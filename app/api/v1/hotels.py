@@ -1,4 +1,7 @@
-from fastapi import APIRouter
+from typing import List, Optional
+
+from fastapi import APIRouter, Query
+from datetime import date
 
 router = APIRouter(prefix="/hotels", tags=["hotels"])
 
@@ -8,3 +11,12 @@ async def get_hotel(hotel_id: int) -> dict:
     return {"hotel_id": hotel_id, "hotel_name": "Hotel Name"}
 
 
+@router.get("/")
+async def get_hotels(
+        location: str,
+        date_from: date,
+        date_to: date,
+        has_spa: Optional[bool] = None,
+        stars: Optional[int] = Query(default=None, ge=1, le=5),
+) -> List[dict]:
+    return [{"hotel_id": 1, "hotel_name": "Hotel Name", "date_from": date_from, "date_to": date_to}]
