@@ -1,31 +1,8 @@
 # mac os
 .DS_Store
 
-# byte-compiled / optimized / dll files
+# byte-compiled
 __pycache__/
-#*.py[cod]
-#*$py.class
-
-# environment
-#.envs/
-#venv
-#coverage-tests-unit.xml
-#tests-unit-results.xml
 
 # pycharm
 .idea/
-#.docker/
-#docker-compose.override.yml
-#.venv/
-#.python-version
-
-## vs code
-#.vscode/
-#.coverage
-
-##pytest
-#coverage.xml
-#.pytest_cache
-
-##sonar
-#.scannerwork
