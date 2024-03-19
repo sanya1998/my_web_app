@@ -16,7 +16,7 @@ def runserver() -> None:
     from app.app import app
     from app.config import settings
 
-    uvicorn.run(app=app, host=settings.HOST, port=settings.PORT)
+    uvicorn.run(app=app, host=settings.DB_HOST, port=settings.DB_PORT)
 
 
 if __name__ == "__main__":

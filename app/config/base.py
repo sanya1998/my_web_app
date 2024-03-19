@@ -14,11 +14,10 @@ class Settings(BaseSettings):
     #: Режим отладки
     DEBUG: bool = True
 
+    #: Хост
+    HOST: str = "localhost"
     #: Порт
     PORT: int = 8000
-
-    #: Хост
-    HOST: str = "0.0.0.0"
 
 
 settings = Settings()
