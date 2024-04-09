@@ -24,3 +24,5 @@ TODO:
 if not strtobool(os.environ.get("TEST", "false")):`
 
 6) local_migrations не выполняется, хотя ее состоавляющие выполняются. понять почему
+7) создать example.env (?)
+8) придумать что-нибудь с submodule (например, модели) и со своей библиотекой
