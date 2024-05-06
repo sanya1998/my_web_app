@@ -7,6 +7,7 @@ app = FastAPI(
     debug=settings.DEBUG,
     title=settings.APPLICATION_NAME,
     description=settings.APPLICATION_DESCRIPTION,
-    swagger_ui_parameters={"tryItOutEnabled": True})
+    swagger_ui_parameters=settings.SWAGGER_UI_PARAMETERS,
+)
 
 app.include_router(api_router)

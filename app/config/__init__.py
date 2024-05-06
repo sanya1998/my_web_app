@@ -1,1 +1,1 @@
-from .base import settings
+from .main import settings

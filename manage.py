@@ -14,7 +14,7 @@ def runserver() -> None:
     import uvicorn
 
     from app.app import app
-    from app.config import settings
+    from app.config.main import settings
 
     uvicorn.run(app=app, host=settings.HOST, port=settings.PORT)
 

@@ -4,7 +4,6 @@ from app.common.tables.base import Base
 
 
 class Hotels(Base):
-    __tablename__ = "hotels"
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=True)
     location = Column(String, nullable=False)

@@ -1,14 +1,23 @@
-Запретить отслеживать изменения в .env-файлах. 
-
-`git update-index --assume-unchanged .envs/*`
-
 Запуск сервисов локально:
 
 `make up-services`
 
 Выполнить миграции на локальную базу данных:
 
-`make local_migrations`
+`make forward_migrations_head_local`
+
+Первый Debug в pycharm:
+1. Создать новую конфигурацию для Python
+2. Выбрать интерпретатор Python
+3. Указать путь до скрипта `manage.py`
+4. Добавить аргумент (для runserver: "runserver"; для run_consumer: "run-consumer")
+5. Указать рабочую директорию - корень проекта
+6. Указать путь до одного из .env-файлов в директории `.envs/`
+7. Запустить Debug
+
+Запретить отслеживать изменения в .env-файлах. 
+
+`git update-index --assume-unchanged .envs/*`
 
 Проект разрабатывается с помощью курса https://stepik.org/course/153849/promo
 
@@ -23,6 +32,8 @@ TODO:
 `# This line sets up loggers basically.
 if not strtobool(os.environ.get("TEST", "false")):`
 
-6) local_migrations не выполняется, хотя ее состоавляющие выполняются. понять почему
+6) local_migrations не выполняется, хотя ее составляющие выполняются. понять почему
 7) создать example.env (?)
 8) придумать что-нибудь с submodule (например, модели) и со своей библиотекой
+9) команды из Makefile не выполняются через конфигурацию pycharm, но выполняются в обычном терминале
+10) Lifespan для fast api
