@@ -1,8 +1,7 @@
+from datetime import date
 from typing import List, Optional
 
-from fastapi import APIRouter, Query, Depends
-from datetime import date
-
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/hotels", tags=["hotels"])
@@ -26,12 +25,12 @@ async def get_hotel(hotel_id: int) -> dict:
 
 class HotelsSearchArgs:
     def __init__(
-            self,
-            location: str,
-            date_from: date,
-            date_to: date,
-            has_spa: Optional[bool] = None,
-            stars: Optional[int] = Query(default=None, ge=1, le=5),
+        self,
+        location: str,
+        date_from: date,
+        date_to: date,
+        has_spa: Optional[bool] = None,
+        stars: Optional[int] = Query(default=None, ge=1, le=5),
     ):
         self.location = location
         self.date_from = date_from
@@ -41,9 +40,7 @@ class HotelsSearchArgs:
 
 
 @router.get("/")
-async def get_hotels(
-        search_args: HotelsSearchArgs = Depends()
-) -> List[SHotel]:
+async def get_hotels(search_args: HotelsSearchArgs = Depends()) -> List[SHotel]:
     hotels = [{"hotel_id": 1, "name": "Hotel Name"}]
     return hotels
     # return [{"hotel_id": 1, "hotel_name": "Hotel Name", "date_from": date_from, "date_to": date_to}]

@@ -3,7 +3,6 @@ from fastapi import APIRouter
 from .srv import srv_router
 from .v1 import v1_router
 
-
 api_router = APIRouter()
 
 api_router.include_router(srv_router)

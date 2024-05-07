@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from app.api.v1.hotels import router as router_hotels
 
 v1_router = APIRouter(prefix="/api/v1")

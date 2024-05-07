@@ -5,6 +5,8 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
+from app.common.tables.base import metadata
+from app.config.main import settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -16,18 +18,15 @@ if not strtobool(os.environ.get("TEST", "false")):
     # Не выполняем настройку логирования, если alembic вызывается во время запуска тестов
     fileConfig(config.config_file_name)
 
-from app.config import settings
-
 # add your model's MetaData object here
 # for 'autogenerate' support
-from app.common.tables.base import metadata
 target_metadata = metadata
-
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
 
 def get_url() -> str:
     return f"{settings.DB_URL}?async_fallback=True"

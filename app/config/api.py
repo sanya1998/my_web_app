@@ -5,6 +5,7 @@ class ApiSettings(BaseSettings):
     """
     Базовые настройки api приложения
     """
+
     APPLICATION_NAME: str = "My web application"
     APPLICATION_DESCRIPTION: str = "My web application description"
     HOST: str = "localhost"

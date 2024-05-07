@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, JSON, ForeignKey, Date, Computed
+from sqlalchemy import Column, Computed, Date, ForeignKey, Integer
 
 from app.common.tables.base import Base
 from app.common.tables.rooms import Rooms

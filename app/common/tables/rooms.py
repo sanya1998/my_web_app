@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, Column, ForeignKey, String, JSON
+from sqlalchemy import JSON, Column, ForeignKey, Integer, String
 
 from app.common.tables.base import Base
 from app.common.tables.hotels import Hotels
@@ -13,5 +13,3 @@ class Rooms(Base):
     services = Column(JSON, nullable=True)
     quantity = Column(Integer, nullable=False)
     image_id = Column(Integer)
-
-

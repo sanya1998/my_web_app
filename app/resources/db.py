@@ -1,4 +1,4 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.config import settings
@@ -11,6 +11,7 @@ async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False
 # временный код, демонстрирующий успешную работу (убрать в следующем коммите)
 async def async_main():
     from sqlalchemy import select
+
     from app.common.tables.hotels import Hotels
 
     async with engine.connect() as conn:
@@ -26,4 +27,5 @@ async def async_main():
 
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(async_main())
