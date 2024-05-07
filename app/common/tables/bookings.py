@@ -1,0 +1,16 @@
+from sqlalchemy import Column, Integer, String, JSON, ForeignKey, Date, Computed
+
+from app.common.tables.base import Base
+from app.common.tables.rooms import Rooms
+from app.common.tables.users import Users
+
+
+class Bookings(Base):
+    id = Column(Integer, primary_key=True)
+    room_id = Column(ForeignKey(Rooms.id), nullable=False)
+    user_id = Column(ForeignKey(Users.id), nullable=False)
+    date_from = Column(Date, nullable=False)
+    date_to = Column(Date, nullable=False)
+    price = Column(Integer, nullable=False)
+    total_days = Column(Integer, Computed("date_to - date_from"))
+    total_cost = Column(Integer, Computed("(date_to - date_from) * price"))

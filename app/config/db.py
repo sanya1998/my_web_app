@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import model_validator, field_validator
+from pydantic import field_validator
 from pydantic_core.core_schema import FieldValidationInfo
 from pydantic_settings import BaseSettings
 
@@ -32,9 +32,9 @@ class DbSettings(BaseSettings):
 
     DB_COMMAND_TIMEOUT: float = 10.0
 
-    @field_validator("DB_URL", mode="before")
+    @field_validator("DB_URL")
     @classmethod
-    def get_db_url(cls, value: str, info: FieldValidationInfo):
+    def get_db_url(cls, value: Optional[str], info: FieldValidationInfo):
         if value is None:
             value = (
                 f"{info.data['DB_DRIVER']}://"
