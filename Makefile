@@ -15,7 +15,7 @@ isort:
 
 linters-check: isort-check black-check flake8-check
 
-linters: black isort linters-check
+linters: black isort flake8-check
 
 set_local_env:
 	export $(grep -v '^#' .envs/local.env | xargs)
