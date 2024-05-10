@@ -2,8 +2,8 @@ from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.common.api_models.base import BaseModel
 from app.common.exceptions.repositories.base import BaseNotFound
-from app.common.models.base import BaseModel
 from app.common.tables.base import BaseTable
 
 
@@ -16,7 +16,11 @@ class BaseRepository:
         self.session = session
 
     async def get_objects(self, filters):
-        raise NotImplementedError
+        query = select(self.db_model)
+        result = await self.session.execute(query)
+        bookings = result.scalars().all()
+        # TODO: work with limit and offset + max_limit (env)
+        return bookings
 
     async def get_object(self, object_id):
         query = select(self.db_model).where(self.db_model.id == object_id)

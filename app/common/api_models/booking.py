@@ -1,6 +1,6 @@
 from datetime import date
 
-from app.common.models.base import BaseModel
+from app.common.api_models.base import BaseModel
 
 
 class SBooking(BaseModel):
