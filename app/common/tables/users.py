@@ -1,9 +1,8 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, String
 
-from app.common.tables.base import Base
+from app.common.tables.base import BaseTable
 
 
-class Users(Base):
-    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+class Users(BaseTable):
     email = Column(String, unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)

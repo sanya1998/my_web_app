@@ -1,10 +1,9 @@
 from sqlalchemy import JSON, Column, Integer, String
 
-from app.common.tables.base import Base
+from app.common.tables.base import BaseTable
 
 
-class Hotels(Base):
-    id = Column(Integer, primary_key=True)
+class Hotels(BaseTable):
     name = Column(String, nullable=True)
     location = Column(String, nullable=False)
     services = Column(JSON)

@@ -1,9 +1,9 @@
 from datetime import date
 
-from app.common.models.base import Base
+from app.common.models.base import BaseModel
 
 
-class SBooking(Base):
+class SBooking(BaseModel):
     room_id: int
     date_from: date
     date_to: date
