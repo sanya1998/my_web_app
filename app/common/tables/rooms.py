@@ -1,7 +1,6 @@
-from sqlalchemy import JSON, Column, ForeignKey, Integer, String
-
 from app.common.tables.base import BaseTable
 from app.common.tables.hotels import Hotels
+from sqlalchemy import JSON, Column, ForeignKey, Integer, String
 
 
 class Rooms(BaseTable):

@@ -1,17 +1,17 @@
 flake8-check:
-	flake8 --config=.flake8
+	flake8 --config=linters/.flake8
 
 black-check:
-	black . --config pyproject.toml --check
+	black . --config linters/.black --check --diff
 
 isort-check:
-	isort -c . --diff
+	isort . --settings-file linters/.isort --check-only  --diff
 
 black:
-	black . --config pyproject.toml
+	black . --config linters/.black
 
 isort:
-	isort .
+	isort . --settings-file linters/.isort
 
 linters-check: isort-check black-check flake8-check
 

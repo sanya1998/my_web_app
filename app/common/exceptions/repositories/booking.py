@@ -1,5 +1,5 @@
-from app.common.exceptions.repositories.base import BaseNotFound
+from app.common.exceptions.repositories.base import BaseNotFoundError
 
 
-class BookingNotFound(BaseNotFound):
+class BookingNotFoundErrorError(BaseNotFoundError):
     pass

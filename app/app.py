@@ -1,9 +1,8 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-
 from app.api import api_router
 from app.config.main import settings
+from fastapi import FastAPI
 
 
 class Application(FastAPI):

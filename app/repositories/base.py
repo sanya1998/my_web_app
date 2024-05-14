@@ -1,35 +1,52 @@
+from typing import List
+
+from app.common.dependencies.filters.base import BaseFilterSchema, _BaseFilterSet
+from app.common.exceptions.repositories.base import BaseNotFoundError
+from app.common.schemas.base import BaseSchema
+from app.common.tables.base import BaseTable
+from pydantic import parse_obj_as
 from sqlalchemy import select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.common.api_models.base import BaseModel
-from app.common.exceptions.repositories.base import BaseNotFound
-from app.common.tables.base import BaseTable
-
 
 class BaseRepository:
-    db_model: BaseTable
-    schema_model: BaseModel
-    exception_not_found: BaseNotFound
+    db_model = BaseTable
+    schema_model = BaseSchema
+    exception_not_found = BaseNotFoundError
+    filter_set = _BaseFilterSet
+    filter_schema = BaseFilterSchema
 
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_objects(self, filters):
-        query = select(self.db_model)
-        result = await self.session.execute(query)
-        bookings = result.scalars().all()
-        # TODO: work with limit and offset + max_limit (env)
-        return bookings
+    async def get_objects(self, raw_filters: BaseFilterSchema) -> List[BaseSchema]:
+        filter_set = self.filter_set(self.session, select(self.db_model))
+        filter_params = raw_filters.model_dump(exclude_none=True)
+        filtered_objects = await filter_set.filter(filter_params)
+        query = filter_set.filter_query(filter_params)  # TODO: tmp
+        print(query)  # TODO: tmp
+        return parse_obj_as(
+            list[self.schema_model], filtered_objects
+        )  # TODO: `return filtered_objects` тоже будет работать для FastApi
+
+        # TODO: убрать в следующем коммите
+        # Тоже рабочий код. Только self.filter_set должен в родителях иметь не AsyncFilterSet, а BaseFilterSet
+        # filter_params = raw_filters.model_dump(exclude_none=True)
+        # filter_set = self.filter_set(select(self.db_model))
+        # query = filter_set.filter_query(filter_params)
+        # result = await self.session.execute(query)
+        # filtered_objects = result.scalars().all()
+        # return parse_obj_as(list[self.schema_model], filtered_objects)
 
     async def get_object(self, object_id):
         query = select(self.db_model).where(self.db_model.id == object_id)
         result = await self.session.execute(query)
         try:
-            booking = result.scalar_one()
+            obj = result.scalar_one()  # TODO: can use scalar_one_or_none()
         except NoResultFound:
             raise self.exception_not_found
-        return self.schema_model.from_orm(booking)
+        return self.schema_model.from_orm(obj)  # TODO: что будет, если оставить только obj ?
 
     async def create(self, data):
         raise NotImplementedError

@@ -12,7 +12,6 @@ def runserver() -> None:
     Run the server.
     """
     import uvicorn
-
     from app.app import app
     from app.config.main import settings
 

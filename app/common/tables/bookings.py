@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Computed, Date, ForeignKey, Integer
-
 from app.common.tables.base import BaseTable
 from app.common.tables.rooms import Rooms
 from app.common.tables.users import Users
+from sqlalchemy import Column, Computed, Date, ForeignKey, Integer
 
 
 class Bookings(BaseTable):

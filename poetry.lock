@@ -1163,7 +1163,7 @@ files = [
 ]
 
 [package.dependencies]
-greenlet = {version = "!=0.4.17", markers = "platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\""}
+greenlet = {version = "!=0.4.17", optional = true, markers = "platform_machine == \"aarch64\" or platform_machine == \"ppc64le\" or platform_machine == \"x86_64\" or platform_machine == \"amd64\" or platform_machine == \"AMD64\" or platform_machine == \"win32\" or platform_machine == \"WIN32\" or extra == \"asyncio\""}
 typing-extensions = ">=4.6.0"
 
 [package.extras]
@@ -1190,6 +1190,21 @@ postgresql-psycopg2cffi = ["psycopg2cffi"]
 postgresql-psycopgbinary = ["psycopg[binary] (>=3.0.7)"]
 pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3_binary"]
+
+[[package]]
+name = "sqlalchemy-filterset"
+version = "2.0.0"
+description = "An easy way to filter, sort, paginate SQLAlchemy queries"
+category = "main"
+optional = false
+python-versions = "<4.0.0,>=3.7"
+files = [
+    {file = "sqlalchemy_filterset-2.0.0-py3-none-any.whl", hash = "sha256:fca11d7a80613feb00748bfc4ea16c93667635dc15640e8b6183f48131d827db"},
+    {file = "sqlalchemy_filterset-2.0.0.tar.gz", hash = "sha256:e33e35b9975ecdea53d1eed6daa4d2bcd2f6d9518f0ec3073fc13331fec63c94"},
+]
+
+[package.dependencies]
+SQLAlchemy = {version = ">=2,<3", extras = ["asyncio"]}
 
 [[package]]
 name = "starlette"
@@ -1571,4 +1586,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "5e5111743b2883925c0bd8bcbec2e05e6e6e529bf8e125b2e068f64170f8cd84"
+content-hash = "8c7c0ea10cfe50f188855af95d8ba277fb0fe62dd4146368b3444912ac033caa"

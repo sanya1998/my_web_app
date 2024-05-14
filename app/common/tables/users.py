@@ -1,6 +1,5 @@
-from sqlalchemy import Column, String
-
 from app.common.tables.base import BaseTable
+from sqlalchemy import Column, String
 
 
 class Users(BaseTable):

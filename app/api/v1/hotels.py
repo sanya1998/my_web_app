@@ -1,9 +1,8 @@
 from typing import List
 
-from fastapi import APIRouter
-
-from app.common.api_models.hotel import SHotel
 from app.common.dependencies.filters.hotels import HotelsFiltersDep
+from app.common.schemas.hotel import SHotel
+from fastapi import APIRouter
 
 router = APIRouter(prefix="/hotels", tags=["hotels"])
 

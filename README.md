@@ -36,3 +36,10 @@ TODO:
 4) придумать что-нибудь с submodule (например, модели) и со своей библиотекой
 5) Lifespan для fast api
 6) Перейти на SQLModel
+7) Изменить поля в фильтрах отелей и бронирований
+8) Посмотреть все TODO в коде
+9) id: uuid.UUID
+10) Добавить OrderingFilter, LimitOffsetFilter
+11) Можно ли в один класс объединить BookingsFilterSet, BookingsFilterSchema
+12) Либо разнести по разным местам и BookingsFilterSchema мб переименовать в аргументы запроса
+13) Попробовать autoflake8

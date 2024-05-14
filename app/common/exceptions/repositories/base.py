@@ -1,2 +1,2 @@
-class BaseNotFound(Exception):
+class BaseNotFoundError(Exception):
     pass

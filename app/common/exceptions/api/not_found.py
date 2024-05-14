@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 
 
-class ApiNotFound(HTTPException):
+class ApiNotFoundError(HTTPException):
     status_code = 404
 
     def __init__(self, model_name: str, detail: dict = None):

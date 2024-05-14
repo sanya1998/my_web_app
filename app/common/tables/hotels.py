@@ -1,6 +1,5 @@
-from sqlalchemy import JSON, Column, Integer, String
-
 from app.common.tables.base import BaseTable
+from sqlalchemy import JSON, Column, Integer, String
 
 
 class Hotels(BaseTable):
