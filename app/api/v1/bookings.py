@@ -9,9 +9,7 @@ router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 
 @router.get("/")
-async def get_bookings(
-    raw_filters: BookingsFiltersDep, booking_repo: BookingRepoDep
-):  # TODO: limit: int, offset: int
+async def get_bookings(raw_filters: BookingsFiltersDep, booking_repo: BookingRepoDep):  # TODO: limit: int, offset: int
     bookings = await booking_repo.get_objects(raw_filters=raw_filters)
     return bookings
 

@@ -24,20 +24,9 @@ class BaseRepository:
         filter_set = self.filter_set(self.session, select(self.db_model))
         filter_params = raw_filters.model_dump(exclude_none=True)
         filtered_objects = await filter_set.filter(filter_params)
-        query = filter_set.filter_query(filter_params)  # TODO: tmp
-        print(query)  # TODO: tmp
-        return parse_obj_as(
-            list[self.schema_model], filtered_objects
-        )  # TODO: `return filtered_objects` тоже будет работать для FastApi
-
-        # TODO: убрать в следующем коммите
-        # Тоже рабочий код. Только self.filter_set должен в родителях иметь не AsyncFilterSet, а BaseFilterSet
-        # filter_params = raw_filters.model_dump(exclude_none=True)
-        # filter_set = self.filter_set(select(self.db_model))
-        # query = filter_set.filter_query(filter_params)
-        # result = await self.session.execute(query)
-        # filtered_objects = result.scalars().all()
-        # return parse_obj_as(list[self.schema_model], filtered_objects)
+        print(filter_set.filter_query(filter_params))  # TODO: tmp
+        # TODO: `return filtered_objects` тоже будет работать для FastApi (разобраться после того, как респонс будет)
+        return parse_obj_as(list[self.schema_model], filtered_objects)
 
     async def get_object(self, object_id):
         query = select(self.db_model).where(self.db_model.id == object_id)
@@ -46,7 +35,8 @@ class BaseRepository:
             obj = result.scalar_one()  # TODO: can use scalar_one_or_none()
         except NoResultFound:
             raise self.exception_not_found
-        return self.schema_model.from_orm(obj)  # TODO: что будет, если оставить только obj ?
+        # TODO: что будет, если оставить только obj, после того, как респонс будет)
+        return self.schema_model.from_orm(obj)
 
     async def create(self, data):
         raise NotImplementedError
