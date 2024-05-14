@@ -1,6 +1,6 @@
 from typing import List
 
-from app.common.dependencies.filters.hotels import HotelsFiltersDep
+from app.common.dependencies.api_args.hotels import HotelsFiltersDep
 from app.common.schemas.hotel import SHotel
 from fastapi import APIRouter
 

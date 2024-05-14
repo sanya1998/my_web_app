@@ -1,7 +1,8 @@
 from typing import List
 
-from app.common.dependencies.filters.base import BaseFilterSchema, _BaseFilterSet
+from app.common.dependencies.api_args.base import BaseFilterSchema
 from app.common.exceptions.repositories.base import BaseNotFoundError
+from app.common.filtersets.base import _BaseFilterSet
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
 from pydantic import parse_obj_as

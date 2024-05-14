@@ -40,6 +40,6 @@ TODO:
 8) Посмотреть все TODO в коде
 9) id: uuid.UUID
 10) Добавить OrderingFilter, LimitOffsetFilter
-11) Можно ли в один класс объединить BookingsFilterSet, BookingsFilterSchema
-12) Либо разнести по разным местам и BookingsFilterSchema мб переименовать в аргументы запроса
-13) Попробовать autoflake8
+11) Можно ли в один класс объединить BookingsFilterSet, BookingsFilterSchema 2
+12) Попробовать autoflake8
+13) pre-commit

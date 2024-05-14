@@ -1,4 +1,4 @@
-from app.common.dependencies.filters.bookings import BookingsFiltersDep
+from app.common.dependencies.api_args.bookings import BookingsFiltersDep
 from app.common.dependencies.repositories.booking import BookingRepoDep
 from app.common.exceptions.api.not_found import ApiNotFoundError
 from app.common.exceptions.repositories.booking import BookingNotFoundErrorError
