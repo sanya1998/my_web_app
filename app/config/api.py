@@ -12,3 +12,6 @@ class ApiSettings(BaseSettings):
     PORT: int = 8000
     SWAGGER_UI_PARAMETERS: dict = {"tryItOutEnabled": True}
     DEBUG: bool = True
+    LIMIT_DEFAULT: int = 10
+    LIMIT_MAX: int = 100
+    OFFSET_DEFAULT: int = 0

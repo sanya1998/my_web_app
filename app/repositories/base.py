@@ -1,8 +1,8 @@
 from typing import List
 
 from app.common.dependencies.api_args.base import BaseFilterSchema
-from app.common.exceptions.repositories.base import BaseNotFoundError
-from app.common.filtersets.base import _BaseFilterSet
+from app.common.exceptions.repositories.base import BaseNotFoundError, BaseTypeError
+from app.common.filtersets.base import BaseAsyncFilterSet
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
 from pydantic import parse_obj_as
@@ -15,17 +15,20 @@ class BaseRepository:
     db_model = BaseTable
     schema_model = BaseSchema
     exception_not_found = BaseNotFoundError
-    filter_set = _BaseFilterSet
+    exception_type = BaseTypeError
+    filter_set = BaseAsyncFilterSet
     filter_schema = BaseFilterSchema
 
     def __init__(self, session: AsyncSession):
         self.session = session
 
     async def get_objects(self, raw_filters: BaseFilterSchema) -> List[BaseSchema]:
-        filter_set = self.filter_set(self.session, select(self.db_model))
-        filter_params = raw_filters.model_dump(exclude_none=True)
-        filtered_objects = await filter_set.filter(filter_params)
-        print(filter_set.filter_query(filter_params))  # TODO: tmp
+        try:
+            filter_set = self.filter_set(self.session, select(self.db_model))
+            filter_params = raw_filters.model_dump(exclude_none=True)
+            filtered_objects = await filter_set.filter(filter_params)
+        except TypeError:
+            raise self.exception_type
         # TODO: `return filtered_objects` тоже будет работать для FastApi (разобраться после того, как респонс будет)
         return parse_obj_as(list[self.schema_model], filtered_objects)
 

@@ -1,8 +1,14 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from app.common.dependencies.api_args.base import BaseFilterSchema
-from fastapi import Depends
-from pydantic import computed_field
+from app.common.helpers.db import get_columns_by_table, get_ordering_enum_by_columns
+from app.common.tables import Bookings
+from fastapi import Depends, Query
+from pydantic import Field, computed_field
+from pydantic.json_schema import SkipJsonSchema
+
+columns = get_columns_by_table(Bookings)
+BookingOrderingEnum = get_ordering_enum_by_columns(columns.price, columns.date_from, columns.date_to)
 
 
 class BookingsFilterSchema(BaseFilterSchema):
@@ -10,6 +16,7 @@ class BookingsFilterSchema(BaseFilterSchema):
     user_id: int | None = None
     price_min: int | None = None
     price_max: int | None = None
+    ordering: List[BookingOrderingEnum] | SkipJsonSchema[None] = Field(Query(None))
 
     @computed_field
     @property

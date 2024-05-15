@@ -1,6 +1,6 @@
-from sqlalchemy_filterset import AsyncFilterSet
+from sqlalchemy_filterset import AsyncFilterSet, LimitOffsetFilter
 
 
-class _BaseFilterSet(AsyncFilterSet):
+class BaseAsyncFilterSet(AsyncFilterSet):
     # Здесь указываются типы фильтров ("=", ">", "<", "in" итд)
-    pass
+    pagination = LimitOffsetFilter()
