@@ -1,8 +1,11 @@
 from app.common.dependencies.api_args.bookings import BookingsFiltersDep
 from app.common.dependencies.repositories.booking import BookingRepoDep
+from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.api.not_found import ApiNotFoundError
 from app.common.exceptions.api.type_error import ApiTypeError
-from app.common.exceptions.repositories.booking import BookingNotFoundError, BookingTypeError
+from app.common.exceptions.repositories.base import BaseRepoError
+from app.common.exceptions.repositories.not_found import RepoNotFoundError
+from app.common.exceptions.repositories.type_error import RepoTypeError
 from app.common.schemas.booking import BookingSchema
 from fastapi import APIRouter
 
@@ -14,8 +17,10 @@ model_name = "Booking"
 async def get_bookings(raw_filters: BookingsFiltersDep, booking_repo: BookingRepoDep):
     try:
         bookings = await booking_repo.get_objects(raw_filters=raw_filters)
-    except BookingTypeError:
-        raise ApiTypeError(model_name=model_name, detail=raw_filters.model_dump())
+    except RepoTypeError as e:
+        raise ApiTypeError(e)
+    except BaseRepoError as e:
+        raise BaseApiError(e)
     return bookings
 
 
@@ -23,9 +28,11 @@ async def get_bookings(raw_filters: BookingsFiltersDep, booking_repo: BookingRep
 async def get_booking(booking_id: int, booking_repo: BookingRepoDep):
     try:
         booking = await booking_repo.get_object(object_id=booking_id)
-    except BookingNotFoundError:
+    except RepoNotFoundError as e:
         # TODO: logger, sentry etc
-        raise ApiNotFoundError(model_name=model_name, detail=dict(booking_id=booking_id))
+        raise ApiNotFoundError(e)
+    except BaseRepoError as e:
+        raise BaseApiError(e)
 
     # TODO: to_api_model().with_wrapper() ???
     return booking
