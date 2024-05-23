@@ -1,8 +1,8 @@
-from app.api.v1.bookings import router as router_bookings
-from app.api.v1.hotels import router as router_hotels
+from app.api.v1.data import data_router
+from app.api.v1.users import users_router
 from fastapi import APIRouter
 
 v1_router = APIRouter(prefix="/api/v1")
 
-v1_router.include_router(router_hotels)
-v1_router.include_router(router_bookings)
+v1_router.include_router(users_router)
+v1_router.include_router(data_router)

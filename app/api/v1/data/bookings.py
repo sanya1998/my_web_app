@@ -29,7 +29,7 @@ async def get_bookings(raw_filters: BookingsFiltersDep, booking_repo: BookingRep
 @router.get("/{booking_id}")
 async def get_booking(booking_id: int, booking_repo: BookingRepoDep) -> BookingSchema:
     try:
-        booking = await booking_repo.get_object(object_id=booking_id)
+        booking = await booking_repo.get_object(id=booking_id)
     except RepoNotFoundError as e:
         # TODO: logger, sentry etc
         raise ApiNotFoundError(e)

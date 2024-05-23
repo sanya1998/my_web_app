@@ -7,7 +7,8 @@ from app.repositories.base import BaseRepository
 
 class BookingRepo(BaseRepository):
     db_model = Bookings
-    schema_model = BookingSchema
+
+    read_schema = BookingSchema
 
     filter_set = BookingsFilterSet
     filter_schema = BookingsFilterSchema
