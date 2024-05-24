@@ -9,7 +9,6 @@ class UserRepo(BaseRepository):
     read_schema = UserReadSchema
     create_schema = UserCreateSchema
 
-    async def create(self, raw_data: UserInputSchema) -> db_model:
-        # TODO: Где делать преобразования pydantic -> sql (с учетом, что в будущем будет SQLModel)
+    async def create(self, raw_data: UserInputSchema) -> read_schema:
         data = self.create_schema.model_validate(raw_data)
         return await super().create(data)
