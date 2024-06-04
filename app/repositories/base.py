@@ -31,6 +31,7 @@ class BaseRepository:
             try:
                 return await method(self, *args, **kwargs)
             # TODO: Эти исключения уже ловились. Надо подумать, как с ними работать
+            #  + ConnectionRefusedError (когда бд отключена)
             # except MultipleResultsFound as e:
             #     # Если хотим скаляр (одну строку), а под такие критерии подходит несколько
             #     raise BaseRepoError(e, self.model_name, kwargs)
@@ -44,8 +45,8 @@ class BaseRepository:
             except Exception as ex:
                 class UnitingException(ex.__class__, BaseRepoError):
                     """
-                    ex.__class__ содержит информацию о типе ошибке.
                     Наследование от BaseRepoError позволяет ловить все исключения из репозитория.
+                    ex.__class__ содержит информацию о типе ошибке.
                     method_args, method_kwargs - входные данные.
                     """
                     method_args = args
@@ -65,7 +66,7 @@ class BaseRepository:
         return [self.read_schema.model_validate(obj) for obj in filtered_objects]
 
     @catch_exception
-    async def get_object(self, **kwargs) -> read_schema | None:
+    async def get_object(self, **kwargs) -> read_schema:
         query = select(self.db_model).filter_by(**kwargs)
         result = await self.session.execute(query)
         obj = result.scalar_one_or_none()
