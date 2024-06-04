@@ -1,5 +1,5 @@
 from app.common.exceptions.repositories.base import BaseRepoError
 
 
-class RepoNotFoundError(BaseRepoError):
+class NotFoundRepoError(BaseRepoError):
     pass

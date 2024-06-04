@@ -3,7 +3,7 @@ from typing import Any, Callable, List
 
 from app.common.dependencies.api_args.base import BaseFilterSchema
 from app.common.exceptions.repositories.base import BaseRepoError
-from app.common.exceptions.repositories.not_found import RepoNotFoundError
+from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.filtersets.base import BaseAsyncFilterSet
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
@@ -73,7 +73,7 @@ class BaseRepository:
         result = await self.session.execute(query)
         obj = result.scalar_one_or_none()
         if obj is None:
-            raise RepoNotFoundError
+            raise NotFoundRepoError
         return self.read_schema.model_validate(obj)
 
     @catch_exception
@@ -82,7 +82,7 @@ class BaseRepository:
         result = await self.session.execute(query)
         value = result.scalar_one_or_none()
         if value is None:
-            raise RepoNotFoundError
+            raise NotFoundRepoError
         return value
 
     @catch_exception
@@ -94,6 +94,17 @@ class BaseRepository:
         obj = result.scalar_one()
         await self.session.commit()
         return self.read_schema.model_validate(obj)
+
+    @catch_exception
+    async def is_exists(self, **filters) -> bool:
+        query = select(self.db_model).filter_by(**filters).exists().select()
+        result = await self.session.execute(query)
+        value = result.scalar_one()
+        return value
+
+    @catch_exception
+    async def is_not_exists(self, **filters) -> bool:
+        return not (await self.is_exists(**filters))
 
     @catch_exception
     async def create_bulk(self, data: List[create_schema]) -> List[read_schema]:

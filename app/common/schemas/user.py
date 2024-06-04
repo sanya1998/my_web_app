@@ -1,6 +1,5 @@
 from app.common.schemas.base import BaseSchema
-from app.services.authorization import AuthorizationService
-from pydantic import EmailStr, computed_field
+from pydantic import EmailStr, SecretStr
 
 
 class UserSchemaBase(BaseSchema):
@@ -8,12 +7,7 @@ class UserSchemaBase(BaseSchema):
 
 
 class UserInputSchema(UserSchemaBase):
-    raw_password: str
-
-    @computed_field
-    @property
-    def hashed_password(self) -> str:
-        return AuthorizationService.get_password_hash(self.raw_password)
+    raw_password: SecretStr
 
 
 class UserCreateSchema(UserSchemaBase):
@@ -21,18 +15,8 @@ class UserCreateSchema(UserSchemaBase):
 
 
 class UserPasswordUpdateSchema(UserSchemaBase):
-    old_password: str
-    new_password: str
-
-    @computed_field
-    @property
-    def old_hashed_password(self) -> str:
-        return AuthorizationService.get_password_hash(self.old_password)
-
-    @computed_field
-    @property
-    def new_hashed_password(self) -> str:
-        return AuthorizationService.get_password_hash(self.new_password)
+    old_password: SecretStr
+    new_password: SecretStr
 
 
 class UserUpdateSchema(UserSchemaBase):
