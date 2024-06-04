@@ -20,3 +20,5 @@ async def sign_up(user_data: UserInputSchema, user_repo: UserRepoDep) -> UserRea
             return await user_repo.create(user_data)
         except BaseRepoError:
             raise BaseApiError
+    except BaseRepoError:
+        raise BaseApiError

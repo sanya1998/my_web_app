@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import List, Callable
+from typing import Any, Callable, List
 
 from app.common.dependencies.api_args.base import BaseFilterSchema
 from app.common.exceptions.repositories.base import BaseRepoError
@@ -43,16 +43,18 @@ class BaseRepository:
             #     raise BaseRepoError(e, self.model_name, kwargs)
 
             except Exception as ex:
+
                 class UnitingException(ex.__class__, BaseRepoError):
                     """
                     Наследование от BaseRepoError позволяет ловить все исключения из репозитория.
                     ex.__class__ содержит информацию о типе ошибке.
                     method_args, method_kwargs - входные данные.
                     """
+
                     method_args = args
                     method_kwargs = kwargs
 
-                message = f'{ex.__class__.__name__}: {ex}.\nRepository exception from {self.model_name}.'
+                message = f"{ex.__class__.__name__}: {ex}.\nRepository exception from {self.model_name}."
                 print(message)  # TODO: весь трейс в логи logger, sentry etc
                 raise UnitingException(message) from ex
 
@@ -66,8 +68,8 @@ class BaseRepository:
         return [self.read_schema.model_validate(obj) for obj in filtered_objects]
 
     @catch_exception
-    async def get_object(self, **kwargs) -> read_schema:
-        query = select(self.db_model).filter_by(**kwargs)
+    async def get_object(self, **filters) -> read_schema:
+        query = select(self.db_model).filter_by(**filters)
         result = await self.session.execute(query)
         obj = result.scalar_one_or_none()
         if obj is None:
@@ -75,8 +77,18 @@ class BaseRepository:
         return self.read_schema.model_validate(obj)
 
     @catch_exception
+    async def get_object_field(self, key: str, **filters) -> Any:
+        query = select(getattr(self.db_model, key)).filter_by(**filters)  # TODO: обработать кейс, если key отсутствует
+        result = await self.session.execute(query)
+        value = result.scalar_one_or_none()
+        if value is None:
+            raise RepoNotFoundError
+        return value
+
+    @catch_exception
     async def create(self, data: create_schema) -> read_schema:
         # TODO: можно ли упростить values(**data.model_dump()) - возможно, SQLModel решит проблему
+        # TODO: вместо insert(self.db_model) можно написать только поля из read_schema (что эффективнее?)
         query = insert(self.db_model).values(**data.model_dump()).returning(self.db_model)
         result = await self.session.execute(query)
         obj = result.scalar_one()

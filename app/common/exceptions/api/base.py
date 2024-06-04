@@ -1,12 +1,12 @@
-import json
-
-from app.common.exceptions.repositories.base import BaseRepoError
-from app.common.helpers.json import CustomEncoder
-from fastapi import HTTPException
+# import json
+#
+# from app.common.exceptions.repositories.base import BaseRepoError
+# from app.common.helpers.json import CustomEncoder
+from fastapi import HTTPException, status
 
 
 class BaseApiError(HTTPException):
-    status_code = 500
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     detail = None
 
     def __init__(self):
