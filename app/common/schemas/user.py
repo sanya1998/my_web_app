@@ -1,13 +1,14 @@
 from app.common.schemas.base import BaseSchema
-from pydantic import EmailStr, SecretStr
+from fastapi import Body
+from pydantic import EmailStr, Field, SecretStr
 
 
 class UserSchemaBase(BaseSchema):
-    email: EmailStr
+    email: EmailStr = Field(Body())
 
 
 class UserInputSchema(UserSchemaBase):
-    raw_password: SecretStr
+    raw_password: SecretStr = Field(Body())
 
 
 class UserCreateSchema(UserSchemaBase):
