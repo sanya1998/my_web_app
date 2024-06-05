@@ -15,15 +15,16 @@ from pydantic import SecretStr
 
 
 class AuthorizationService(BaseService):
+    @BaseService.catch_exception
     def __init__(self, user_repo: UserRepo):
         super().__init__()
         self.user_repo = user_repo
 
-    # @BaseService.catch_exception  #TODO: для не асинхронных тоже нужно сделать обработку
+    @BaseService.catch_exception
     def get_password_hash(self, password: SecretStr) -> str:
         return hashlib.sha256(password.get_secret_value().encode(settings.ENCODING)).hexdigest()
 
-    # @BaseService.catch_exception
+    @BaseService.catch_exception
     def create_access_token(self, data: dict) -> str:
         to_encode = copy.deepcopy(data)
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -48,8 +49,8 @@ class AuthorizationService(BaseService):
         if hashed_password_db != hashed_password_input:
             raise UnauthorizedServiceError
 
-    # @BaseService.catch_exception
-    async def create_and_remember_access_token(self, response: Response, email: str):
+    @BaseService.catch_exception
+    def create_and_remember_access_token(self, response: Response, email: str):
         access_token = self.create_access_token(data=dict(sub=email))
         response.set_cookie(key=settings.ACCESS_TOKEN_VARIABLE, value=access_token, httponly=True)
         return access_token

@@ -15,7 +15,7 @@ async def sign_up(
 ) -> UserReadSchema:
     try:
         new_user = await auth_service.sign_up(user_input)
-        await auth_service.create_and_remember_access_token(response=response, email=user_input.email)
+        auth_service.create_and_remember_access_token(response=response, email=user_input.email)
         return new_user
     except AlreadyExistsServiceError:
         raise AlreadyExistsApiError

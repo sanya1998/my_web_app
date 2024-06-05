@@ -1,7 +1,7 @@
 # from typing import Annotated
 #
-# from app.common.schemas.user import UserCreateSchema
+# from app.common.schemas.user import UserInputSchema
 # from fastapi import Depends
 #
-# UserSignUpDep = Annotated[UserCreateSchema, Depends(UserCreateSchema)]
+# UserInputDep = Annotated[UserInputSchema, Depends(UserInputSchema)]
 # TODO: нельзя пароль в открытом виде передавать, надо в тело его

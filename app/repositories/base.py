@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import contextmanager
 from functools import wraps
 from typing import Any, Callable, List
 
@@ -20,30 +22,24 @@ class BaseRepository:
     filter_set = BaseAsyncFilterSet
     filter_schema = BaseFilterSchema
 
-    def __init__(self, session: AsyncSession):
-        self.model_name = self.__class__.__name__
-        self.session = session
-
     @staticmethod
     def catch_exception(method: Callable) -> Callable:
-        @wraps(method)  # TODO: узнать, зачем это
-        async def wrapper(self, *args, **kwargs):
+        @contextmanager
+        def wrapping_logic(self, *args, **kwargs):
             try:
-                return await method(self, *args, **kwargs)
-            # TODO: Эти исключения уже ловились. Надо подумать, как с ними работать
-            #  + ConnectionRefusedError (когда бд отключена)
-            # except MultipleResultsFound as e:
-            #     # Если хотим скаляр (одну строку), а под такие критерии подходит несколько
-            #     raise BaseRepoError(e, self.model_name, kwargs)
-            # except InvalidRequestError as e:
-            #     # Одно из пришедших полей отсутствует в таблице
-            #     raise BaseRepoError(e, self.model_name, kwargs)
-            # except CompileError as e:
-            #     # Если при создании придет поле, которого нет в таблице. (по идее должно решиться SQLModel)
-            #     raise BaseRepoError(e, self.model_name, kwargs)
-
+                yield
             except Exception as ex:
-
+                # TODO: Эти исключения уже ловились. Надо подумать, как с ними работать
+                #  + ConnectionRefusedError (когда бд отключена)
+                # except MultipleResultsFound as e:
+                #     # Если хотим скаляр (одну строку), а под такие критерии подходит несколько
+                #     raise BaseRepoError(e, self.model_name, kwargs)
+                # except InvalidRequestError as e:
+                #     # Одно из пришедших полей отсутствует в таблице
+                #     raise BaseRepoError(e, self.model_name, kwargs)
+                # except CompileError as e:
+                #     # Если при создании придет поле, которого нет в таблице. (по идее должно решиться SQLModel)
+                #     raise BaseRepoError(e, self.model_name, kwargs)
                 class UnitingException(ex.__class__, BaseRepoError):
                     """
                     Наследование от BaseRepoError позволяет ловить все исключения из репозитория.
@@ -58,7 +54,25 @@ class BaseRepository:
                 print(message)  # TODO: весь трейс в логи logger, sentry etc
                 raise UnitingException(message) from ex
 
+        @wraps(method)  # TODO: узнать, зачем это
+        def wrapper(self, *args, **kwargs):
+            if asyncio.iscoroutinefunction(method):
+
+                async def async_wrapper():
+                    with wrapping_logic(self, *args, **kwargs):
+                        return await method(self, *args, **kwargs)
+
+                return async_wrapper()
+            else:
+                with wrapping_logic(self, *args, **kwargs):
+                    return method(self, *args, **kwargs)
+
         return wrapper
+
+    @catch_exception
+    def __init__(self, session: AsyncSession):
+        self.model_name = self.__class__.__name__
+        self.session = session
 
     @catch_exception
     async def get_objects(self, raw_filters: filter_schema) -> List[read_schema]:
@@ -97,6 +111,7 @@ class BaseRepository:
 
     @catch_exception
     async def is_exists(self, **filters) -> bool:
+        # TODO: можно ли упростить query
         query = select(self.db_model).filter_by(**filters).exists().select()
         result = await self.session.execute(query)
         value = result.scalar_one()

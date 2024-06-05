@@ -15,7 +15,7 @@ sign_in_router = APIRouter()
 async def sign_in(user_input: UserInputSchema, auth_service: AuthorizationServiceDep, response: Response) -> dict:
     try:
         await auth_service.sign_in(user_input)
-        access_token = await auth_service.create_and_remember_access_token(response=response, email=user_input.email)
+        access_token = auth_service.create_and_remember_access_token(response=response, email=user_input.email)
         return dict(access_token=access_token)
     except NotFoundServiceError:
         raise NotFoundApiError
