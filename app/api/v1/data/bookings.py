@@ -1,6 +1,7 @@
 from typing import List
 
 from app.common.dependencies.api_args.bookings import BookingsFiltersDep
+from app.common.dependencies.api_args.users import CurrentUserDep
 from app.common.dependencies.repositories.booking import BookingRepoDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.api.not_found import NotFoundApiError
@@ -14,9 +15,11 @@ model_name = "Booking"
 
 
 @router.get("/")
-async def get_bookings(raw_filters: BookingsFiltersDep, booking_repo: BookingRepoDep) -> List[BookingSchema]:
+async def get_bookings(
+    raw_filters: BookingsFiltersDep, user: CurrentUserDep, booking_repo: BookingRepoDep
+) -> List[BookingSchema]:
     try:
-        bookings = await booking_repo.get_objects(raw_filters=raw_filters)
+        bookings = await booking_repo.get_objects(raw_filters=raw_filters, user_id=user.id)
     except BaseRepoError:
         raise BaseApiError
     return bookings

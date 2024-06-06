@@ -19,3 +19,4 @@ class ApiSettings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     ACCESS_TOKEN_VARIABLE: str = "access_token"
     JWT_SECRET_KEY: str
+    ALGORITHM: str

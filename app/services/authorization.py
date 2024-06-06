@@ -6,7 +6,7 @@ import jwt
 from app.common.exceptions.services.already_exists import AlreadyExistsServiceError
 from app.common.exceptions.services.not_found import NotFoundServiceError
 from app.common.exceptions.services.unauthorized import UnauthorizedServiceError
-from app.common.schemas.user import UserCreateSchema, UserInputSchema
+from app.common.schemas.user import UserCreateSchema, UserInputSchema, UserReadSchema
 from app.config.main import settings
 from app.repositories.user import UserRepo
 from app.services.base import BaseService
@@ -29,8 +29,23 @@ class AuthorizationService(BaseService):
         to_encode = copy.deepcopy(data)
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(payload=to_encode, key=settings.JWT_SECRET_KEY)
+        encoded_jwt = jwt.encode(payload=to_encode, key=settings.JWT_SECRET_KEY, algorithm=settings.ALGORITHM)
         return encoded_jwt
+
+    @BaseService.catcher
+    async def decrypt_access_token(self, token: str) -> UserReadSchema:
+        try:
+            payload = jwt.decode(jwt=token, key=settings.JWT_SECRET_KEY, algorithms=[settings.ALGORITHM])
+        except jwt.ExpiredSignatureError:
+            raise UnauthorizedServiceError("Не удалось распознать токен")  # TODO: прочекать ошибку
+        expire = payload.get("exp")
+        if not expire or expire < datetime.utcnow().timestamp():
+            raise UnauthorizedServiceError("Нет времени истечения токена или оно истекло")  # TODO: прочекать ошибку
+        user_email = payload.get("sub")
+        if not user_email:
+            raise UnauthorizedServiceError("Токен не содержит email пользователя")  # TODO: прочекать ошибку
+        user = await self.user_repo.get_object(email=user_email)
+        return user
 
     @BaseService.catcher
     async def sign_up(self, user_input: UserInputSchema):

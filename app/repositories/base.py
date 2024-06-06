@@ -27,9 +27,11 @@ class BaseRepository:
         self.session = session
 
     @catcher
-    async def get_objects(self, raw_filters: filter_schema) -> List[read_schema]:
+    async def get_objects(self, raw_filters: filter_schema, **add_filters) -> List[read_schema]:
         filter_set = self.filter_set(self.session, select(self.db_model))
         filter_params = raw_filters.model_dump(exclude_none=True)
+        if add_filters:
+            filter_params.update(add_filters)
         filtered_objects = await filter_set.filter(filter_params)
         return [self.read_schema.model_validate(obj) for obj in filtered_objects]
 
