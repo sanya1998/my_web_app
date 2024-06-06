@@ -5,7 +5,7 @@ from typing import Callable, Type
 
 
 def catch_exception(base_error: Type[Exception], description: str = "exception", verbose=True) -> Callable:
-    """Декоратор, который ловит все исключения в методе класса"""
+    """Декоратор, который позволяет ловить все исключения в методе класса с помощью base_error"""
 
     def wrapper(method: Callable) -> Callable:
         @contextmanager
