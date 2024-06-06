@@ -39,7 +39,7 @@ class AuthorizationService(BaseService):
         except jwt.ExpiredSignatureError:
             raise UnauthorizedServiceError("Не удалось распознать токен")  # TODO: прочекать ошибку
         expire = payload.get("exp")
-        if not expire or expire < datetime.utcnow().timestamp():
+        if not expire or expire < datetime.utcnow().timestamp():  # TODO: мб ExpiredSignatureError не пустит досюда
             raise UnauthorizedServiceError("Нет времени истечения токена или оно истекло")  # TODO: прочекать ошибку
         user_email = payload.get("sub")
         if not user_email:

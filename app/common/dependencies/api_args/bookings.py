@@ -20,10 +20,7 @@ class BookingsFilterSchema(BaseFilterSchema):
     @computed_field
     @property
     def price(self) -> tuple[int | None, int | None] | None:
-        if self.price_min or self.price_max:
-            return self.price_min, self.price_max
-        else:
-            return None
+        return (self.price_min, self.price_max) if self.price_min or self.price_max else None
 
 
 BookingsFiltersDep = Annotated[BookingsFilterSchema, Depends(BookingsFilterSchema)]
