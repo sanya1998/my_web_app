@@ -1,8 +1,9 @@
-from typing import List
+from typing import Any, List
 
 from app.common.dependencies.api_args.base import BaseFilterSchema
 from app.common.exceptions.catcher import catch_exception
 from app.common.exceptions.repositories.base import BaseRepoError
+from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.filtersets.base import BaseAsyncFilterSet
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
@@ -24,6 +25,31 @@ class BaseRepository:
     @catcher
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    @catcher
+    async def get_objects(self, raw_filters: filter_schema) -> List[read_schema]:
+        filter_set = self.filter_set(self.session, select(self.db_model))
+        filter_params = raw_filters.model_dump(exclude_none=True)
+        filtered_objects = await filter_set.filter(filter_params)
+        return [self.read_schema.model_validate(obj) for obj in filtered_objects]
+
+    @catcher
+    async def get_object(self, **filters) -> read_schema:
+        query = select(self.db_model).filter_by(**filters)
+        result = await self.session.execute(query)
+        obj = result.scalar_one_or_none()
+        if obj is None:
+            raise NotFoundRepoError
+        return self.read_schema.model_validate(obj)
+
+    @catcher
+    async def get_object_field(self, key: str, **filters) -> Any:
+        query = select(getattr(self.db_model, key)).filter_by(**filters)  # TODO: обработать кейс, если key отсутствует
+        result = await self.session.execute(query)
+        value = result.scalar_one_or_none()
+        if value is None:
+            raise NotFoundRepoError
+        return value
 
     @catcher
     async def create(self, data: create_schema) -> read_schema:
