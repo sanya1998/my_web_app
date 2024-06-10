@@ -1,7 +1,4 @@
-from typing import Optional
-
-from pydantic import field_validator
-from pydantic_core.core_schema import FieldValidationInfo
+from pydantic import computed_field
 from pydantic_settings import BaseSettings
 
 
@@ -22,8 +19,6 @@ class DbSettings(BaseSettings):
 
     DB_NAME: str
 
-    DB_URL: Optional[str] = None
-
     # DB_WRITE_MIN_POOL_SIZE: int = 4
     # DB_WRITE_MAX_POOL_SIZE: int = 10
     #
@@ -32,14 +27,13 @@ class DbSettings(BaseSettings):
     #
     # DB_COMMAND_TIMEOUT: float = 10.0
 
-    @field_validator("DB_URL")
-    @classmethod
-    def get_db_url(cls, value: Optional[str], info: FieldValidationInfo):
-        if value is None:
-            value = (
-                f"{info.data['DB_DRIVER']}://"
-                f"{info.data['DB_USER']}:{info.data['DB_PASSWORD']}@"
-                f"{info.data['DB_HOST']}:{info.data['DB_PORT']}/"
-                f"{info.data['DB_NAME']}"
-            )
+    @computed_field
+    @property
+    def DB_URL(self) -> str:
+        value = (
+            f"{self.DB_DRIVER}://"
+            f"{self.DB_USER}:{self.DB_PASSWORD}@"
+            f"{self.DB_HOST}:{self.DB_PORT}/"
+            f"{self.DB_NAME}"
+        )
         return value
