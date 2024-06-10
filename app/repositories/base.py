@@ -27,10 +27,13 @@ class BaseRepository:
         self.session = session
 
     @catcher
-    async def get_objects(self, raw_filters: filter_schema, **add_filters) -> List[read_schema]:
+    async def get_objects(self, raw_filters: filter_schema = filter_schema(), **add_filters) -> List[read_schema]:
+        # TODO: =filter_schema() - это из текущего класса или из родительского?
+        #  будет ли работать user_repo.get_objects() (без парам), если не ставить filter_schema = UserFilterSchema ???
+        # TODO: что будет, если raw_filters=None + значение по умолчанию
         filter_set = self.filter_set(self.session, select(self.db_model))
         filter_params = raw_filters.model_dump(exclude_none=True)
-        if add_filters:
+        if add_filters:  # TODO: что будет без `if add_filters`?
             filter_params.update(add_filters)
         filtered_objects = await filter_set.filter(filter_params)
         return [self.read_schema.model_validate(obj) for obj in filtered_objects]

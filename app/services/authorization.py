@@ -6,7 +6,9 @@ import jwt
 from app.common.exceptions.services.already_exists import AlreadyExistsServiceError
 from app.common.exceptions.services.not_found import NotFoundServiceError
 from app.common.exceptions.services.unauthorized import UnauthorizedServiceError
+from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.user import UserCreateSchema, UserInputSchema, UserReadSchema
+from app.common.tables import Users
 from app.config.main import settings
 from app.repositories.user import UserRepo
 from app.services.base import BaseService
@@ -37,7 +39,8 @@ class AuthorizationService(BaseService):
         try:
             payload = jwt.decode(jwt=token, key=settings.JWT_SECRET_KEY, algorithms=[settings.ALGORITHM])
         except jwt.ExpiredSignatureError:
-            raise UnauthorizedServiceError("Не удалось распознать токен")  # TODO: прочекать ошибку
+            # TODO: если после истечения тоже сюда, то описание надо скорректировать
+            raise UnauthorizedServiceError("Не удалось распознать токен")  # TODO: прочекать ошибку)
         expire = payload.get("exp")
         if not expire or expire < datetime.utcnow().timestamp():  # TODO: мб ExpiredSignatureError не пустит досюда
             raise UnauthorizedServiceError("Нет времени истечения токена или оно истекло")  # TODO: прочекать ошибку
@@ -59,13 +62,18 @@ class AuthorizationService(BaseService):
     async def sign_in(self, user_input: UserInputSchema):
         if await self.user_repo.is_not_exists(email=user_input.email):
             raise NotFoundServiceError
-        hashed_password_db = await self.user_repo.get_object_field(key="hashed_password", email=user_input.email)
+        password_field = get_columns_by_table(Users).hashed_password.name
+        hashed_password_db = await self.user_repo.get_object_field(key=password_field, email=user_input.email)
         hashed_password_input = self.get_password_hash(user_input.raw_password)
         if hashed_password_db != hashed_password_input:
             raise UnauthorizedServiceError
 
     @BaseService.catcher
+    async def sign_out(self, response: Response):
+        response.delete_cookie(settings.JWT_COOKIE_NAME)
+
+    @BaseService.catcher
     def create_and_remember_access_token(self, response: Response, email: str):
         access_token = self.create_access_token(data=dict(sub=email))
-        response.set_cookie(key=settings.ACCESS_TOKEN_VARIABLE, value=access_token, httponly=True)
+        response.set_cookie(key=settings.JWT_COOKIE_NAME, value=access_token, httponly=True)
         return access_token

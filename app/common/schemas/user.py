@@ -1,3 +1,6 @@
+from typing import List
+
+from app.common.constants.roles import RolesEnum
 from app.common.schemas.base import BaseSchema
 from fastapi import Body
 from pydantic import EmailStr, Field, SecretStr
@@ -20,10 +23,14 @@ class UserPasswordUpdateSchema(UserSchemaBase):
     new_password: SecretStr
 
 
-class UserUpdateSchema(UserSchemaBase):
+class UserDataUpdateSchema(UserSchemaBase):
     first_name: str | None = None
     last_name: str | None = None
 
 
-class UserReadSchema(UserUpdateSchema):
-    id: int | None = None
+class UserRolesUpdateSchema(UserSchemaBase):
+    roles: List[RolesEnum] = []
+
+
+class UserReadSchema(UserDataUpdateSchema, UserRolesUpdateSchema):
+    id: int

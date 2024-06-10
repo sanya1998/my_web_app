@@ -1,7 +1,7 @@
 from typing import List
 
+from app.common.dependencies.api_args.auth import CurrentUserDep
 from app.common.dependencies.api_args.bookings import BookingsFiltersDep
-from app.common.dependencies.api_args.users import CurrentUserDep
 from app.common.dependencies.repositories.booking import BookingRepoDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.api.not_found import NotFoundApiError
@@ -11,7 +11,6 @@ from app.common.schemas.booking import BookingSchema
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
-model_name = "Booking"
 
 
 @router.get("/")
