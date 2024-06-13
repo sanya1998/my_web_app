@@ -1,7 +1,13 @@
 from app.common.filtersets.base import BaseCustomFilterSet
 from app.common.tables import Bookings
 from sqlalchemy.sql import operators as ops
-from sqlalchemy_filterset import Filter, NullsPosition, OrderingField, OrderingFilter, RangeFilter
+from sqlalchemy_filterset import (
+    Filter,
+    NullsPosition,
+    OrderingField,
+    OrderingFilter,
+    RangeFilter,
+)
 
 
 class BookingsFilterSet(BaseCustomFilterSet):

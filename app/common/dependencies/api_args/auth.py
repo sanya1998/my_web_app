@@ -4,35 +4,53 @@ from app.common.constants.roles import RolesEnum
 from app.common.dependencies.services.authorization import AuthorizationServiceDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.api.forbidden import ForbiddenApiError
-from app.common.exceptions.api.unauthorized import UnauthorizedApiError
+from app.common.exceptions.api.not_found import NotFoundApiError
+from app.common.exceptions.api.unauthorized import (
+    ExpiredSignatureApiError,
+    InvalidTokenApiError,
+    MissingRequiredClaimApiError,
+    MissingTokenApiError,
+)
 from app.common.exceptions.services.base import BaseServiceError
+from app.common.exceptions.services.not_found import NotFoundServiceError
+from app.common.exceptions.services.unauthorized import (
+    ExpiredSignatureServiceError,
+    InvalidTokenServiceError,
+    MissingRequiredClaimServiceError,
+)
 from app.common.schemas.user import UserReadSchema
 from app.config.main import settings
 from fastapi import Depends, Request
 
 
-def get_token(request: Request):
-    token = request.cookies.get(settings.JWT_COOKIE_NAME)
-    if not token:
-        raise UnauthorizedApiError(detail="Токен отсутствует.")
-    return token
+def get_token(request: Request) -> str:
+    if token := request.cookies.get(settings.JWT_COOKIE_NAME):
+        return token
+    else:
+        raise MissingTokenApiError
 
 
-async def get_current_user(auth_service: AuthorizationServiceDep, token: Annotated[str, Depends(get_token)]):
+async def get_current_user(
+    auth_service: AuthorizationServiceDep, token: Annotated[str, Depends(get_token)]
+) -> UserReadSchema:
     try:
-        return await auth_service.decrypt_access_token(token)
+        return await auth_service.get_user_by_access_token(token)
+    except MissingRequiredClaimServiceError:
+        raise MissingRequiredClaimApiError
+    except ExpiredSignatureServiceError:
+        raise ExpiredSignatureApiError
+    except InvalidTokenServiceError:
+        raise InvalidTokenApiError
+    except NotFoundServiceError:
+        raise NotFoundApiError
     except BaseServiceError:
         raise BaseApiError
 
 
-async def get_current_admin_user(auth_service: AuthorizationServiceDep, token: Annotated[str, Depends(get_token)]):
-    try:
-        user = await auth_service.decrypt_access_token(token)
-        if RolesEnum.ADMIN not in user.roles:
-            raise ForbiddenApiError
-        return user
-    except BaseServiceError:
-        raise BaseApiError
+async def get_current_admin_user(user: Annotated[UserReadSchema, Depends(get_current_user)]):
+    if RolesEnum.ADMIN not in user.roles:
+        raise ForbiddenApiError
+    return user
 
 
 CurrentUserDep = Annotated[UserReadSchema, Depends(get_current_user)]

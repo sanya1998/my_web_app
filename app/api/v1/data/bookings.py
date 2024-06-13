@@ -16,7 +16,7 @@ router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 
 @router.get("/")
-async def get_bookings(
+async def get_my_bookings(
     raw_filters: BookingsFiltersDep, user: CurrentUserDep, booking_repo: BookingRepoDep
 ) -> List[BookingSchema]:
     try:

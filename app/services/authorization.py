@@ -5,7 +5,13 @@ from datetime import datetime, timedelta
 import jwt
 from app.common.exceptions.services.already_exists import AlreadyExistsServiceError
 from app.common.exceptions.services.not_found import NotFoundServiceError
-from app.common.exceptions.services.unauthorized import UnauthorizedServiceError
+from app.common.exceptions.services.unauthorized import (
+    ExpiredSignatureServiceError,
+    InvalidAlgorithmServiceError,
+    InvalidTokenServiceError,
+    MissingRequiredClaimServiceError,
+    UnauthorizedServiceError,
+)
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.user import UserCreateSchema, UserInputSchema, UserReadSchema
 from app.common.tables import Users
@@ -13,6 +19,12 @@ from app.config.main import settings
 from app.repositories.user import UserRepo
 from app.services.base import BaseService
 from fastapi import Response
+from jwt.exceptions import (
+    ExpiredSignatureError,
+    InvalidAlgorithmError,
+    InvalidTokenError,
+    MissingRequiredClaimError,
+)
 from pydantic import SecretStr
 
 
@@ -31,23 +43,34 @@ class AuthorizationService(BaseService):
         to_encode = copy.deepcopy(data)
         expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(payload=to_encode, key=settings.JWT_SECRET_KEY, algorithm=settings.ALGORITHM)
+        encoded_jwt = jwt.encode(payload=to_encode, key=settings.JWT_SECRET_KEY, algorithm=settings.ENCODE_ALGORITHM)
         return encoded_jwt
 
     @BaseService.catcher
-    async def decrypt_access_token(self, token: str) -> UserReadSchema:
+    def decrypt_access_token(
+        self, token: str, key=settings.JWT_SECRET_KEY, algorithms=settings.DECODE_ALGORITHMS
+    ) -> dict:
         try:
-            payload = jwt.decode(jwt=token, key=settings.JWT_SECRET_KEY, algorithms=[settings.ALGORITHM])
-        except jwt.ExpiredSignatureError:
-            # TODO: если после истечения тоже сюда, то описание надо скорректировать
-            raise UnauthorizedServiceError("Не удалось распознать токен")  # TODO: прочекать ошибку)
-        expire = payload.get("exp")
-        if not expire or expire < datetime.utcnow().timestamp():  # TODO: мб ExpiredSignatureError не пустит досюда
-            raise UnauthorizedServiceError("Нет времени истечения токена или оно истекло")  # TODO: прочекать ошибку
-        user_email = payload.get("sub")
-        if not user_email:
-            raise UnauthorizedServiceError("Токен не содержит email пользователя")  # TODO: прочекать ошибку
-        user = await self.user_repo.get_object(email=user_email)
+            payload = jwt.decode(
+                jwt=token,
+                key=key,
+                algorithms=algorithms,
+                options={"require": ["exp", "sub"]},
+            )
+            return payload
+        except MissingRequiredClaimError:
+            raise MissingRequiredClaimServiceError
+        except ExpiredSignatureError:
+            raise ExpiredSignatureServiceError
+        except InvalidAlgorithmError:
+            raise InvalidAlgorithmServiceError
+        except InvalidTokenError:
+            raise InvalidTokenServiceError
+
+    @BaseService.catcher
+    async def get_user_by_access_token(self, token: str) -> UserReadSchema:
+        payload = self.decrypt_access_token(token)
+        user = await self.user_repo.get_object(email=payload.get("sub"))
         return user
 
     @BaseService.catcher

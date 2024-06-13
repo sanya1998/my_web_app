@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic_settings import BaseSettings
 
 
@@ -19,4 +21,5 @@ class ApiSettings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     JWT_COOKIE_NAME: str = "access_token"
     JWT_SECRET_KEY: str
-    ALGORITHM: str
+    ENCODE_ALGORITHM: str
+    DECODE_ALGORITHMS: List[str]

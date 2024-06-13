@@ -1,17 +1,18 @@
 from typing import Any, List
 
-from sqlalchemy.exc import MultipleResultsFound, NoResultFound
-
 from app.common.dependencies.api_args.base import BaseFilterSchema
 from app.common.exceptions.catcher import catch_exception
 from app.common.exceptions.repositories.base import BaseRepoError
-from app.common.exceptions.repositories.connection_refused import ConnectionRefusedRepoError
+from app.common.exceptions.repositories.connection_refused import (
+    ConnectionRefusedRepoError,
+)
 from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.filtersets.base import BaseCustomFilterSet
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
-from sqlalchemy import insert, select, Executable, Result
+from sqlalchemy import Executable, Result, insert, select
+from sqlalchemy.exc import MultipleResultsFound, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
