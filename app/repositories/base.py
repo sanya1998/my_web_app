@@ -1,13 +1,17 @@
 from typing import Any, List
 
+from sqlalchemy.exc import MultipleResultsFound, NoResultFound
+
 from app.common.dependencies.api_args.base import BaseFilterSchema
 from app.common.exceptions.catcher import catch_exception
 from app.common.exceptions.repositories.base import BaseRepoError
+from app.common.exceptions.repositories.connection_refused import ConnectionRefusedRepoError
+from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
-from app.common.filtersets.base import BaseAsyncFilterSet
+from app.common.filtersets.base import BaseCustomFilterSet
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, Executable, Result
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -17,7 +21,7 @@ class BaseRepository:
     read_schema = BaseSchema
     create_schema = BaseSchema
 
-    filter_set = BaseAsyncFilterSet
+    filter_set = BaseCustomFilterSet
     filter_schema = BaseFilterSchema
 
     catcher = catch_exception(base_error=BaseRepoError, description="repository exception")
@@ -31,27 +35,37 @@ class BaseRepository:
         # TODO: =filter_schema() - это из текущего класса или из родительского?
         #  будет ли работать user_repo.get_objects() (без парам), если не ставить filter_schema = UserFilterSchema ???
         # TODO: что будет, если raw_filters=None + значение по умолчанию
-        filter_set = self.filter_set(self.session, select(self.db_model))
         filter_params = raw_filters.model_dump(exclude_none=True)
         if add_filters:  # TODO: что будет без `if add_filters`?
             filter_params.update(add_filters)
-        filtered_objects = await filter_set.filter(filter_params)
+        query = self.filter_set(select(self.db_model)).filter_query(filter_params)
+        result = await self.execute(query)
+        filtered_objects = result.scalars().all()
         return [self.read_schema.model_validate(obj) for obj in filtered_objects]
+
+    async def execute(self, statement: Executable) -> Result:
+        try:
+            return await self.session.execute(statement)
+        except ConnectionRefusedError:
+            raise ConnectionRefusedRepoError
 
     @catcher
     async def get_object(self, **filters) -> read_schema:
         query = select(self.db_model).filter_by(**filters)
-        result = await self.session.execute(query)
-        obj = result.scalar_one_or_none()
-        if obj is None:
+        result = await self.execute(query)
+        try:
+            obj = result.scalar_one()
+        except NoResultFound:
             raise NotFoundRepoError
+        except MultipleResultsFound:
+            raise MultipleResultsRepoError
         return self.read_schema.model_validate(obj)
 
     @catcher
     async def get_object_field(self, key: str, **filters) -> Any:
         query = select(getattr(self.db_model, key)).filter_by(**filters)  # TODO: обработать кейс, если key отсутствует
-        result = await self.session.execute(query)
-        value = result.scalar_one_or_none()
+        result = await self.execute(query)
+        value = result.scalar_one_or_none()  # TODO: обработать кейс, если по filters несколько строк подходит
         if value is None:
             raise NotFoundRepoError
         return value
@@ -61,7 +75,7 @@ class BaseRepository:
         # TODO: можно ли упростить values(**data.model_dump()) - возможно, SQLModel решит проблему
         # TODO: вместо insert(self.db_model) можно написать только поля из read_schema (что эффективнее?)
         query = insert(self.db_model).values(**data.model_dump()).returning(self.db_model)
-        result = await self.session.execute(query)
+        result = await self.execute(query)
         obj = result.scalar_one()
         await self.session.commit()
         return self.read_schema.model_validate(obj)
@@ -70,7 +84,7 @@ class BaseRepository:
     async def is_exists(self, **filters) -> bool:
         # TODO: можно ли упростить query
         query = select(self.db_model).filter_by(**filters).exists().select()
-        result = await self.session.execute(query)
+        result = await self.execute(query)
         value = result.scalar_one()
         return value
 

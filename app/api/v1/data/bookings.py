@@ -4,8 +4,10 @@ from app.common.dependencies.api_args.auth import CurrentUserDep
 from app.common.dependencies.api_args.bookings import BookingsFiltersDep
 from app.common.dependencies.repositories.booking import BookingRepoDep
 from app.common.exceptions.api.base import BaseApiError
+from app.common.exceptions.api.multiple_results import MultipleResultsApiError
 from app.common.exceptions.api.not_found import NotFoundApiError
 from app.common.exceptions.repositories.base import BaseRepoError
+from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.schemas.booking import BookingSchema
 from fastapi import APIRouter
@@ -30,7 +32,9 @@ async def get_booking(booking_id: int, booking_repo: BookingRepoDep) -> BookingS
         booking = await booking_repo.get_object(id=booking_id)
     except NotFoundRepoError:
         raise NotFoundApiError
-    except BaseRepoError:  # TODO: Можно ли базовое исключение наложить на все ручки сразу?
+    except MultipleResultsRepoError:
+        raise MultipleResultsApiError
+    except BaseRepoError:
         raise BaseApiError
     # TODO: to_api_model().with_wrapper() ??? (видел в другом проекте. понять: зачем это)
     return booking
