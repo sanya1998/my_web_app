@@ -26,6 +26,8 @@ async def get_my_bookings(
     return bookings
 
 
+# TODO: эту ручку может дергать только менеджер, сделать по аналогии с CurrentAdminUserDep
+# TODO: но эту ручку может дергать и тот, кому принадлежит заказ...
 @router.get("/{booking_id}")
 async def get_booking(booking_id: int, booking_repo: BookingRepoDep) -> BookingSchema:
     try:
@@ -42,4 +44,5 @@ async def get_booking(booking_id: int, booking_repo: BookingRepoDep) -> BookingS
 
 @router.post("/")
 async def create_booking(booking: BookingSchema):
+    # TODO: Не дать создать заказ, если на выбранный период все комнаты данного типа будут заняты
     pass

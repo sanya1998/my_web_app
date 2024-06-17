@@ -51,3 +51,6 @@ TODO:
 21) До конца реализовать базовый репо, добавить модели для редактирования.
 23) Иногда при исключениях в логах:  PydanticJsonSchemaWarning: Default value annotation=NoneType required=True json_schema_extra={} is not JSON serializable; excluding default from JSON schema [non-serializable-default]
 warnings.warn(message, PydanticJsonSchemaWarning)
+24) Переписать SQL-скрипт так, чтоб запросы возвращали id, которые можно потом использовать в следующих запросах
+25) зачем rooms_quantity в hotels, оно скорее всего не верное, с подсчетом rooms не связано. Но в целом можно добавить процедуру по изменению при различных операциях
+26) rooms - это, скорее тип комнаты, а не сама комната, потому что в отеле есть определенный тип комнаты и определенное количество таких комнат
