@@ -1,4 +1,3 @@
-from app.common.dependencies.api_args.bookings import BookingsFilterSchema
 from app.common.filtersets.bookings import BookingsFilterSet
 from app.common.schemas.booking import BookingSchema
 from app.common.tables import Bookings
@@ -11,4 +10,3 @@ class BookingRepo(BaseRepository):
     read_schema = BookingSchema
 
     filter_set = BookingsFilterSet
-    filter_schema = BookingsFilterSchema

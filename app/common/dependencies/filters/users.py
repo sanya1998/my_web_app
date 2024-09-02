@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from app.common.dependencies.api_args.base import BaseFilterSchema
+from app.common.dependencies.filters.base import BaseFilterSchema
 from app.common.schemas.user import UserInputSchema
 from fastapi import Depends
 

@@ -1,9 +1,7 @@
 from typing import Annotated
 
-from app.common.constants.roles import RolesEnum
 from app.common.dependencies.services.authorization import AuthorizationServiceDep
 from app.common.exceptions.api.base import BaseApiError
-from app.common.exceptions.api.forbidden import ForbiddenApiError
 from app.common.exceptions.api.not_found import NotFoundApiError
 from app.common.exceptions.api.unauthorized import (
     ExpiredSignatureApiError,
@@ -47,11 +45,4 @@ async def get_current_user(
         raise BaseApiError
 
 
-async def get_current_admin_user(user: Annotated[UserReadSchema, Depends(get_current_user)]):
-    if RolesEnum.ADMIN not in user.roles:
-        raise ForbiddenApiError
-    return user
-
-
 CurrentUserDep = Annotated[UserReadSchema, Depends(get_current_user)]
-CurrentAdminUserDep = Annotated[UserReadSchema, Depends(get_current_admin_user)]

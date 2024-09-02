@@ -1,6 +1,6 @@
 from typing import Annotated, List
 
-from app.common.dependencies.api_args.base import BaseFilterSchema
+from app.common.dependencies.filters.base import BaseFilterSchema
 from app.common.helpers.db import get_columns_by_table, get_ordering_enum_by_columns
 from app.common.tables import Bookings
 from fastapi import Depends, Query

@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from app.common.dependencies.api_args.base import BaseFilterSchema
+from app.common.dependencies.filters.base import BaseFilterSchema
 from app.common.exceptions.catcher import catch_exception
 from app.common.exceptions.repositories.base import BaseRepoError
 from app.common.exceptions.repositories.connection_refused import (
@@ -23,7 +23,6 @@ class BaseRepository:
     create_schema = BaseSchema
 
     filter_set = BaseCustomFilterSet
-    filter_schema = BaseFilterSchema
 
     catcher = catch_exception(base_error=BaseRepoError, description="repository exception")
 
@@ -31,24 +30,20 @@ class BaseRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    @catcher
-    async def get_objects(self, raw_filters: filter_schema = filter_schema(), **add_filters) -> List[read_schema]:
-        # TODO: =filter_schema() - это из текущего класса или из родительского?
-        #  будет ли работать user_repo.get_objects() (без парам), если не ставить filter_schema = UserFilterSchema ???
-        # TODO: что будет, если raw_filters=None + значение по умолчанию
-        filter_params = raw_filters.model_dump(exclude_none=True)
-        if add_filters:  # TODO: что будет без `if add_filters`?
-            filter_params.update(add_filters)
-        query = self.filter_set(select(self.db_model)).filter_query(filter_params)
-        result = await self.execute(query)
-        filtered_objects = result.scalars().all()
-        return [self.read_schema.model_validate(obj) for obj in filtered_objects]
-
     async def execute(self, statement: Executable) -> Result:
         try:
             return await self.session.execute(statement)
         except ConnectionRefusedError:
             raise ConnectionRefusedRepoError
+
+    @catcher
+    async def get_objects(self, raw_filters: BaseFilterSchema = BaseFilterSchema(), **add_filters) -> List[read_schema]:
+        filter_params = raw_filters.model_dump(exclude_none=True)
+        filter_params.update(add_filters)
+        query = self.filter_set(select(self.db_model)).filter_query(filter_params)
+        result = await self.execute(query)
+        filtered_objects = result.scalars().all()
+        return [self.read_schema.model_validate(obj) for obj in filtered_objects]
 
     @catcher
     async def get_object(self, **filters) -> read_schema:
@@ -91,6 +86,7 @@ class BaseRepository:
 
     @catcher
     async def is_not_exists(self, **filters) -> bool:
+        # TODO: not перенести из python в sql
         return not (await self.is_exists(**filters))
 
     @catcher

@@ -1,7 +1,8 @@
 from typing import List
 
-from app.common.dependencies.api_args.auth import CurrentAdminUserDep, CurrentUserDep
-from app.common.dependencies.api_args.users import UserFiltersDep
+from app.common.dependencies.auth.admin import CurrentAdminUserDep
+from app.common.dependencies.auth.base import CurrentUserDep
+from app.common.dependencies.filters.users import UserFiltersDep
 from app.common.dependencies.repositories.user import UserRepoDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.repositories.base import BaseRepoError

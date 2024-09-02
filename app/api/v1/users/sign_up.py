@@ -1,4 +1,4 @@
-from app.common.dependencies.api_args.users import UserInputDep
+from app.common.dependencies.filters.users import UserInputDep
 from app.common.dependencies.services.authorization import AuthorizationServiceDep
 from app.common.exceptions.api.already_exists import AlreadyExistsApiError
 from app.common.exceptions.api.base import BaseApiError
