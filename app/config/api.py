@@ -23,3 +23,5 @@ class ApiSettings(BaseSettings):
     JWT_SECRET_KEY: str
     ENCODE_ALGORITHM: str
     DECODE_ALGORITHMS: List[str]
+
+    PASSWORD_MIN_LENGTH: int = 8

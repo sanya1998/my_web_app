@@ -36,7 +36,7 @@ TODO:
 `alembic revision --autogenerate -m "Initial migration"`
 3) создать example.env (?)
 4) придумать что-нибудь с submodule (например, модели) и со своей библиотекой
-5) Использовать Lifespan (fast api) (Добавить какого-нибудь клиента)
+5) Использовать Lifespan (fast api) (Добавить какого-нибудь клиента). Где лучше использовать бд в lifespan или в зависимостях
 6) Перейти на SQLModel 
 7) Поля в фильтрах отелей
 9) id: uuid.UUID
@@ -49,9 +49,8 @@ TODO:
 18) Вспомнить, когда была ошибка TypeError (в апишке или в репо)
 19) Вместо json использовать orjson (или другие альтернативы). Если вообще нужен будет
 21) До конца реализовать базовый репо, добавить модели для редактирования.
-23) Иногда при обновлении свагера появляются исключения в логах:  PydanticJsonSchemaWarning: Default value annotation=NoneType required=True json_schema_extra={} is not JSON serializable; excluding default from JSON schema [non-serializable-default]
-warnings.warn(message, PydanticJsonSchemaWarning) (см sign_up_router и get_router)
 24) Переписать SQL-скрипт так, чтоб запросы возвращали id, которые можно потом использовать в следующих запросах
 25) зачем rooms_quantity в hotels, оно скорее всего не верное, с подсчетом rooms не связано. Но в целом можно добавить процедуру по изменению при различных операциях
 26) rooms - это, скорее тип комнаты, а не сама комната, потому что в отеле есть определенный тип комнаты и определенное количество таких комнат
 27) pydantic_factory можно использовать для быстрой генерации данных
+28) В некоторых ручках return внутри try, а в некоторых после try. Прийти к единообразию.
