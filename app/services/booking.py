@@ -16,7 +16,7 @@ class BookingService(BaseService):
 
     @BaseService.catcher
     async def create_booking(self, booking_input: BookingInputSchema, user_id: int):
-        selected_room = await self.booking_repo.find_available(booking_input)
+        selected_room = await self.booking_repo.get_room_info(booking_input)
         if selected_room is None:
             raise NotFoundServiceError
         if selected_room.remain < 1:

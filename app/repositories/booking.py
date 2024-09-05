@@ -18,7 +18,7 @@ class BookingRepo(BaseRepository):
     filter_set = BookingsFilterSet
 
     @BaseRepository.catcher
-    async def find_available(self, booking_input: BookingInputSchema):
+    async def get_room_info(self, booking_input: BookingInputSchema):
         """
         -- Показать, сколько осталось свободных номеров данного типа комнат на указанный период
         WITH
@@ -34,6 +34,7 @@ class BookingRepo(BaseRepository):
                         date_from < check_into AND date_to > check_into
                     )
             )
+        -- Получить id, цену и остаток данного типа комнат
         SELECT rooms.id AS room_id, rooms.price, rooms.quantity - COUNT(booked_rooms.room_id) AS remain
         FROM
             ids,
@@ -71,4 +72,4 @@ class BookingRepo(BaseRepository):
         )
 
         selected_room_answer = await self.session.execute(selected_room_query)
-        return selected_room_answer.mappings().one_or_none()
+        return selected_room_answer.one_or_none()
