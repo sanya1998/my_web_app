@@ -30,6 +30,7 @@ class BaseRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    @catcher
     async def execute(self, statement: Executable) -> Result:
         try:
             return await self.session.execute(statement)
