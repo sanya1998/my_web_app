@@ -2,7 +2,7 @@ from typing import List
 
 from app.common.dependencies.auth.admin import CurrentAdminUserDep
 from app.common.dependencies.auth.base import CurrentUserDep
-from app.common.dependencies.filters.users import UserFiltersDep
+from app.common.dependencies.filters.users import UsersFiltersDep
 from app.common.dependencies.repositories.user import UserRepoDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.repositories.base import BaseRepoError
@@ -14,7 +14,7 @@ get_router = APIRouter()
 
 @get_router.get("/")
 async def get_users(
-    raw_filters: UserFiltersDep, user_repo: UserRepoDep, admin: CurrentAdminUserDep
+    raw_filters: UsersFiltersDep, user_repo: UserRepoDep, admin: CurrentAdminUserDep
 ) -> List[UserReadSchema]:
     try:
         return await user_repo.get_objects(raw_filters)

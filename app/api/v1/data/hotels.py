@@ -1,21 +1,34 @@
 from typing import List
 
 from app.common.dependencies.filters.hotels import HotelsFiltersDep
-from app.common.schemas.hotel import HotelSchema
+from app.common.dependencies.repositories.hotel import HotelRepoDep
+from app.common.exceptions.api.base import BaseApiError
+from app.common.exceptions.api.multiple_results import MultipleResultsApiError
+from app.common.exceptions.api.not_found import NotFoundApiError
+from app.common.exceptions.repositories.base import BaseRepoError
+from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
+from app.common.exceptions.repositories.not_found import NotFoundRepoError
+from app.common.schemas.hotel import HotelReadSchema
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/hotels", tags=["hotels"])
 
 
 @router.get("/{hotel_id}")
-async def get_hotel(hotel_id: int) -> dict:
-    # TODO: получать из бд, по аналогии с bookings
-    return {"hotel_id": hotel_id, "hotel_name": "Hotel Name"}
+async def get_hotel(hotel_id: int, hotel_repo: HotelRepoDep) -> HotelReadSchema:
+    try:
+        return await hotel_repo.get_object(id=hotel_id)
+    except NotFoundRepoError:
+        raise NotFoundApiError
+    except MultipleResultsRepoError:
+        raise MultipleResultsApiError
+    except BaseRepoError:
+        raise BaseApiError
 
 
 @router.get("/")
-async def get_hotels(search_args: HotelsFiltersDep) -> List[HotelSchema]:
-    # TODO: получать из бд, по аналогии с bookings
-    hotels = [{"hotel_id": 1, "name": "Hotel Name"}]
-    return hotels
-    # return [{"hotel_id": 1, "hotel_name": "Hotel Name", "date_from": date_from, "date_to": date_to}]
+async def get_hotels(raw_filters: HotelsFiltersDep, hotel_repo: HotelRepoDep) -> List[HotelReadSchema]:
+    try:
+        return await hotel_repo.get_objects(raw_filters=raw_filters)
+    except BaseRepoError:
+        raise BaseApiError

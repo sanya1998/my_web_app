@@ -3,7 +3,7 @@ from fastapi import Query
 from pydantic import BaseModel, computed_field
 
 
-class BaseFilterSchema(BaseModel):
+class BaseFiltersSchema(BaseModel):
     # Здесь указываются типы переменных и значения по умолчанию
     limit: int = Query(default=settings.LIMIT_DEFAULT, ge=1, le=settings.LIMIT_MAX)
     offset: int = Query(default=settings.OFFSET_DEFAULT, ge=0)

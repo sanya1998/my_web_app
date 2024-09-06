@@ -1,4 +1,4 @@
-from app.common.filtersets.bookings import BookingsFilterSet
+from app.common.filtersets.bookings import BookingsFiltersSet
 from app.common.schemas.booking import (
     BookingCreateSchema,
     BookingInputSchema,
@@ -15,7 +15,7 @@ class BookingRepo(BaseRepository):
     read_schema = BookingReadSchema
     create_schema = BookingCreateSchema
 
-    filter_set = BookingsFilterSet
+    filter_set = BookingsFiltersSet
 
     @BaseRepository.catcher
     async def get_room_info(self, booking_input: BookingInputSchema):

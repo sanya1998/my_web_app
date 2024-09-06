@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from app.common.dependencies.filters.base import BaseFilterSchema
+from app.common.dependencies.filters.base import BaseFiltersSchema
 from app.common.exceptions.catcher import catch_exception
 from app.common.exceptions.repositories.base import BaseRepoError
 from app.common.exceptions.repositories.connection_refused import (
@@ -8,7 +8,7 @@ from app.common.exceptions.repositories.connection_refused import (
 )
 from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
-from app.common.filtersets.base import BaseCustomFilterSet
+from app.common.filtersets.base import BaseFiltersSet
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
 from sqlalchemy import Executable, Result, insert, select
@@ -22,7 +22,7 @@ class BaseRepository:
     read_schema = BaseSchema
     create_schema = BaseSchema
 
-    filter_set = BaseCustomFilterSet
+    filter_set = BaseFiltersSet
 
     catcher = catch_exception(base_error=BaseRepoError, description="repository exception")
 
@@ -38,7 +38,9 @@ class BaseRepository:
             raise ConnectionRefusedRepoError
 
     @catcher
-    async def get_objects(self, raw_filters: BaseFilterSchema = BaseFilterSchema(), **add_filters) -> List[read_schema]:
+    async def get_objects(
+        self, raw_filters: BaseFiltersSchema = BaseFiltersSchema(), **add_filters
+    ) -> List[read_schema]:
         filter_params = raw_filters.model_dump(exclude_none=True)
         filter_params.update(add_filters)
         query = self.filter_set(select(self.db_model)).filter_query(filter_params)

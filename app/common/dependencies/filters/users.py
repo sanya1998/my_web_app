@@ -1,11 +1,11 @@
 from typing import Annotated
 
-from app.common.dependencies.filters.base import BaseFilterSchema
+from app.common.dependencies.filters.base import BaseFiltersSchema
 from fastapi import Depends
 
 
-class UserFilterSchema(BaseFilterSchema):
+class UserBaseFiltersSchema(BaseFiltersSchema):
     pass
 
 
-UserFiltersDep = Annotated[UserFilterSchema, Depends(UserFilterSchema)]
+UsersFiltersDep = Annotated[UserBaseFiltersSchema, Depends(UserBaseFiltersSchema)]

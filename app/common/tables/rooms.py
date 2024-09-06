@@ -8,6 +8,6 @@ class Rooms(BaseTable):
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     price = Column(Integer, nullable=False)
-    services = Column(ARRAY(String), nullable=False)
+    services = Column(ARRAY(String), default=list(), nullable=False)
     quantity = Column(Integer, nullable=False)
-    image_id = Column(Integer)
+    image_id = Column(Integer, nullable=True)

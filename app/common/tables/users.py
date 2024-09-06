@@ -4,7 +4,7 @@ from sqlalchemy import ARRAY, Column, String
 
 class Users(BaseTable):
     email = Column(String, unique=True, nullable=False)
-    first_name = Column(String)
-    last_name = Column(String)
-    roles = Column(ARRAY(String), default=[], nullable=False)  # TODO: RolesEnum
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    roles = Column(ARRAY(String), default=list(), nullable=False)  # TODO: RolesEnum
     hashed_password = Column(String, nullable=False)

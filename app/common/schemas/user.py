@@ -7,30 +7,30 @@ from fastapi import Form
 from pydantic import EmailStr, Field, SecretStr
 
 
-class UserSchemaBase(BaseSchema):
+class UserBaseSchema(BaseSchema):
     email: EmailStr
 
 
-class UserInputSchema(UserSchemaBase):
+class UserInputSchema(UserBaseSchema):
     email: EmailStr = Field(Form())
     raw_password: SecretStr = PASSWORD_FIELD
 
 
-class UserCreateSchema(UserSchemaBase):
+class UserCreateSchema(UserBaseSchema):
     hashed_password: str
 
 
-class UserPasswordUpdateSchema(UserSchemaBase):
+class UserPasswordUpdateSchema(UserBaseSchema):
     old_password: SecretStr = PASSWORD_FIELD
     new_password: SecretStr = PASSWORD_FIELD
 
 
-class UserDataUpdateSchema(UserSchemaBase):
+class UserDataUpdateSchema(UserBaseSchema):
     first_name: str | None = None
     last_name: str | None = None
 
 
-class UserRolesUpdateSchema(UserSchemaBase):
+class UserRolesUpdateSchema(UserBaseSchema):
     roles: List[RolesEnum] = []
 
 

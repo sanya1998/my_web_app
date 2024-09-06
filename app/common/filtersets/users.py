@@ -1,5 +1,5 @@
-from app.common.filtersets.base import BaseCustomFilterSet
+from app.common.filtersets.base import BaseFiltersSet
 
 
-class UserFilterSet(BaseCustomFilterSet):
+class UsersFiltersSet(BaseFiltersSet):
     pass

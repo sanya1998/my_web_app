@@ -1,12 +1,12 @@
 INSERT INTO
-    hotels (id, name, location, services, rooms_quantity, image_id)
+    hotels (id, name, location, services, image_id)
 VALUES
-    (1, 'Cosmos Collection Altay', 'Республика Алтай, +точный адрес', array ['Wi-Fi', 'Парковка'], 5, 1),
-    (2, 'Skala', 'Адрес Skala', array ['Wi-Fi'], 23, 2),
-    (3, 'Ару-Кёль', 'республика, район, улица, дом', array ['Парковка'], 30, 3),
-    (4, 'Гостиница Сыктывкар', 'Коми, адрес', array ['Тренажёрный зал'], 10, 4),
-    (5, 'Palace', 'Республика Коми, адрес', array ['Кондиционер'], 13, 5),
-    (6, 'Bridge Resort', 'Поселок Сириус, улица, дом', array ['Wi-Fi'], 15, 6);
+    (1, 'Cosmos Collection Altay', 'Республика Алтай, +точный адрес', array ['Wi-Fi', 'Парковка'], 1),
+    (2, 'Skala', 'Адрес Skala', array ['Wi-Fi'], 2),
+    (3, 'Ару-Кёль', 'республика, район, улица, дом', array ['Парковка'], 3),
+    (4, 'Гостиница Сыктывкар', 'Коми, адрес', array ['Тренажёрный зал'], 4),
+    (5, 'Palace', 'Республика Коми, адрес', array ['Кондиционер'], 5),
+    (6, 'Bridge Resort', 'Поселок Сириус, улица, дом', array ['Wi-Fi'], 6);
 
 INSERT INTO
     rooms (id, hotel_id, name, price, quantity, services, image_id)
