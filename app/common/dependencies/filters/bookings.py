@@ -5,10 +5,11 @@ from app.common.helpers.db import get_columns_by_table, get_ordering_enum_by_col
 from app.common.tables import Bookings
 from fastapi import Depends, Query
 from pydantic import Field, computed_field
-from pydantic.json_schema import SkipJsonSchema
 
 columns = get_columns_by_table(Bookings)
-BookingsOrderingEnum = get_ordering_enum_by_columns(columns.price, columns.date_from, columns.date_to)
+BookingsOrderingEnum = get_ordering_enum_by_columns(
+    "BookingsOrderingEnum", columns.price, columns.date_from, columns.date_to
+)
 
 
 class BookingsBaseFiltersSchema(BaseFiltersSchema):

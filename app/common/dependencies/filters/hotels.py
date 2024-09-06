@@ -5,10 +5,9 @@ from app.common.helpers.db import get_columns_by_table, get_ordering_enum_by_col
 from app.common.tables import Hotels
 from fastapi import Depends, Query
 from pydantic import Field
-from pydantic.json_schema import SkipJsonSchema
 
 columns = get_columns_by_table(Hotels)
-HotelsOrderingEnum = get_ordering_enum_by_columns(columns.name, columns.location)
+HotelsOrderingEnum = get_ordering_enum_by_columns("HotelsOrderingEnum", columns.name, columns.location)
 
 
 class HotelsBaseFiltersSchema(BaseFiltersSchema):
