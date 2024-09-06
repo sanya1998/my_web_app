@@ -1,6 +1,7 @@
 from typing import List
 
 from app.common.dependencies.auth.base import CurrentUserDep
+from app.common.dependencies.auth.manager import CurrentManagerUserDep
 from app.common.dependencies.filters.bookings import BookingsFiltersDep
 from app.common.dependencies.input.bookings import BookingInputDep
 from app.common.dependencies.repositories.booking import BookingRepoDep
@@ -26,38 +27,41 @@ async def get_my_bookings(
     raw_filters: BookingsFiltersDep, booking_repo: BookingRepoDep, user: CurrentUserDep
 ) -> List[BookingReadSchema]:
     try:
-        bookings = await booking_repo.get_objects(raw_filters=raw_filters, user_id=user.id)
+        return await booking_repo.get_objects(raw_filters=raw_filters, user_id=user.id)
     except BaseRepoError:
         raise BaseApiError
-    return bookings
 
 
-# TODO: эту ручку может дергать только менеджер, сделать по аналогии с CurrentAdminUserDep
-# TODO: но эту ручку может дергать и тот, кому принадлежит заказ...
 @router.get("/{booking_id}")
-async def get_booking(booking_id: int, booking_repo: BookingRepoDep) -> BookingReadSchema:
+async def get_my_booking(booking_id: int, booking_repo: BookingRepoDep, user: CurrentUserDep) -> BookingReadSchema:
     try:
-        booking = await booking_repo.get_object(id=booking_id)
+        return await booking_repo.get_object(id=booking_id, user_id=user.id)
     except NotFoundRepoError:
         raise NotFoundApiError
     except MultipleResultsRepoError:
         raise MultipleResultsApiError
     except BaseRepoError:
         raise BaseApiError
-    # TODO: to_api_model().with_wrapper() ??? (видел в другом проекте. понять: зачем это)
-    return booking
+
+
+@router.get("/{booking_id}/for_manager")
+async def get_booking_for_manager(
+    booking_id: int, booking_repo: BookingRepoDep, manager: CurrentManagerUserDep
+) -> BookingReadSchema:
+    try:
+        return await booking_repo.get_object(id=booking_id)
+    except NotFoundRepoError:
+        raise NotFoundApiError
+    except MultipleResultsRepoError:
+        raise MultipleResultsApiError
+    except BaseRepoError:
+        raise BaseApiError
 
 
 @router.post("/")
 async def create_booking(
     booking_input: BookingInputDep, booking_service: BookingServiceDep, user: CurrentUserDep
 ) -> BookingReadSchema:
-    """
-    sample:
-    room_id=1
-    date_from=2024-07-14
-    date_to=2024-07-20
-    """
     try:
         return await booking_service.create_booking(booking_input, user_id=user.id)
     except NotFoundServiceError:
