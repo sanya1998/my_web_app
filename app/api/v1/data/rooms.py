@@ -1,6 +1,6 @@
 from typing import List
 
-from app.common.dependencies.filters.rooms import RoomsFiltersDep
+from app.common.dependencies.filters_input.rooms import RoomsFiltersDep
 from app.common.dependencies.repositories.room import RoomRepoDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.api.multiple_results import MultipleResultsApiError

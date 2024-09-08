@@ -1,6 +1,6 @@
 from typing import List
 
-from app.common.dependencies.filters.hotels import HotelsFiltersDep
+from app.common.dependencies.filters_input.hotels import HotelsFiltersDep
 from app.common.dependencies.repositories.hotel import HotelRepoDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.api.multiple_results import MultipleResultsApiError

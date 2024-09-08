@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from app.common.dependencies.filters.base import BaseFiltersSchema
+from app.common.dependencies.filters_input.base import BaseFiltersInput
 from app.common.exceptions.catcher import catch_exception
 from app.common.exceptions.repositories.base import BaseRepoError
 from app.common.exceptions.repositories.connection_refused import (
@@ -38,12 +38,11 @@ class BaseRepository:
             raise ConnectionRefusedRepoError
 
     @catcher
-    async def get_objects(
-        self, raw_filters: BaseFiltersSchema = BaseFiltersSchema(), **add_filters
-    ) -> List[read_schema]:
+    async def get_objects(self, raw_filters: BaseFiltersInput = BaseFiltersInput(), **add_filters) -> List[read_schema]:
         filter_params = raw_filters.model_dump(exclude_none=True)
         filter_params.update(add_filters)
         query = self.filter_set(select(self.db_model)).filter_query(filter_params)
+        print(query.compile(compile_kwargs={"literal_binds": True}))
         result = await self.execute(query)
         filtered_objects = result.scalars().all()
         return [self.read_schema.model_validate(obj) for obj in filtered_objects]

@@ -21,5 +21,5 @@ class BookingService(BaseService):
             raise NotFoundServiceError
         if selected_room.remain < 1:
             raise UnavailableServiceError
-        booking_create = BookingCreateSchema(user_id=user_id, price=selected_room.price, **booking_input.model_dump())
+        booking_create = BookingCreateSchema(user_id=user_id, price=selected_room.prices, **booking_input.model_dump())
         return await self.booking_repo.create(booking_create)

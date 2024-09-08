@@ -2,7 +2,7 @@ from typing import List
 
 from app.common.dependencies.auth.base import CurrentUserDep
 from app.common.dependencies.auth.manager import CurrentManagerUserDep
-from app.common.dependencies.filters.bookings import BookingsFiltersDep
+from app.common.dependencies.filters_input.bookings import BookingsFiltersDep
 from app.common.dependencies.input.bookings import BookingInputDep
 from app.common.dependencies.repositories.booking import BookingRepoDep
 from app.common.dependencies.services.booking import BookingServiceDep
