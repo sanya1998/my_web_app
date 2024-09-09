@@ -1,6 +1,7 @@
 from datetime import date
 
-from app.common.tables import Bookings, Rooms
+from app.common.filtersets.custom_filters.join_hotels_rooms import join_hotels_rooms
+from app.common.tables import Bookings, Rooms, Hotels
 from sqlalchemy import Select, and_, func, or_, select
 from sqlalchemy_filterset import BaseFilter
 
@@ -24,6 +25,8 @@ class DatesFilter(BaseFilter):
     def filter(self, query: Select, value: tuple[date, date] | None, values: dict) -> Select:
         if value is None:
             return query
+
+        query = join_hotels_rooms(query, values)
 
         check_into, check_out = value
         booked_rooms = (

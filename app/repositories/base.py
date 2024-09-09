@@ -33,6 +33,7 @@ class BaseRepository:
     @catcher
     async def execute(self, statement: Executable) -> Result:
         try:
+            print(statement.compile(compile_kwargs={"literal_binds": True}))
             return await self.session.execute(statement)
         except ConnectionRefusedError:
             raise ConnectionRefusedRepoError
@@ -42,7 +43,6 @@ class BaseRepository:
         filter_params = raw_filters.model_dump(exclude_none=True)
         filter_params.update(add_filters)
         query = self.filter_set(select(self.db_model)).filter_query(filter_params)
-        print(query.compile(compile_kwargs={"literal_binds": True}))
         result = await self.execute(query)
         filtered_objects = result.scalars().all()
         return [self.read_schema.model_validate(obj) for obj in filtered_objects]
