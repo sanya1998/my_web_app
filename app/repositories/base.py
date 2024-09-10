@@ -1,25 +1,31 @@
-from typing import Any, List
+from typing import Any, List, Union
 
 from app.common.dependencies.filters_input.base import BaseFiltersInput
 from app.common.exceptions.catcher import catch_exception
 from app.common.exceptions.repositories.base import BaseRepoError
+
+# TODO: сделать в одну строку. Пусть длина импорта будет равна длина обычной строке
 from app.common.exceptions.repositories.connection_refused import (
     ConnectionRefusedRepoError,
 )
 from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
+from app.common.exceptions.repositories.wrong_query import WrongQueryError
 from app.common.filtersets.base import BaseFiltersSet
+from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
-from sqlalchemy import Executable, Result, insert, select
-from sqlalchemy.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy import Result, Select, insert, select
+from sqlalchemy.exc import MultipleResultsFound, NoResultFound, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.dml import ReturningInsert
 
 
 class BaseRepository:
     db_model = BaseTable
 
-    read_schema = BaseSchema
+    one_read_schema = BaseSchema
+    many_read_schema = BaseSchema
     create_schema = BaseSchema
 
     filter_set = BaseFiltersSet
@@ -31,24 +37,43 @@ class BaseRepository:
         self.session = session
 
     @catcher
-    async def execute(self, statement: Executable) -> Result:
+    async def execute(self, statement: Union[Select, ReturningInsert]) -> Result:
         try:
             print(statement.compile(compile_kwargs={"literal_binds": True}))
             return await self.session.execute(statement)
         except ConnectionRefusedError:
             raise ConnectionRefusedRepoError
+        except SQLAlchemyError:
+            # TODO: 1) to logs
+            # TODO: 2) SQLAlchemyError не такой содержательный, как если без него
+            print(statement.compile(compile_kwargs={"literal_binds": True}))
+            raise WrongQueryError
 
     @catcher
-    async def get_objects(self, raw_filters: BaseFiltersInput = BaseFiltersInput(), **add_filters) -> List[read_schema]:
+    def create_query(self) -> Select:
+        return select(get_columns_by_table(self.db_model))
+
+    @catcher
+    def append_query(self, query: Select) -> Select:
+        return query
+
+    @catcher
+    async def get_objects(
+        self, raw_filters: BaseFiltersInput = BaseFiltersInput(), **add_filters
+    ) -> List[many_read_schema]:
         filter_params = raw_filters.model_dump(exclude_none=True)
         filter_params.update(add_filters)
-        query = self.filter_set(select(self.db_model)).filter_query(filter_params)
+
+        query = self.create_query()
+        query = self.filter_set(query).filter_query(filter_params)
+        query = self.append_query(query)
+
         result = await self.execute(query)
-        filtered_objects = result.scalars().all()
-        return [self.read_schema.model_validate(obj) for obj in filtered_objects]
+        filtered_objects = result.all()
+        return [self.many_read_schema.model_validate(obj) for obj in filtered_objects]
 
     @catcher
-    async def get_object(self, **filters) -> read_schema:
+    async def get_object(self, **filters) -> one_read_schema:
         query = select(self.db_model).filter_by(**filters)
         result = await self.execute(query)
         try:
@@ -57,7 +82,7 @@ class BaseRepository:
             raise NotFoundRepoError
         except MultipleResultsFound:
             raise MultipleResultsRepoError
-        return self.read_schema.model_validate(obj)
+        return obj
 
     @catcher
     async def get_object_field(self, key: str, **filters) -> Any:
@@ -69,14 +94,14 @@ class BaseRepository:
         return value
 
     @catcher
-    async def create(self, data: create_schema) -> read_schema:
+    async def create(self, data: create_schema) -> one_read_schema:
         # TODO: можно ли упростить values(**data.model_dump()) - возможно, SQLModel решит проблему
         # TODO: вместо insert(self.db_model) можно написать только поля из read_schema (что эффективнее?)
         query = insert(self.db_model).values(**data.model_dump()).returning(self.db_model)
         result = await self.execute(query)
-        obj = result.scalar_one()
         await self.session.commit()
-        return self.read_schema.model_validate(obj)
+        obj = result.scalar_one()
+        return obj
 
     @catcher
     async def is_exists(self, **filters) -> bool:
@@ -92,7 +117,7 @@ class BaseRepository:
         return not (await self.is_exists(**filters))
 
     @catcher
-    async def create_bulk(self, data: List[create_schema]) -> List[read_schema]:
+    async def create_bulk(self, data: List[create_schema]) -> List[many_read_schema]:
         raise NotImplementedError
 
     @catcher

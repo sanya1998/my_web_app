@@ -12,7 +12,8 @@ from sqlalchemy import and_, func, label, or_, select
 class BookingRepo(BaseRepository):
     db_model = Bookings
 
-    read_schema = BookingReadSchema
+    one_read_schema = BookingReadSchema
+    many_read_schema = BookingReadSchema
     create_schema = BookingCreateSchema
 
     filter_set = BookingsFiltersSet
@@ -63,6 +64,7 @@ class BookingRepo(BaseRepository):
             )
         ).cte()
 
+        # TODO: привести к единообразию remain и remain_by_room
         selected_room_query = (
             select(Rooms.id, Rooms.price, label("remain", Rooms.quantity - func.count(booked_rooms.c.room_id)))
             .select_from(Rooms)

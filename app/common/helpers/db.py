@@ -1,9 +1,9 @@
 from enum import Enum
 
-from sqlalchemy import inspect
+from sqlalchemy import ColumnCollection, inspect
 
 
-def get_columns_by_table(table):
+def get_columns_by_table(table) -> ColumnCollection:
     return inspect(table).c
 
 

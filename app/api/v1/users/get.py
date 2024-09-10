@@ -17,7 +17,7 @@ async def get_users(
     raw_filters: UsersFiltersDep, user_repo: UserRepoDep, admin: CurrentAdminUserDep
 ) -> List[UserReadSchema]:
     try:
-        return await user_repo.get_objects(raw_filters)
+        return await user_repo.get_objects(raw_filters=raw_filters)
     except BaseRepoError:
         raise BaseApiError
 

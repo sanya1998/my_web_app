@@ -41,6 +41,7 @@ def catch_exception(base_error: Type[Exception], description: str = "exception",
 
         @wraps(method)
         def executor(self, *args, **kwargs):
+            # TODO: попробовать вынести with catching(self, *args, **kwargs):, чтобы не дублировать
             if asyncio.iscoroutinefunction(method):
 
                 async def async_executor():

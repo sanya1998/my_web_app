@@ -17,3 +17,11 @@ class HotelCreateSchema(HotelBaseSchema):
 
 class HotelReadSchema(HotelCreateSchema):
     id: int
+
+
+class OneHotelReadSchema(HotelReadSchema):
+    pass
+
+
+class ManyHotelsReadSchema(HotelReadSchema):
+    remain_by_hotel: int | None = None  # Если не указаны даты, то None, потому что невозможно посчитать

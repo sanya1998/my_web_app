@@ -14,15 +14,14 @@ LEFT JOIN booked_rooms ON booked_rooms.room_id = rooms.id -- Показать о
 -- INNER JOIN booked_rooms ON booked_rooms.room_id = rooms.id  -- Показать остаток только в тех комнатах, которые есть в booked_rooms
 GROUP BY rooms.id;
 
-WITH anon_1 AS (
-    SELECT bookings.room_id AS room_id, count(bookings.room_id) AS occupied
-    FROM bookings
-    WHERE bookings.date_from >= '2025-07-07' AND bookings.date_from < '2025-07-08' OR
-          bookings.date_from < '2025-07-07' AND bookings.date_to > '2025-07-07' GROUP BY bookings.room_id
-)
-SELECT DISTINCT hotels.name, hotels.location, hotels.services, hotels.image_id, hotels.id
-FROM hotels
-    LEFT OUTER JOIN anon_1 ON anon_1.room_id = rooms.id
-    LEFT OUTER JOIN rooms ON rooms.hotel_id = hotels.id
-WHERE rooms.quantity > coalesce(anon_1.occupied, 0) AND rooms.price <= 7700
-LIMIT 10 OFFSET 0
+SELECT hotels.name, hotels.location, hotels.services, hotels.image_id, hotels.id, sum(rooms.quantity - coalesce(occupied, 0)) AS remain_by_hotel
+FROM hotels LEFT OUTER JOIN rooms ON rooms.hotel_id = hotels.id GROUP BY hotels.name, hotels.location, hotels.services, hotels.image_id, hotels.id
+ LIMIT 10 OFFSET 0
+
+WITH booked_rooms AS
+(SELECT bookings.room_id AS room_id, count(bookings.room_id) AS occupied
+FROM bookings
+WHERE bookings.date_from >= '2024-07-12' AND bookings.date_from < '2024-07-20' OR bookings.date_from < '2024-07-12' AND bookings.date_to > '2024-07-12' GROUP BY bookings.room_id)
+ SELECT hotels.name, hotels.location, hotels.services, hotels.image_id, hotels.id, rooms.quantity - coalesce(booked_rooms.occupied, 0) AS remain_by_room
+FROM hotels LEFT OUTER JOIN rooms ON rooms.hotel_id = hotels.id LEFT OUTER JOIN booked_rooms ON booked_rooms.room_id = rooms.id
+WHERE rooms.quantity - coalesce(booked_rooms.occupied, 0) > 0 GROUP BY hotels.name, hotels.location, hotels.services, hotels.image_id, hotels.id;

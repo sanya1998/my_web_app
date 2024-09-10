@@ -1,5 +1,3 @@
-from typing import Any
-
 from app.config.main import settings
 from fastapi import Query
 from pydantic import BaseModel, computed_field

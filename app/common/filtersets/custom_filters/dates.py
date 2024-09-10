@@ -1,8 +1,7 @@
 from datetime import date
 
-from app.common.filtersets.custom_filters.join_hotels_rooms import join_hotels_rooms
-from app.common.tables import Bookings, Rooms, Hotels
-from sqlalchemy import Select, and_, func, or_, select
+from app.common.tables import Bookings, Rooms
+from sqlalchemy import Select, and_, func, label, or_, select
 from sqlalchemy_filterset import BaseFilter
 
 
@@ -26,11 +25,10 @@ class DatesFilter(BaseFilter):
         if value is None:
             return query
 
-        query = join_hotels_rooms(query, values)
-
         check_into, check_out = value
+        # TODO: const "occupied", "remain_by_room"...
         booked_rooms = (
-            select(Bookings.room_id, func.count(Bookings.room_id).label("occupied"))
+            select(Bookings.room_id, label("occupied", func.count(Bookings.room_id)))
             .where(
                 or_(
                     and_(
@@ -44,10 +42,14 @@ class DatesFilter(BaseFilter):
                 ),
             )
             .group_by(Bookings.room_id)
-        ).cte()
+        ).cte("booked_rooms")
 
-        query = query.outerjoin(target=booked_rooms, onclause=booked_rooms.c.room_id == Rooms.id).where(
-            Rooms.quantity > func.coalesce(booked_rooms.c.occupied, 0)
+        remain_by_room = label("remain_by_room", Rooms.quantity - func.coalesce(booked_rooms.c.occupied, 0))
+
+        query = (
+            query.add_columns(remain_by_room)
+            .outerjoin(target=booked_rooms, onclause=booked_rooms.c.room_id == Rooms.id)
+            .where(remain_by_room > 0)
         )
 
         return query

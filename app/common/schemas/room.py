@@ -20,3 +20,11 @@ class RoomCreateSchema(RoomBaseSchema):
 
 class RoomReadSchema(RoomCreateSchema):
     id: int
+
+
+class OneRoomReadSchema(RoomReadSchema):
+    pass
+
+
+class ManyRoomsReadSchema(RoomReadSchema):
+    remain_by_room: int | None = None  # Если не указаны даты, то None, потому что невозможно посчитать
