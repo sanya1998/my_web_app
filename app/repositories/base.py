@@ -15,10 +15,10 @@ from app.common.filtersets.base import BaseFiltersSet
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
-from sqlalchemy import Result, Select, insert, select
+from sqlalchemy import Result, Select, delete, insert, select, update
 from sqlalchemy.exc import MultipleResultsFound, NoResultFound, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql.dml import ReturningInsert
+from sqlalchemy.sql.dml import Delete, ReturningInsert, Update
 
 
 class BaseRepository:
@@ -27,6 +27,7 @@ class BaseRepository:
     one_read_schema = BaseSchema
     many_read_schema = BaseSchema
     create_schema = BaseSchema
+    update_schema = BaseSchema
 
     filter_set = BaseFiltersSet
 
@@ -37,7 +38,7 @@ class BaseRepository:
         self.session = session
 
     @catcher
-    async def execute(self, statement: Union[Select, ReturningInsert]) -> Result:
+    async def execute(self, statement: Union[ReturningInsert, Select, Update, Delete]) -> Result:
         try:
             print(statement.compile(compile_kwargs={"literal_binds": True}))
             return await self.session.execute(statement)
@@ -51,10 +52,12 @@ class BaseRepository:
 
     @catcher
     def create_query(self) -> Select:
+        """For get_objects"""
         return select(get_columns_by_table(self.db_model))
 
     @catcher
     def append_query(self, query: Select) -> Select:
+        """For get_objects"""
         return query
 
     @catcher
@@ -104,6 +107,10 @@ class BaseRepository:
         return obj
 
     @catcher
+    async def create_bulk(self, data: List[create_schema]) -> List[many_read_schema]:
+        raise NotImplementedError
+
+    @catcher
     async def is_exists(self, **filters) -> bool:
         # TODO: можно ли упростить query
         query = select(self.db_model).filter_by(**filters).exists().select()
@@ -117,15 +124,20 @@ class BaseRepository:
         return not (await self.is_exists(**filters))
 
     @catcher
-    async def create_bulk(self, data: List[create_schema]) -> List[many_read_schema]:
-        raise NotImplementedError
-
-    @catcher
     async def upsert(self, data):
         raise NotImplementedError
 
     @catcher
-    async def update_object(self, object_id, data):
+    async def update(self, data: update_schema, **filters) -> one_read_schema:
+        query = update(self.db_model).filter_by(**filters).values(**data.model_dump()).returning(self.db_model)
+        result = await self.execute(query)
+        await self.session.commit()
+        obj = result.scalar_one()
+        # TODO: returning возвращает старые total_days и total_cost
+        return obj
+
+    @catcher
+    async def update_bulk(self, data: update_schema, **filters) -> List[many_read_schema]:
         raise NotImplementedError
 
     @catcher
@@ -133,5 +145,7 @@ class BaseRepository:
         raise NotImplementedError
 
     @catcher
-    async def delete(self, object_id):
-        raise NotImplementedError
+    async def delete(self, **filters):
+        query = delete(self.db_model).filter_by(**filters)
+        await self.execute(query)
+        await self.session.commit()

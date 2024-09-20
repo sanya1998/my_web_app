@@ -1,6 +1,10 @@
 from typing import Annotated
 
-from app.common.schemas.booking import BookingInputSchema
+from app.common.schemas.booking import (
+    BookingCreateInputSchema,
+    BookingUpdateInputSchema,
+)
 from fastapi import Depends
 
-BookingInputDep = Annotated[BookingInputSchema, Depends(BookingInputSchema)]
+BookingInputCreateDep = Annotated[BookingCreateInputSchema, Depends(BookingCreateInputSchema)]
+BookingInputUpdateDep = Annotated[BookingUpdateInputSchema, Depends(BookingUpdateInputSchema)]

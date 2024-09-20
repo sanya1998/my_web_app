@@ -8,15 +8,15 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 asyncpg = "^0.29.0"
-greenlet = "^3.0.3"
+greenlet = "^3.1.0"
 sqlalchemy-filterset = "^2.3.0"
 uvicorn = "^0.30.6"
 pydantic-settings = "^2.4.0"
 pyjwt = "^2.9.0"
 python-multipart = "^0.0.9"
 fastapi = "^0.113.0"
-pydantic = {extras = ["email"], version = "^2.9.0"}
-sqlalchemy = "^2.0.34"
+pydantic = {extras = ["email"], version = "^2.9.2"}
+sqlalchemy = "^2.0.35"
 
 
 

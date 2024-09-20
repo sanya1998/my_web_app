@@ -3,7 +3,10 @@ from typing import List
 from app.common.dependencies.auth.base import CurrentUserDep
 from app.common.dependencies.auth.manager import CurrentManagerUserDep
 from app.common.dependencies.filters_input.bookings import BookingsFiltersDep
-from app.common.dependencies.input.bookings import BookingInputDep
+from app.common.dependencies.input.bookings import (
+    BookingInputCreateDep,
+    BookingInputUpdateDep,
+)
 from app.common.dependencies.repositories.booking import BookingRepoDep
 from app.common.dependencies.services.booking import BookingServiceDep
 from app.common.exceptions.api.base import BaseApiError
@@ -58,12 +61,31 @@ async def get_booking_for_manager(
         raise BaseApiError
 
 
-@router.post("/")
-async def create_booking(
-    booking_input: BookingInputDep, booking_service: BookingServiceDep, user: CurrentUserDep
+@router.delete("/{booking_id}/for_manager")
+async def delete_booking_for_manager(booking_id: int, booking_repo: BookingRepoDep, manager: CurrentManagerUserDep):
+    # TODO: вернуть то, что удалилось
+    try:
+        return await booking_repo.delete(id=booking_id)
+    except BaseRepoError:
+        raise BaseApiError
+
+
+@router.put("/for_manager")
+async def update_booking(
+    booking_input: BookingInputUpdateDep, booking_service: BookingServiceDep, manager: CurrentManagerUserDep
 ) -> BookingReadSchema:
     try:
-        return await booking_service.create_booking(booking_input, user_id=user.id)
+        return await booking_service.update(booking_input)
+    except BaseRepoError:
+        raise BaseApiError
+
+
+@router.post("/")
+async def create_booking(
+    booking_input: BookingInputCreateDep, booking_service: BookingServiceDep, user: CurrentUserDep
+) -> BookingReadSchema:
+    try:
+        return await booking_service.create(booking_input, user_id=user.id)
     except NotFoundServiceError:
         raise NotFoundApiError
     except UnavailableServiceError:

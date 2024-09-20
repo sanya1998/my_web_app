@@ -14,14 +14,11 @@ LEFT JOIN booked_rooms ON booked_rooms.room_id = rooms.id -- Показать о
 -- INNER JOIN booked_rooms ON booked_rooms.room_id = rooms.id  -- Показать остаток только в тех комнатах, которые есть в booked_rooms
 GROUP BY rooms.id;
 
-SELECT hotels.name, hotels.location, hotels.services, hotels.image_id, hotels.id, sum(rooms.quantity - coalesce(occupied, 0)) AS remain_by_hotel
-FROM hotels LEFT OUTER JOIN rooms ON rooms.hotel_id = hotels.id GROUP BY hotels.name, hotels.location, hotels.services, hotels.image_id, hotels.id
- LIMIT 10 OFFSET 0
-
-WITH booked_rooms AS
-(SELECT bookings.room_id AS room_id, count(bookings.room_id) AS occupied
-FROM bookings
-WHERE bookings.date_from >= '2024-07-12' AND bookings.date_from < '2024-07-20' OR bookings.date_from < '2024-07-12' AND bookings.date_to > '2024-07-12' GROUP BY bookings.room_id)
- SELECT hotels.name, hotels.location, hotels.services, hotels.image_id, hotels.id, rooms.quantity - coalesce(booked_rooms.occupied, 0) AS remain_by_room
-FROM hotels LEFT OUTER JOIN rooms ON rooms.hotel_id = hotels.id LEFT OUTER JOIN booked_rooms ON booked_rooms.room_id = rooms.id
-WHERE rooms.quantity - coalesce(booked_rooms.occupied, 0) > 0 GROUP BY hotels.name, hotels.location, hotels.services, hotels.image_id, hotels.id;
+-- TODO: в sqlalchemy возвращает неизмененные total_cost, а в SQL все норм
+UPDATE bookings
+SET price=6000
+WHERE bookings.id = 1
+RETURNING
+    bookings.id,
+    bookings.price,
+    bookings.total_cost;
