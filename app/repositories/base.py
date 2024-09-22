@@ -129,11 +129,16 @@ class BaseRepository:
 
     @catcher
     async def update(self, data: update_schema, **filters) -> one_read_schema:
-        query = update(self.db_model).filter_by(**filters).values(**data.model_dump()).returning(self.db_model)
+        query = (
+            update(self.db_model)
+            .filter_by(**filters)
+            .values(**data.model_dump())
+            .execution_options(populate_existing=True)  # TODO: Обновить SQLAlchemy до 2.0.36 для Computed полей
+            .returning(self.db_model)
+        )
         result = await self.execute(query)
         await self.session.commit()
         obj = result.scalar_one()
-        # TODO: returning возвращает старые total_days и total_cost
         return obj
 
     @catcher
