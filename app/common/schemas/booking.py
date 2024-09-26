@@ -25,7 +25,6 @@ class BookingCreateInputSchema(BookingBaseInputSchema):
 class BookingUpdateInputSchema(BookingBaseInputSchema):
     """Бронирование редактирует менеджер, он не может изменить room_id, но может изменить цену"""
 
-    id: int = Field(Form(1))
     price: int = Field(Form(0))
 
 

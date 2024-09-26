@@ -138,7 +138,10 @@ class BaseRepository:
         )
         result = await self.execute(query)
         await self.session.commit()
-        obj = result.scalar_one()
+        try:
+            obj = result.scalar_one()
+        except NoResultFound:
+            raise NotFoundRepoError
         return obj
 
     @catcher
@@ -150,7 +153,16 @@ class BaseRepository:
         raise NotImplementedError
 
     @catcher
-    async def delete(self, **filters):
-        query = delete(self.db_model).filter_by(**filters)
-        await self.execute(query)
+    async def delete_object(self, **filters) -> one_read_schema:
+        query = delete(self.db_model).filter_by(**filters).returning(self.db_model)
+        result = await self.execute(query)
         await self.session.commit()
+        try:
+            obj = result.scalar_one()
+        except NoResultFound:
+            raise NotFoundRepoError
+        return obj
+
+    @catcher
+    async def delete_bulk(self, **filters) -> List[many_read_schema]:
+        raise NotImplementedError

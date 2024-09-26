@@ -1,3 +1,4 @@
+from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.exceptions.services.not_found import NotFoundServiceError
 from app.common.exceptions.services.unavailable import UnavailableServiceError
 from app.common.schemas.booking import (
@@ -42,14 +43,17 @@ class BookingService(BaseService):
         return await self.booking_repo.create(booking_create)
 
     @BaseService.catcher
-    async def update(self, booking_input: BookingUpdateInputSchema):
-        unchanged_booking = await self.booking_repo.get_object(id=booking_input.id)
+    async def update(self, booking_input: BookingUpdateInputSchema, booking_id: int):
+        try:
+            unchanged_booking = await self.booking_repo.get_object(id=booking_id)
+        except NotFoundRepoError:
+            raise NotFoundServiceError
         self.check_data = CheckData(
             selected_room_id=unchanged_booking.room_id,
             check_into=booking_input.date_from,
             check_out=booking_input.date_to,
-            exclude_booking_ids=[booking_input.id],
+            exclude_booking_ids=[booking_id],
         )
         await self.select_room_and_check_dates()
         booking_update = BookingUpdateSchema.model_validate(booking_input)
-        return await self.booking_repo.update(booking_update, id=booking_input.id)
+        return await self.booking_repo.update(booking_update, id=booking_id)

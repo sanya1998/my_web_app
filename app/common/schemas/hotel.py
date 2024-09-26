@@ -1,6 +1,7 @@
 from typing import List
 
 from app.common.schemas.base import BaseSchema
+from fastapi import Form
 from pydantic import Field
 
 
@@ -11,7 +12,26 @@ class HotelBaseSchema(BaseSchema):
     image_id: int | None = None
 
 
-class HotelCreateSchema(HotelBaseSchema):
+class HotelBaseInputSchema(HotelBaseSchema):
+    name: str = Field(Form("Name"))
+    location: str = Field(Form("Location"))
+    services: List[str] = Field(Form(default=list()))
+    image_id: int | None = Field(Form(None))
+
+
+class HotelCreateInputSchema(HotelBaseInputSchema):
+    pass
+
+
+class HotelUpdateInputSchema(HotelBaseInputSchema):
+    pass
+
+
+class HotelUpdateSchema(HotelBaseSchema):
+    pass
+
+
+class HotelCreateSchema(HotelUpdateSchema):
     pass
 
 

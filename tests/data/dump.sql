@@ -26,7 +26,7 @@ VALUES
 INSERT INTO
     users (id, email, roles, hashed_password)
 VALUES
-    (1, 'user@example.com', array ['admin', 'manager'], '07ab59f4731b0790d0acfded6a52d2c53e7e3c6a1e241f6dfe3a41f3072e07fb'),
+    (1, 'user@example.com', array ['admin', 'manager', 'moderator'], '07ab59f4731b0790d0acfded6a52d2c53e7e3c6a1e241f6dfe3a41f3072e07fb'),
     (2, 'fedor@moloko.ru', array []::varchar[], 'tut_budet_hashed_password_1'),
     (3, 'sharik@moloko.ru', array []::varchar[], 'tut_budet_hashed_password_2');
 
