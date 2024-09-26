@@ -2,6 +2,7 @@ from app.common.tables.base import BaseTable
 from app.common.tables.rooms import Rooms
 from app.common.tables.users import Users
 from sqlalchemy import Column, Computed, Date, ForeignKey, Integer
+from sqlalchemy.orm import relationship
 
 
 class Bookings(BaseTable):
@@ -12,3 +13,5 @@ class Bookings(BaseTable):
     price = Column(Integer, nullable=False)
     total_days = Column(Integer, Computed("date_to - date_from"))
     total_cost = Column(Integer, Computed("(date_to - date_from) * price"))
+
+    room = relationship(Rooms, backref="bookings")

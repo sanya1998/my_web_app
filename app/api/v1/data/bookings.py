@@ -19,16 +19,16 @@ from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.exceptions.services.base import BaseServiceError
 from app.common.exceptions.services.not_found import NotFoundServiceError
 from app.common.exceptions.services.unavailable import UnavailableServiceError
-from app.common.schemas.booking import BookingReadSchema
+from app.common.schemas.booking import ManyBookingsReadSchema, OneBookingReadSchema
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 
-@router.post("/")
-async def create_booking(
+@router.post("/for_current_user")
+async def create_booking_for_current_user(
     booking_input: BookingInputCreateDep, booking_service: BookingServiceDep, user: CurrentUserDep
-) -> BookingReadSchema:
+) -> OneBookingReadSchema:
     try:
         return await booking_service.create(booking_input, user_id=user.id)
     except NotFoundServiceError:
@@ -39,18 +39,21 @@ async def create_booking(
         raise BaseApiError
 
 
-@router.get("/")
-async def get_my_bookings(
+@router.get("/for_current_user")
+async def get_bookings_for_current_user(
     raw_filters: BookingsFiltersDep, booking_repo: BookingRepoDep, user: CurrentUserDep
-) -> List[BookingReadSchema]:
+) -> List[ManyBookingsReadSchema]:
     try:
         return await booking_repo.get_objects(raw_filters=raw_filters, user_id=user.id)
     except BaseRepoError:
         raise BaseApiError
 
 
-@router.get("/{booking_id}")
-async def get_my_booking(booking_id: int, booking_repo: BookingRepoDep, user: CurrentUserDep) -> BookingReadSchema:
+@router.get("/{booking_id}/for_current_user")
+async def get_booking_for_current_user(
+    booking_id: int, booking_repo: BookingRepoDep, user: CurrentUserDep
+) -> OneBookingReadSchema:
+    """Если запрашиваемое бронирование существует, но не принадлежит пользователю, то ответ NotFoundApiError"""
     try:
         return await booking_repo.get_object(id=booking_id, user_id=user.id)
     except NotFoundRepoError:
@@ -64,7 +67,7 @@ async def get_my_booking(booking_id: int, booking_repo: BookingRepoDep, user: Cu
 @router.get("/{booking_id}/for_manager")
 async def get_booking_for_manager(
     booking_id: int, booking_repo: BookingRepoDep, manager: CurrentManagerUserDep
-) -> BookingReadSchema:
+) -> OneBookingReadSchema:
     try:
         return await booking_repo.get_object(id=booking_id)
     except NotFoundRepoError:
@@ -81,7 +84,7 @@ async def update_booking_for_manager(
     booking_input: BookingInputUpdateDep,
     booking_service: BookingServiceDep,
     manager: CurrentManagerUserDep,
-) -> BookingReadSchema:
+) -> OneBookingReadSchema:
     try:
         return await booking_service.update(booking_input, booking_id=booking_id)
     except NotFoundServiceError:
@@ -93,7 +96,7 @@ async def update_booking_for_manager(
 @router.delete("/{booking_id}/for_manager")
 async def delete_booking_for_manager(
     booking_id: int, booking_repo: BookingRepoDep, manager: CurrentManagerUserDep
-) -> BookingReadSchema:
+) -> OneBookingReadSchema:
     try:
         return await booking_repo.delete_object(id=booking_id)
     except NotFoundRepoError:

@@ -3,6 +3,7 @@ from typing import List
 
 from app.common.constants.datetimes import TODAY, TOMORROW
 from app.common.schemas.base import BaseSchema
+from app.common.schemas.room import RoomBaseSchema
 from fastapi import Form
 from pydantic import Field
 
@@ -38,10 +39,23 @@ class BookingCreateSchema(BookingUpdateSchema):
     user_id: int
 
 
-class BookingReadSchema(BookingCreateSchema):
+class BaseBookingReadSchema(BookingCreateSchema):
     id: int
     total_days: int
     total_cost: int
+
+
+class OneBookingReadSchema(BaseBookingReadSchema):
+    room: RoomBaseSchema
+
+
+class ManyBookingsReadSchema(BaseBookingReadSchema):
+    pass
+    # TODO:
+    # room_image_id: int
+    # room_name: str
+    # room_description: str
+    # room_services: list
 
 
 class CheckData(BaseSchema):

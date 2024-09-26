@@ -18,15 +18,15 @@ class RoomCreateSchema(RoomBaseSchema):
     pass
 
 
-class RoomReadSchema(RoomCreateSchema):
+class BaseRoomReadSchema(RoomCreateSchema):
     id: int
 
 
-class OneRoomReadSchema(RoomReadSchema):
+class OneRoomReadSchema(BaseRoomReadSchema):
     pass
 
 
-class ManyRoomsReadSchema(RoomReadSchema):
+class ManyRoomsReadSchema(BaseRoomReadSchema):
     # Если не указаны даты, то None, потому что невозможно посчитать
     remain_by_room: int | None = None
     total_cost: int | None = None

@@ -12,8 +12,8 @@ from fastapi import APIRouter
 get_router = APIRouter()
 
 
-@get_router.get("/")
-async def get_users(
+@get_router.get("/for_admin")
+async def get_users_for_admin(
     raw_filters: UsersFiltersDep, user_repo: UserRepoDep, admin: CurrentAdminUserDep
 ) -> List[UserReadSchema]:
     try:
@@ -22,6 +22,6 @@ async def get_users(
         raise BaseApiError
 
 
-@get_router.get("/me")
-async def get_me(user: CurrentUserDep) -> UserReadSchema:
+@get_router.get("/current")
+async def get_current_user(user: CurrentUserDep) -> UserReadSchema:
     return user

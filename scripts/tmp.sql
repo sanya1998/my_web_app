@@ -22,3 +22,6 @@ RETURNING
     bookings.id,
     bookings.price,
     bookings.total_cost;
+
+SELECT bookings.room_id, bookings.user_id, bookings.date_from, bookings.date_to, bookings.price, bookings.total_days, bookings.total_cost, bookings.id
+FROM bookings LEFT OUTER JOIN rooms ON rooms.id = bookings.room_id
