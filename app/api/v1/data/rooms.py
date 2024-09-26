@@ -26,9 +26,12 @@ async def get_room(room_id: int, room_repo: RoomRepoDep) -> OneRoomReadSchema:
         raise BaseApiError
 
 
-# TODO: вернуть комнаты, которые доступны на выбранные даты + фильтры
 @router.get("/")
 async def get_rooms(raw_filters: RoomsFiltersDep, room_repo: RoomRepoDep) -> List[ManyRoomsReadSchema]:
+    """
+    Возвращает все типы комнат.
+    Поля remain_by_room, total_cost заполняются, только если есть date_to и date_from
+    """
     try:
         return await room_repo.get_objects(raw_filters=raw_filters)
     except BaseRepoError:

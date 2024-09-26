@@ -1,6 +1,7 @@
-from datetime import date, timedelta
+from datetime import date
 from typing import List
 
+from app.common.constants.datetimes import TODAY, TOMORROW
 from app.common.schemas.base import BaseSchema
 from fastapi import Form
 from pydantic import Field
@@ -12,8 +13,8 @@ class BookingBaseSchema(BaseSchema):
 
 
 class BookingBaseInputSchema(BookingBaseSchema):
-    date_from: date = Field(Form(date.today()))
-    date_to: date = Field(Form(date.today() + timedelta(days=1)))
+    date_from: date = Field(Form(TODAY))
+    date_to: date = Field(Form(TOMORROW))
 
 
 class BookingCreateInputSchema(BookingBaseInputSchema):

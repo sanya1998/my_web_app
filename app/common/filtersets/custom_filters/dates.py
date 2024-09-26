@@ -18,7 +18,6 @@ class DatesFilter(BaseFilter):
     SELECT *
     FROM rooms LEFT OUTER JOIN booked_rooms ON booked_rooms.room_id = rooms.id
     WHERE rooms.quantity > COALESCE(booked_rooms.occupied, 0)
-    LIMIT 10 OFFSET 0;
     """
 
     def filter(self, query: Select, value: tuple[date, date] | None, values: dict) -> Select:
@@ -26,6 +25,7 @@ class DatesFilter(BaseFilter):
             return query
 
         check_into, check_out = value
+        days = (check_out - check_into).days
         # TODO: const "occupied", "remain_by_room"...
         booked_rooms = (
             select(Bookings.room_id, label("occupied", func.count(Bookings.room_id)))
@@ -45,9 +45,11 @@ class DatesFilter(BaseFilter):
         ).cte("booked_rooms")
 
         remain_by_room = label("remain_by_room", Rooms.quantity - func.coalesce(booked_rooms.c.occupied, 0))
+        # TODO: разобраться, почему pycharm подчеркивает days * Rooms.price
+        total_cost = label("total_cost", days * Rooms.price)
 
         query = (
-            query.add_columns(remain_by_room)
+            query.add_columns(remain_by_room, total_cost)
             .outerjoin(target=booked_rooms, onclause=booked_rooms.c.room_id == Rooms.id)
             .where(remain_by_room > 0)
         )

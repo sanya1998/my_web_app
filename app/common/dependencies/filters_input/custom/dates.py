@@ -1,11 +1,13 @@
 from datetime import date
 
-from pydantic import BaseModel, computed_field
+from app.common.constants.datetimes import TODAY, TOMORROW
+from fastapi import Query
+from pydantic import BaseModel, Field, computed_field
 
 
 class DatesFiltersInput(BaseModel):
-    date_from: date | None = None
-    date_to: date | None = None
+    date_from: date | None = Field(Query(None, description=f"Example: {TODAY}"))
+    date_to: date | None = Field(Query(None, description=f"Example: {TOMORROW}"))
 
     @computed_field
     @property

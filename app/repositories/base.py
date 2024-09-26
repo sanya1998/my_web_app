@@ -51,12 +51,11 @@ class BaseRepository:
             raise WrongQueryError
 
     @catcher
-    def create_query(self) -> Select:
-        """For get_objects"""
+    def _create_query_for_getting_objects(self) -> Select:
         return select(get_columns_by_table(self.db_model))
 
     @catcher
-    def append_query(self, query: Select) -> Select:
+    def _append_query_for_getting_objects(self, query: Select) -> Select:
         """For get_objects"""
         return query
 
@@ -67,9 +66,9 @@ class BaseRepository:
         filter_params = raw_filters.model_dump(exclude_none=True)
         filter_params.update(add_filters)
 
-        query = self.create_query()
+        query = self._create_query_for_getting_objects()
         query = self.filter_set(query).filter_query(filter_params)
-        query = self.append_query(query)
+        query = self._append_query_for_getting_objects(query)
 
         result = await self.execute(query)
         filtered_objects = result.all()
