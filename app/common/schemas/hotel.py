@@ -40,8 +40,12 @@ class HotelReadSchema(HotelCreateSchema):
 
 
 class OneHotelReadSchema(HotelReadSchema):
-    pass
+    rooms_quantity: int  # Всего различных типов номеров
 
 
 class ManyHotelsReadSchema(HotelReadSchema):
     remain_by_hotel: int | None = None  # Если не указаны даты, то None, потому что невозможно посчитать
+
+
+class HotelDeleteSchema(HotelReadSchema):
+    pass

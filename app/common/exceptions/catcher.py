@@ -34,7 +34,8 @@ def catch_exception(base_error: Type[Exception], description: str = "exception",
                 model_name = self.__class__.__name__
                 exception_name = ex.__class__.__name__
                 message = f"{exception_name}: \n{ex}\n{description}. Model: {model_name}. Method: {method_name}."
-                message = "\n\t".join(message.split("\n"))  # TODO: иногда тут неполная инфа, например SQLAlchemyError
+                # TODO: иногда тут неполная инфа, например SQLAlchemyError, ValidationError
+                message = "\n\t".join(message.split("\n"))
                 if verbose:
                     print(f"{message}")  # TODO: весь трейс в логи logger, sentry etc
                 raise UnitingException(message) from ex

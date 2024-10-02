@@ -1,16 +1,15 @@
-from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
-from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.filtersets.bookings import BookingsFiltersSet
+from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.booking import (
     BookingCreateSchema,
+    BookingDeleteSchema,
     CheckData,
     ManyBookingsReadSchema,
     OneBookingReadSchema,
 )
 from app.common.tables import Bookings, Rooms
 from app.repositories.base import BaseRepository
-from sqlalchemy import and_, func, label, or_, select
-from sqlalchemy.exc import MultipleResultsFound, NoResultFound
+from sqlalchemy import Select, and_, func, label, or_, select
 
 
 class BookingRepo(BaseRepository):
@@ -19,25 +18,17 @@ class BookingRepo(BaseRepository):
     one_read_schema = OneBookingReadSchema
     many_read_schema = ManyBookingsReadSchema
     create_schema = BookingCreateSchema
+    one_delete_schema = BookingDeleteSchema
 
     filter_set = BookingsFiltersSet
 
     @BaseRepository.catcher
-    async def get_object(self, **filters) -> one_read_schema:
-        query = select(self.db_model, Rooms).filter_by(**filters).join(Rooms)
-        result = await self.execute(query)
-        try:
-            # TODO: код рабочий, но надо поискать как работать с вложенными моделями после join
-            booking, _ = result.one()
-        except NoResultFound:
-            raise NotFoundRepoError
-        except MultipleResultsFound:
-            raise MultipleResultsRepoError
-        return self.one_read_schema.model_validate(booking)
+    def _create_query_for_getting_object_with_join(self, **filters) -> Select:
+        return select(self.db_model, Rooms).filter_by(**filters).join(Rooms)
 
-    # @BaseRepository.catcher
-    # def _create_query_for_getting_objects(self) -> Select:
-    #     return select(get_columns_by_table(self.db_model), Rooms.).join(Rooms)
+    @BaseRepository.catcher
+    def _create_query_for_getting_objects(self) -> Select:
+        return select(get_columns_by_table(self.db_model), get_columns_by_table(Rooms)).join(Rooms)
 
     @BaseRepository.catcher
     async def get_room_info_by_id_and_dates(self, data: CheckData):

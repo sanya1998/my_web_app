@@ -2,6 +2,7 @@ from app.common.filtersets.hotels import HotelsFiltersSet
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.hotel import (
     HotelCreateSchema,
+    HotelDeleteSchema,
     ManyHotelsReadSchema,
     OneHotelReadSchema,
 )
@@ -16,6 +17,7 @@ class HotelRepo(BaseRepository):
     one_read_schema = OneHotelReadSchema
     many_read_schema = ManyHotelsReadSchema
     create_schema = HotelCreateSchema
+    one_delete_schema = HotelDeleteSchema
 
     filter_set = HotelsFiltersSet
 
@@ -41,3 +43,16 @@ class HotelRepo(BaseRepository):
                 remain_by_hotel
             )
         return query
+
+    @BaseRepository.catcher
+    def _create_query_for_getting_object_with_join(self, **filters) -> Select:
+        return (
+            select(self.db_model, label("rooms_quantity", func.count(Rooms.id)))
+            .filter_by(**filters)
+            .outerjoin(Rooms, Rooms.hotel_id == self.db_model.id)
+            .group_by(self.db_model)
+        )
+
+    @BaseRepository.catcher
+    def _model_validate_for_getting_object_with_join(self, *objects) -> one_read_schema:
+        return self.one_read_schema(rooms_quantity=objects[1], **objects[0].__dict__)

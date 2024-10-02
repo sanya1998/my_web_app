@@ -50,12 +50,16 @@ class OneBookingReadSchema(BaseBookingReadSchema):
 
 
 class ManyBookingsReadSchema(BaseBookingReadSchema):
+    # TODO: prefix room_
+    # TODO: не дублировать поля из Rooms
+    name: str
+    description: str | None = None
+    services: List[str] = Field(default=list())
+    image_id: int | None = None
+
+
+class BookingDeleteSchema(BaseBookingReadSchema):
     pass
-    # TODO:
-    # room_image_id: int
-    # room_name: str
-    # room_description: str
-    # room_services: list
 
 
 class CheckData(BaseSchema):

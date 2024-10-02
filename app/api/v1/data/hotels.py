@@ -15,6 +15,8 @@ from app.common.exceptions.repositories.multiple_results import MultipleResultsR
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.schemas.hotel import (
     HotelCreateSchema,
+    HotelDeleteSchema,
+    HotelReadSchema,
     HotelUpdateSchema,
     ManyHotelsReadSchema,
     OneHotelReadSchema,
@@ -27,7 +29,7 @@ router = APIRouter(prefix="/hotels", tags=["hotels"])
 @router.post("/for_moderator")
 async def create_hotel_for_moderator(
     hotel_input: HotelInputCreateDep, hotel_repo: HotelRepoDep, moderator: CurrentModeratorUserDep
-) -> OneHotelReadSchema:
+) -> HotelReadSchema:
     try:
         hotel_create = HotelCreateSchema.model_validate(hotel_input)
         return await hotel_repo.create(hotel_create)
@@ -46,7 +48,7 @@ async def get_hotels(raw_filters: HotelsFiltersDep, hotel_repo: HotelRepoDep) ->
 @router.get("/{hotel_id}")
 async def get_hotel(hotel_id: int, hotel_repo: HotelRepoDep) -> OneHotelReadSchema:
     try:
-        return await hotel_repo.get_object(id=hotel_id)
+        return await hotel_repo.get_object_with_join(id=hotel_id)
     except NotFoundRepoError:
         raise NotFoundApiError
     except MultipleResultsRepoError:
@@ -71,7 +73,7 @@ async def update_hotel_for_moderator(
 @router.delete("/{hotel_id}/for_moderator")
 async def delete_hotel_for_moderator(
     hotel_id: int, hotel_repo: HotelRepoDep, moderator: CurrentModeratorUserDep
-) -> OneHotelReadSchema:
+) -> HotelDeleteSchema:
     try:
         return await hotel_repo.delete_object(id=hotel_id)
     except NotFoundRepoError:

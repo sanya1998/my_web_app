@@ -15,7 +15,7 @@ from app.common.filtersets.base import BaseFiltersSet
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
-from sqlalchemy import Result, Select, delete, insert, select, update
+from sqlalchemy import Result, Row, Select, delete, insert, select, update
 from sqlalchemy.exc import MultipleResultsFound, NoResultFound, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.dml import Delete, ReturningInsert, Update
@@ -28,6 +28,7 @@ class BaseRepository:
     many_read_schema = BaseSchema
     create_schema = BaseSchema
     update_schema = BaseSchema
+    one_delete_schema = BaseSchema
 
     filter_set = BaseFiltersSet
 
@@ -56,8 +57,11 @@ class BaseRepository:
 
     @catcher
     def _append_query_for_getting_objects(self, query: Select) -> Select:
-        """For get_objects"""
         return query
+
+    @catcher
+    def _model_validate_for_getting_objects(self, filtered_objects: List[Row]) -> List[many_read_schema]:
+        return [self.many_read_schema.model_validate(obj) for obj in filtered_objects]
 
     @catcher
     async def get_objects(
@@ -72,11 +76,19 @@ class BaseRepository:
 
         result = await self.execute(query)
         filtered_objects = result.all()
-        return [self.many_read_schema.model_validate(obj) for obj in filtered_objects]
+        return self._model_validate_for_getting_objects(filtered_objects)
+
+    @catcher
+    def _create_query_for_getting_object(self, **filters) -> Select:
+        return select(self.db_model).filter_by(**filters)
+
+    @catcher
+    def _model_validate_for_getting_object(self, obj) -> one_read_schema:
+        return self.one_read_schema.model_validate(obj)
 
     @catcher
     async def get_object(self, **filters) -> one_read_schema:
-        query = select(self.db_model).filter_by(**filters)
+        query = self._create_query_for_getting_object(**filters)
         result = await self.execute(query)
         try:
             obj = result.scalar_one()
@@ -84,7 +96,28 @@ class BaseRepository:
             raise NotFoundRepoError
         except MultipleResultsFound:
             raise MultipleResultsRepoError
-        return obj
+        return self._model_validate_for_getting_object(obj)
+
+    @catcher
+    def _create_query_for_getting_object_with_join(self, **filters) -> Select:
+        raise NotImplementedError
+
+    @catcher
+    def _model_validate_for_getting_object_with_join(self, *objects) -> one_read_schema:
+        return self.one_read_schema.model_validate(objects[0])
+
+    @catcher
+    async def get_object_with_join(self, **filters) -> one_read_schema:
+        query = self._create_query_for_getting_object_with_join(**filters)
+        result = await self.execute(query)
+        try:
+            # TODO: код рабочий, но стоит поискать, как работать с вложенными моделями после join
+            objects = result.one()
+        except NoResultFound:
+            raise NotFoundRepoError
+        except MultipleResultsFound:
+            raise MultipleResultsRepoError
+        return self._model_validate_for_getting_object_with_join(*objects)
 
     @catcher
     async def get_object_field(self, key: str, **filters) -> Any:
@@ -152,7 +185,7 @@ class BaseRepository:
         raise NotImplementedError
 
     @catcher
-    async def delete_object(self, **filters) -> one_read_schema:
+    async def delete_object(self, **filters) -> one_delete_schema:
         query = delete(self.db_model).filter_by(**filters).returning(self.db_model)
         result = await self.execute(query)
         await self.session.commit()
@@ -160,7 +193,7 @@ class BaseRepository:
             obj = result.scalar_one()
         except NoResultFound:
             raise NotFoundRepoError
-        return obj
+        return self.one_delete_schema.model_validate(obj)
 
     @catcher
     async def delete_bulk(self, **filters) -> List[many_read_schema]:
