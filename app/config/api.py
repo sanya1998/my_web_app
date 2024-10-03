@@ -12,6 +12,7 @@ class ApiSettings(BaseSettings):
     APPLICATION_DESCRIPTION: str = "My web application description"
     HOST: str = "localhost"
     PORT: int = 8000
+    RELOAD: bool = False
     SWAGGER_UI_PARAMETERS: dict = {"tryItOutEnabled": True}
     DEBUG: bool = True
     LIMIT_DEFAULT: int = 10
@@ -23,5 +24,3 @@ class ApiSettings(BaseSettings):
     JWT_SECRET_KEY: str
     ENCODE_ALGORITHM: str
     DECODE_ALGORITHMS: List[str]
-
-    PASSWORD_MIN_LENGTH: int = 8

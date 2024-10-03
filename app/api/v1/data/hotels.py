@@ -23,7 +23,7 @@ from app.common.schemas.hotel import (
 )
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/hotels", tags=["hotels"])
+router = APIRouter(prefix="/hotels", tags=["Hotels"])
 
 
 @router.post("/for_moderator")

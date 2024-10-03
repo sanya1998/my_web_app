@@ -11,7 +11,7 @@ from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.schemas.room import ManyRoomsReadSchema, OneRoomReadSchema
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/rooms", tags=["rooms"])
+router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
 
 @router.get("/{room_id}")

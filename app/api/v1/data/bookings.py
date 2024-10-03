@@ -27,7 +27,7 @@ from app.common.schemas.booking import (
 )
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/bookings", tags=["bookings"])
+router = APIRouter(prefix="/bookings", tags=["Bookings"])
 
 
 @router.post("/for_current_user")

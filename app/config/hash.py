@@ -7,3 +7,4 @@ class HashSettings(BaseSettings):
     """
 
     ENCODING: str = "utf-8"
+    PASSWORD_MIN_LENGTH: int = 8
