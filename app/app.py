@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from app.api import api_router
 from app.config.main import settings
 from fastapi import FastAPI
+from starlette.staticfiles import StaticFiles
 
 
 class Application(FastAPI):
@@ -11,6 +12,7 @@ class Application(FastAPI):
 
     def setup(self) -> None:
         self.init_routers()
+        self.mount(path="/static", app=StaticFiles(directory="static/"), name="static")
 
         super().setup()
 
