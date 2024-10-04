@@ -9,12 +9,12 @@ from fastapi import Depends, Query
 from pydantic import Field
 
 columns = get_columns_by_table(Hotels)
-HotelsOrderingEnum = get_ordering_enum_by_columns("HotelsOrderingEnum", columns.name, columns.location)
+HotelsOrderingEnum = get_ordering_enum_by_columns("HotelsOrderingEnum", columns.id, columns.name, columns.location)
 
 
 class HotelsFiltersInput(BaseFiltersInput, PricesFiltersInput, DatesFiltersInput):
     location: str | None = None
-    ordering: List[HotelsOrderingEnum] | None = Field(Query(None))
+    ordering: List[HotelsOrderingEnum] | None = Field(Query([HotelsOrderingEnum.ID]))
 
     # TODO:
     # has_spa
