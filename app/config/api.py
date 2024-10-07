@@ -15,6 +15,19 @@ class ApiSettings(BaseSettings):
     RELOAD: bool = False
     SWAGGER_UI_PARAMETERS: dict = {"tryItOutEnabled": True}
     DEBUG: bool = True
+
+    # CORS
+    ALLOW_ORIGINS_REGEX: str = r"http://localhost:3000/*"
+    ALLOW_CREDENTIALS: bool = True
+    ALLOW_METHODS: List[str] = ["GET", "POST", "PUT", "DELETE", "PATCH"]
+    ALLOW_HEADERS: List[str] = [
+        "Content-Type",
+        "Set-Cookie",
+        "Access-Control-Allow-Headers",
+        "Access-Control-Allow-Origin",
+        "Authorization",
+    ]
+
     LIMIT_DEFAULT: int = 10
     LIMIT_MAX: int = 100
     OFFSET_DEFAULT: int = 0
