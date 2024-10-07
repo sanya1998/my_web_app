@@ -1,3 +1,5 @@
 [flake8]
 max-line-length = 120
-per-file-ignores = __init__.py:F401
+per-file-ignores =
+    __init__.py:F401
+    frontend/my_front/node_modules/flatted/python/*:E302,E305,E501,E703,E713,E712,E722
