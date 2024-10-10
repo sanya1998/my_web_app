@@ -28,7 +28,7 @@ target_metadata = metadata
 
 
 def get_url() -> str:
-    return f"{settings.DB_URL}?async_fallback=True"
+    return f"{settings.POSTGRES_URL}?async_fallback=True"
 
 
 def run_migrations_offline() -> None:
