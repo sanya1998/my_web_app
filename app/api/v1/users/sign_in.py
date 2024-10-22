@@ -11,6 +11,7 @@ from fastapi import APIRouter, Response
 sign_in_router = APIRouter()
 
 
+# TODO: нельзя ли response добавить в зависимости в auth_service
 @sign_in_router.post("/sign_in")
 async def sign_in(user_input: UserInputDep, auth_service: AuthorizationServiceDep, response: Response) -> dict:
     try:

@@ -14,10 +14,10 @@ from fastapi import APIRouter
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
 
-@router.get("/{room_id}")
-async def get_room(room_id: int, room_repo: RoomRepoDep) -> OneRoomReadSchema:
+@router.get("/{object_id}")
+async def get_room(object_id: int, room_repo: RoomRepoDep) -> OneRoomReadSchema:
     try:
-        return await room_repo.get_object(id=room_id)
+        return await room_repo.get_object(id=object_id)
     except NotFoundRepoError:
         raise NotFoundApiError
     except MultipleResultsRepoError:

@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from app.api import api_router
 from app.config.main import settings
 from app.middlewares import add_all_middlewares
+from app.resources.redis import prepare_redis_cache
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
@@ -16,9 +17,9 @@ class Application(FastAPI):
 
 @asynccontextmanager
 async def lifespan(application: Application):
-    # application.state.resource1 = Resource1().start()
+    prepare_redis_cache()
+
     yield
-    # application.state.resource1.close()
 
 
 app = Application(

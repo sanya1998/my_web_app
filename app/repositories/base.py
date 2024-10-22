@@ -1,4 +1,4 @@
-from typing import Any, List, Union
+from typing import Any, List, Sequence, Union
 
 from app.common.dependencies.filters_input.base import BaseFiltersInput
 from app.common.exceptions.catcher import catch_exception
@@ -60,7 +60,7 @@ class BaseRepository:
         return query
 
     @catcher
-    def _model_validate_for_getting_objects(self, filtered_objects: List[Row]) -> List[many_read_schema]:
+    def _model_validate_for_getting_objects(self, filtered_objects: Sequence[Row]) -> List[many_read_schema]:
         return [self.many_read_schema.model_validate(obj) for obj in filtered_objects]
 
     @catcher
