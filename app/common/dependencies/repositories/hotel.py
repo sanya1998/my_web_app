@@ -1,13 +1,13 @@
 from typing import Annotated
 
-from app.common.dependencies.db.db import SessionDep
+from app.common.dependencies.db.postgres import PostgresSessionDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.repositories.base import BaseRepoError
 from app.repositories.hotel import HotelRepo
 from fastapi import Depends
 
 
-def get_hotel_repo(session: SessionDep):
+def get_hotel_repo(session: PostgresSessionDep):
     try:
         return HotelRepo(session=session)
     except BaseRepoError:

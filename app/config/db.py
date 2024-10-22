@@ -4,15 +4,30 @@ from pydantic_settings import BaseSettings
 
 class DbSettings(BaseSettings):
     """
-    Конфигурация базы данных
+    Конфигурация баз данных
     """
 
     # REDIS
     REDIS_VERSION: str
-    REDIS_DEFAULT_PASSWORD: str
-    REDIS_USER: str
-    REDIS_USER_PASSWORD: str
+    REDIS_DRIVER: str = "redis"
+    REDIS_HOST: str
     REDIS_PORT: int
+    REDIS_USER: str
+    REDIS_PASSWORD: str
+    REDIS_DB: str
+    REDIS_MAX_CONNECTIONS: int = 10
+    REDIS_CACHE_EXPIRE: int = 120
+
+    @computed_field
+    @property
+    def REDIS_URL(self) -> str:
+        value = (
+            f"{self.REDIS_DRIVER}://"
+            f"{self.REDIS_USER}:{self.REDIS_PASSWORD}@"
+            f"{self.REDIS_HOST}:{self.REDIS_PORT}/"
+            f"{self.REDIS_DB}"
+        )
+        return value
 
     # POSTGRES
     POSTGRES_VERSION: str
@@ -21,7 +36,7 @@ class DbSettings(BaseSettings):
     POSTGRES_PORT: int
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
-    POSTGRES_NAME: str
+    POSTGRES_DB: str
 
     # DB_WRITE_MIN_POOL_SIZE: int = 4
     # DB_WRITE_MAX_POOL_SIZE: int = 10
@@ -36,6 +51,6 @@ class DbSettings(BaseSettings):
             f"{self.POSTGRES_DRIVER}://"
             f"{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
             f"{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/"
-            f"{self.POSTGRES_NAME}"
+            f"{self.POSTGRES_DB}"
         )
         return value

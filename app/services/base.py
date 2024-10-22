@@ -7,4 +7,4 @@ class BaseService:
 
     @catcher
     def __init__(self, *args, **kwargs) -> None:
-        self.model_name = self.__class__.__name__
+        self.model_name = self.__class__.__name__  # TODO: подумать, нужно ли это
