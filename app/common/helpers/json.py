@@ -3,6 +3,7 @@ from json import JSONEncoder
 from pydantic import BaseModel
 
 
+# TODO: не используется, но, возможно, пригодится
 class CustomEncoder(JSONEncoder):
     def default(self, obj):
         if isinstance(obj, set | tuple):
