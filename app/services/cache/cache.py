@@ -39,22 +39,32 @@ class CacheService(BaseService):
 
     @BaseService.catcher
     async def clear(
-        self, prefix_key: str | None = None, clear_by_key: bool = False, clear_by_pattern: bool = False, **kwargs
+        self,
+        prefix_key: str | None = None,
+        clear_by_key: bool = False,
+        build_key_for_clear: Callable = None,
+        clear_by_pattern: bool = False,
+        build_key_pattern_for_clear: Callable = None,
+        **kwargs,
     ):
         """
         Очистить кеш
         :param prefix_key: Префикс ключа
         :param clear_by_key: True => build_key_for_clear(**kwargs), delete_cache_by_key(key)
+        :param build_key_for_clear: Способ построения ключа для очистки
         :param clear_by_pattern: True => build_key_pattern_for_clear(**kwargs), delete_cache_by_pattern(pattern)
-        :param kwargs: данные, которые будут передаваться в функции построения ключа и построения паттерна ключа
+        :param build_key_pattern_for_clear: Способ построения паттерна для очистки
+        :param kwargs: Данные, которые будут передаваться в функции построения ключа и построения паттерна ключа
         :return None:
         """
         prefix_key = prefix_key or self.prefix_key
         if clear_by_key:
-            key = f"{prefix_key}{self.build_key_for_clear(**kwargs)}"
+            build_key_for_clear = build_key_for_clear or self.build_key_for_clear
+            key = f"{prefix_key}{build_key_for_clear(**kwargs)}"
             await self.delete_cache_by_key(key=key)
         if clear_by_pattern:
-            pattern = f"{prefix_key}{self.build_key_pattern_for_clear(**kwargs)}"
+            build_key_pattern_for_clear = build_key_pattern_for_clear or self.build_key_pattern_for_clear
+            pattern = f"{prefix_key}{build_key_pattern_for_clear(**kwargs)}"
             await self.delete_cache_by_pattern(pattern=pattern)
 
     @BaseService.catcher
@@ -82,6 +92,7 @@ class CacheService(BaseService):
         :param build_key: функция построения ключа для записи и чтения
         :return:
         """
+
         def wrapper(func):
             @wraps(func)
             async def inner(
