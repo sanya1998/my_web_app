@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-
   postgres:
     image: postgres:${POSTGRES_VERSION}
     container_name: web_app_pgdb
@@ -24,7 +23,7 @@ services:
     command: sh -c '
         mkdir -p /usr/local/etc/redis &&
         echo "user default off" > /usr/local/etc/redis/users.acl &&
-        echo "user $REDIS_USER on >$REDIS_PASSWORD ~* +@all" >> /usr/local/etc/redis/users.acl &&
+        echo "user $REDIS_USER on allkeys allchannels allcommands >$REDIS_PASSWORD ~* +@all" >> /usr/local/etc/redis/users.acl &&
         redis-server --bind 0.0.0.0 --aclfile /usr/local/etc/redis/users.acl
       '
 #    volumes:
