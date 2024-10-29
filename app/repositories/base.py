@@ -165,7 +165,6 @@ class BaseRepository:
             update(self.db_model)
             .filter_by(**filters)
             .values(**data.model_dump())
-            .execution_options(populate_existing=True)  # TODO: Обновить SQLAlchemy до 2.0.36 для Computed полей
             .returning(self.db_model)
         )
         result = await self.execute(query)
