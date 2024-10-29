@@ -20,10 +20,11 @@ from app.common.exceptions.services.base import BaseServiceError
 from app.common.exceptions.services.not_found import NotFoundServiceError
 from app.common.exceptions.services.unavailable import UnavailableServiceError
 from app.common.schemas.booking import (
-    BaseBookingReadSchema,
-    BookingDeleteSchema,
     ManyBookingsReadSchema,
-    OneBookingReadSchema,
+    OneBookingWithJoinReadSchema,
+    OneCreatedBookingReadSchema,
+    OneDeletedBookingReadSchema,
+    OneUpdatedBookingReadSchema,
 )
 from fastapi import APIRouter
 
@@ -33,9 +34,10 @@ router = APIRouter(prefix="/bookings", tags=["Bookings"])
 @router.post("/for_current_user")
 async def create_booking_for_current_user(
     booking_input: BookingInputCreateDep, booking_service: BookingServiceDep, user: CurrentUserDep
-) -> BaseBookingReadSchema:
+) -> OneCreatedBookingReadSchema:
     try:
-        return await booking_service.create(booking_input, user_id=user.id)
+        booking = await booking_service.create(booking_input, user_id=user.id)
+        return booking
     except NotFoundServiceError:
         raise NotFoundApiError
     except UnavailableServiceError:
@@ -57,7 +59,7 @@ async def get_bookings_for_current_user(
 @router.get("/{object_id}/for_current_user")
 async def get_booking_for_current_user(
     object_id: int, booking_repo: BookingRepoDep, user: CurrentUserDep
-) -> OneBookingReadSchema:
+) -> OneBookingWithJoinReadSchema:
     """Если запрашиваемое бронирование существует, но не принадлежит пользователю, то ответ NotFoundApiError"""
     try:
         return await booking_repo.get_object_with_join(id=object_id, user_id=user.id)
@@ -72,7 +74,7 @@ async def get_booking_for_current_user(
 @router.get("/{object_id}/for_manager")
 async def get_booking_for_manager(
     object_id: int, booking_repo: BookingRepoDep, manager: CurrentManagerUserDep
-) -> OneBookingReadSchema:
+) -> OneBookingWithJoinReadSchema:
     try:
         return await booking_repo.get_object_with_join(id=object_id)
     except NotFoundRepoError:
@@ -89,7 +91,7 @@ async def update_booking_for_manager(
     booking_input: BookingInputUpdateDep,
     booking_service: BookingServiceDep,
     manager: CurrentManagerUserDep,
-) -> OneBookingReadSchema:
+) -> OneUpdatedBookingReadSchema:
     try:
         return await booking_service.update(booking_input, booking_id=object_id)
     except NotFoundServiceError:
@@ -101,7 +103,7 @@ async def update_booking_for_manager(
 @router.delete("/{object_id}/for_manager")
 async def delete_booking_for_manager(
     object_id: int, booking_repo: BookingRepoDep, manager: CurrentManagerUserDep
-) -> BookingDeleteSchema:
+) -> OneDeletedBookingReadSchema:
     try:
         return await booking_repo.delete_object(id=object_id)
     except NotFoundRepoError:

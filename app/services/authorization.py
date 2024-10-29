@@ -13,7 +13,7 @@ from app.common.exceptions.services.unauthorized import (
     UnauthorizedServiceError,
 )
 from app.common.helpers.db import get_columns_by_table
-from app.common.schemas.user import UserCreateSchema, UserInputSchema, UserReadSchema
+from app.common.schemas.user import OneUserReadSchema, UserCreateSchema, UserInputSchema
 from app.common.tables import Users
 from app.config.main import settings
 from app.repositories.user import UserRepo
@@ -68,7 +68,7 @@ class AuthorizationService(BaseService):
             raise InvalidTokenServiceError
 
     @BaseService.catcher
-    async def get_user_by_access_token(self, token: str) -> UserReadSchema:
+    async def get_user_by_access_token(self, token: str) -> OneUserReadSchema:
         payload = self.decrypt_access_token(token)
         user = await self.user_repo.get_object(email=payload.get("sub"))
         return user

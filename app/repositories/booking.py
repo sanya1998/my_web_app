@@ -2,10 +2,13 @@ from app.common.filtersets.bookings import BookingsFiltersSet
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.booking import (
     BookingCreateSchema,
-    BookingDeleteSchema,
     CheckData,
     ManyBookingsReadSchema,
     OneBookingReadSchema,
+    OneBookingWithJoinReadSchema,
+    OneCreatedBookingReadSchema,
+    OneDeletedBookingReadSchema,
+    OneUpdatedBookingReadSchema,
 )
 from app.common.tables import Bookings, Rooms
 from app.repositories.base import BaseRepository
@@ -16,9 +19,12 @@ class BookingRepo(BaseRepository):
     db_model = Bookings
 
     one_read_schema = OneBookingReadSchema
+    one_read_join_schema = OneBookingWithJoinReadSchema
     many_read_schema = ManyBookingsReadSchema
+    one_created_read_schema = OneCreatedBookingReadSchema
+    one_updated_read_schema = OneUpdatedBookingReadSchema
+    one_deleted_read_schema = OneDeletedBookingReadSchema
     create_schema = BookingCreateSchema
-    one_delete_schema = BookingDeleteSchema
 
     filter_set = BookingsFiltersSet
 

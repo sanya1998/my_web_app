@@ -34,5 +34,13 @@ class UserRolesUpdateSchema(UserBaseSchema):
     roles: List[RolesEnum] = []
 
 
-class UserReadSchema(UserDataUpdateSchema, UserRolesUpdateSchema):
+class OneUserReadSchema(UserDataUpdateSchema, UserRolesUpdateSchema):
     id: int
+
+
+class OneCreatedUserReadSchema(OneUserReadSchema):
+    pass
+
+
+class ManyUsersReadSchema(OneUserReadSchema):
+    pass

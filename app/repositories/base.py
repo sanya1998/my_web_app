@@ -25,10 +25,13 @@ class BaseRepository:
     db_model = BaseTable
 
     one_read_schema = BaseSchema
+    one_read_join_schema = BaseSchema
     many_read_schema = BaseSchema
+    one_created_read_schema = BaseSchema
+    one_updated_read_schema = BaseSchema
+    one_deleted_read_schema = BaseSchema
     create_schema = BaseSchema
     update_schema = BaseSchema
-    one_delete_schema = BaseSchema
 
     filter_set = BaseFiltersSet
 
@@ -83,10 +86,6 @@ class BaseRepository:
         return select(self.db_model).filter_by(**filters)
 
     @catcher
-    def _model_validate_for_getting_object(self, obj) -> one_read_schema:
-        return self.one_read_schema.model_validate(obj)
-
-    @catcher
     async def get_object(self, **filters) -> one_read_schema:
         query = self._create_query_for_getting_object(**filters)
         result = await self.execute(query)
@@ -96,22 +95,23 @@ class BaseRepository:
             raise NotFoundRepoError
         except MultipleResultsFound:
             raise MultipleResultsRepoError
-        return self._model_validate_for_getting_object(obj)
+        return self.one_read_schema.model_validate(obj)
 
     @catcher
     def _create_query_for_getting_object_with_join(self, **filters) -> Select:
         raise NotImplementedError
 
     @catcher
-    def _model_validate_for_getting_object_with_join(self, *objects) -> one_read_schema:
-        return self.one_read_schema.model_validate(objects[0])
+    def _model_validate_for_getting_object_with_join(self, *objects) -> one_read_join_schema:
+        return self.one_read_join_schema.model_validate(objects[0])
 
     @catcher
-    async def get_object_with_join(self, **filters) -> one_read_schema:
+    async def get_object_with_join(self, **filters) -> one_read_join_schema:
         query = self._create_query_for_getting_object_with_join(**filters)
         result = await self.execute(query)
         try:
             # TODO: код рабочий, но стоит поискать, как работать с вложенными моделями после join
+            # TODO: методы _model_validate_for_getting_object_with_join не самые красивые из-за objects[0]
             objects = result.one()
         except NoResultFound:
             raise NotFoundRepoError
@@ -129,17 +129,17 @@ class BaseRepository:
         return value
 
     @catcher
-    async def create(self, data: create_schema) -> one_read_schema:
+    async def create(self, data: create_schema) -> one_created_read_schema:
         # TODO: можно ли упростить values(**data.model_dump()) - возможно, SQLModel решит проблему
         # TODO: вместо insert(self.db_model) можно написать только поля из read_schema (что эффективнее?)
         query = insert(self.db_model).values(**data.model_dump()).returning(self.db_model)
         result = await self.execute(query)
         await self.session.commit()
         obj = result.scalar_one()
-        return obj
+        return self.one_created_read_schema.model_validate(obj)
 
     @catcher
-    async def create_bulk(self, data: List[create_schema]) -> List[many_read_schema]:
+    async def create_bulk(self, data: List[create_schema]) -> List[many_read_schema]:  # TODO: many_created_read_schema
         raise NotImplementedError
 
     @catcher
@@ -160,7 +160,7 @@ class BaseRepository:
         raise NotImplementedError
 
     @catcher
-    async def update(self, data: update_schema, **filters) -> one_read_schema:
+    async def update(self, data: update_schema, **filters) -> one_updated_read_schema:
         query = (
             update(self.db_model)
             .filter_by(**filters)
@@ -174,7 +174,7 @@ class BaseRepository:
             obj = result.scalar_one()
         except NoResultFound:
             raise NotFoundRepoError
-        return obj
+        return self.one_updated_read_schema.model_validate(obj)
 
     @catcher
     async def update_bulk(self, data: update_schema, **filters) -> List[many_read_schema]:
@@ -185,7 +185,7 @@ class BaseRepository:
         raise NotImplementedError
 
     @catcher
-    async def delete_object(self, **filters) -> one_delete_schema:
+    async def delete_object(self, **filters) -> one_deleted_read_schema:
         query = delete(self.db_model).filter_by(**filters).returning(self.db_model)
         result = await self.execute(query)
         await self.session.commit()
@@ -193,7 +193,7 @@ class BaseRepository:
             obj = result.scalar_one()
         except NoResultFound:
             raise NotFoundRepoError
-        return self.one_delete_schema.model_validate(obj)
+        return self.one_deleted_read_schema.model_validate(obj)
 
     @catcher
     async def delete_bulk(self, **filters) -> List[many_read_schema]:
