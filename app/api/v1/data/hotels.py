@@ -15,11 +15,12 @@ from app.common.exceptions.repositories.multiple_results import MultipleResultsR
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.schemas.hotel import (
     HotelCreateSchema,
-    HotelDeleteSchema,
-    HotelReadSchema,
     HotelUpdateSchema,
     ManyHotelsReadSchema,
-    OneHotelReadSchema,
+    OneCreatedHotelReadSchema,
+    OneDeletedHotelReadSchema,
+    OneHotelWithJoinReadSchema,
+    OneUpdatedHotelReadSchema,
 )
 from app.services.cache.cache import CacheService
 from app.services.cache.key_builders.listing import (
@@ -43,7 +44,7 @@ async def create_hotel_for_moderator(
     hotel_input: HotelInputCreateDep,
     hotel_repo: HotelRepoDep,
     moderator: CurrentModeratorUserDep,
-) -> HotelReadSchema:
+) -> OneCreatedHotelReadSchema:
     try:
         hotel_create = HotelCreateSchema.model_validate(hotel_input)
         new_hotel = await hotel_repo.create(hotel_create)
@@ -65,7 +66,7 @@ async def get_hotels(raw_filters: HotelsFiltersDep, hotel_repo: HotelRepoDep) ->
 
 @router.get("/{object_id}")
 @cache.caching(build_key=build_key_by_object_id)
-async def get_hotel(object_id: int, hotel_repo: HotelRepoDep) -> OneHotelReadSchema:
+async def get_hotel(object_id: int, hotel_repo: HotelRepoDep) -> OneHotelWithJoinReadSchema:
     try:
         return await hotel_repo.get_object_with_join(id=object_id)
     except NotFoundRepoError:
@@ -82,7 +83,7 @@ async def update_hotel_for_moderator(
     hotel_input: HotelInputUpdateDep,
     hotel_repo: HotelRepoDep,
     moderator: CurrentModeratorUserDep,
-) -> HotelReadSchema:
+) -> OneUpdatedHotelReadSchema:
     try:
         hotel_update = HotelUpdateSchema.model_validate(hotel_input)
         updated_hotel = await hotel_repo.update(hotel_update, id=object_id)
@@ -98,7 +99,7 @@ async def update_hotel_for_moderator(
 @router.delete("/{object_id}/for_moderator")
 async def delete_hotel_for_moderator(
     object_id: int, hotel_repo: HotelRepoDep, moderator: CurrentModeratorUserDep
-) -> HotelDeleteSchema:
+) -> OneDeletedHotelReadSchema:
     try:
         deleted_hotel = await hotel_repo.delete_object(id=object_id)
         # TODO: отправлять в консюмер команду на очистку кеша

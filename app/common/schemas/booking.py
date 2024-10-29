@@ -46,6 +46,18 @@ class BaseBookingReadSchema(BookingCreateSchema):
 
 
 class OneBookingReadSchema(BaseBookingReadSchema):
+    pass
+
+
+class OneCreatedBookingReadSchema(BaseBookingReadSchema):
+    pass
+
+
+class OneUpdatedBookingReadSchema(BaseBookingReadSchema):
+    pass
+
+
+class OneBookingWithJoinReadSchema(BaseBookingReadSchema):
     room: RoomBaseSchema
 
 
@@ -58,7 +70,7 @@ class ManyBookingsReadSchema(BaseBookingReadSchema):
     image_id: int | None = None
 
 
-class BookingDeleteSchema(BaseBookingReadSchema):
+class OneDeletedBookingReadSchema(BaseBookingReadSchema):
     pass
 
 

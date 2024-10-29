@@ -2,9 +2,12 @@ from app.common.filtersets.hotels import HotelsFiltersSet
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.hotel import (
     HotelCreateSchema,
-    HotelDeleteSchema,
     ManyHotelsReadSchema,
+    OneCreatedHotelReadSchema,
+    OneDeletedHotelReadSchema,
     OneHotelReadSchema,
+    OneHotelWithJoinReadSchema,
+    OneUpdatedHotelReadSchema,
 )
 from app.common.tables import Hotels, Rooms
 from app.repositories.base import BaseRepository
@@ -15,9 +18,12 @@ class HotelRepo(BaseRepository):
     db_model = Hotels
 
     one_read_schema = OneHotelReadSchema
+    one_read_join_schema = OneHotelWithJoinReadSchema
     many_read_schema = ManyHotelsReadSchema
+    one_created_read_schema = OneCreatedHotelReadSchema
+    one_updated_read_schema = OneUpdatedHotelReadSchema
+    one_deleted_read_schema = OneDeletedHotelReadSchema
     create_schema = HotelCreateSchema
-    one_delete_schema = HotelDeleteSchema
 
     filter_set = HotelsFiltersSet
 
@@ -54,5 +60,5 @@ class HotelRepo(BaseRepository):
         )
 
     @BaseRepository.catcher
-    def _model_validate_for_getting_object_with_join(self, *objects) -> one_read_schema:
-        return self.one_read_schema(rooms_quantity=objects[1], **objects[0].__dict__)
+    def _model_validate_for_getting_object_with_join(self, *objects) -> one_read_join_schema:
+        return self.one_read_join_schema(rooms_quantity=objects[1], **objects[0].__dict__)
