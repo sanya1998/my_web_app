@@ -26,6 +26,7 @@ from app.common.schemas.booking import (
     OneDeletedBookingReadSchema,
     OneUpdatedBookingReadSchema,
 )
+from app.common.tasks.email import send_booking_notify_email
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/bookings", tags=["Bookings"])
@@ -37,6 +38,8 @@ async def create_booking_for_current_user(
 ) -> OneCreatedBookingReadSchema:
     try:
         booking = await booking_service.create(booking_input, user_id=user.id)
+        booking_dict = booking.model_dump()
+        send_booking_notify_email.delay(booking_dict, user.email)
         return booking
     except NotFoundServiceError:
         raise NotFoundApiError
