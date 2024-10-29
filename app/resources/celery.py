@@ -4,6 +4,9 @@ from celery import Celery
 celery = Celery(
     "tasks",
     broker=settings.CELERY_BROKER_URL,
-    include=["app.common.tasks.img"],
+    include=[
+        "app.common.tasks.img",
+        "app.common.tasks.email",
+    ],
 )
 celery.conf.broker_connection_retry_on_startup = True
