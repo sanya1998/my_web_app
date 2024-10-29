@@ -7,5 +7,9 @@ class CelerySettings(BaseSettings):
     """
 
     CELERY_BROKER_URL: str
-    CELERY_BROKER_HOST: str
-    CELERY_BROKER_PORT: int
+    #
+    # CELERY_WORKER_HOST: str  # TODO: связать
+    # CELERY_WORKER_PORT: int  # TODO: связать
+    #
+    # CELERY_FLOWER_HOST: str  # TODO: связать
+    # CELERY_FLOWER_PORT: int  # TODO: связать

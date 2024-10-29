@@ -9,7 +9,7 @@ from pydantic_settings import SettingsConfigDict
 class Settings(ApiSettings, DbSettings, HashSettings, CelerySettings, EmailSettings):
     TEST: bool = False
 
-    model_config = SettingsConfigDict(env_file=".envs/local.env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file="envs/local.env", env_file_encoding="utf-8")
 
 
 settings = Settings()
