@@ -12,7 +12,7 @@
 3. Указать путь до скрипта `manage.py`
 4. Добавить аргумент (для runserver: "runserver"; для run_consumer: "run-consumer")
 5. Указать рабочую директорию - корень проекта
-6. Указать путь до одного из .env-файлов в директории `.envs/`
+6. Указать путь до одного из .env-файлов в директории `envs/`
 7. Запустить Debug
 
 Некоторые команды из Makefile не запускаются через конфигурацию Makefile, т.к. там не подключается виртуальное окружение.
@@ -22,13 +22,13 @@
 3. Ввести команду в текстовое поле, например `make alembic_upgrade_head`
 4. Выполнить конфигурацию
 
-Запустить celery:
+Запустить celery worker:
 
-`make up-celery`
+`make up-celery-worker`
 
-Запретить отслеживать изменения в .env-файлах. 
+Запустить celery flower:
 
-`git update-index --assume-unchanged .envs/*`
+`make up-celery-flower`
 
 Проект разрабатывается с помощью курса https://stepik.org/course/153849/promo
 
@@ -65,3 +65,4 @@ TODO:
 36) Приложения, консьюмеры и тд из manage.py запустить в докере (+celery)
 37) Для celery можно почитать https://github.com/celery/celery/issues/8724, чтобы задать корректно разрешения
 38) Залесть на сайт docker на python (почитать про alpine, bookworm и тд)
+39) Flower не показывает задачи со state "started". Только после выполнения показывает задачи со state "success"

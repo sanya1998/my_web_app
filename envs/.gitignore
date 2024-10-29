@@ -1,0 +1,7 @@
+# Ignore everything in this directory
+*
+# Except this file
+!.gitignore
+# TODO: !example.env or !local.env
+# Этот файл нужен также для того, чтобы директория попала в git,
+# чтобы после клонирования её не нужно было создавать вручную.

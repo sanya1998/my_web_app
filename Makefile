@@ -18,7 +18,7 @@ linters-check: isort-check black-check flake8-check
 linters: black isort flake8-check
 
 set_local_env:
-	export $(grep -v '^#' .envs/local.env | xargs)
+	export $(grep -v '^#' envs/local.env | xargs)
 
 alembic_create_first_revision:
 	alembic revision --autogenerate -m "Initial migration"
@@ -35,8 +35,11 @@ forward_migrations_head_local: set_local_env alembic_upgrade_head
 
 rollback_one_migration_local: set_local_env alembic_downgrade_1
 
-up-celery:
+up-celery-worker:
 	celery --app app.resources.celery:celery worker --loglevel=INFO --pool=solo
 
+up-celery-flower:
+	celery --app app.resources.celery:celery flower
+
 up-services:
-	docker-compose --env-file .envs/local.env up -d postgres redis celery
+	docker-compose --env-file envs/local.env up -d postgres redis celery
