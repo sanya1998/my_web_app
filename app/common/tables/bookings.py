@@ -14,4 +14,8 @@ class Bookings(BaseTable):
     total_days = Column(Integer, Computed("date_to - date_from"))
     total_cost = Column(Integer, Computed("(date_to - date_from) * price"))
 
-    room = relationship(Rooms, backref="bookings")
+    room = relationship(Rooms, back_populates="bookings")
+    user = relationship(Users, back_populates="bookings")  # TODO: Users.bookings => ошибка при запуске
+
+    def __str__(self):
+        return f"Booking #{self.id}"

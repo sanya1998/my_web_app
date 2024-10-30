@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 
-def add_all_middlewares(app: FastAPI):
+def add_middlewares(app: FastAPI):
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.ALLOW_ORIGINS_REGEX,
