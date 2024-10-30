@@ -44,14 +44,14 @@ class BaseRepository:
     @catcher
     async def execute(self, statement: Union[ReturningInsert, Select, Update, Delete]) -> Result:
         try:
-            print(statement.compile(compile_kwargs={"literal_binds": True}))
+            print(statement.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
             return await self.session.execute(statement)
         except ConnectionRefusedError:
             raise ConnectionRefusedRepoError
         except SQLAlchemyError:
             # TODO: 1) to logs
             # TODO: 2) SQLAlchemyError не такой содержательный, как если без него
-            print(statement.compile(compile_kwargs={"literal_binds": True}))
+            print(statement.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
             raise WrongQueryError
 
     @catcher
@@ -103,6 +103,7 @@ class BaseRepository:
 
     @catcher
     def _model_validate_for_getting_object_with_join(self, *objects) -> one_read_join_schema:
+        # TODO: мб получится без objects[0] и objects[1], если sqlalchemy правильно объяснить связи?
         return self.one_read_join_schema.model_validate(objects[0])
 
     @catcher
@@ -161,12 +162,7 @@ class BaseRepository:
 
     @catcher
     async def update(self, data: update_schema, **filters) -> one_updated_read_schema:
-        query = (
-            update(self.db_model)
-            .filter_by(**filters)
-            .values(**data.model_dump())
-            .returning(self.db_model)
-        )
+        query = update(self.db_model).filter_by(**filters).values(**data.model_dump()).returning(self.db_model)
         result = await self.execute(query)
         await self.session.commit()
         try:

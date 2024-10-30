@@ -15,6 +15,10 @@
 6. Указать путь до одного из .env-файлов в директории `envs/`
 7. Запустить Debug
 
+Swagger: `http://localhost:8010/docs`
+
+Панель администратора: `http://localhost:8010/admin/`
+
 Некоторые команды из Makefile не запускаются через конфигурацию Makefile, т.к. там не подключается виртуальное окружение.
 Запуск таких команд из Makefile в PyCharm:
 1. Создать конфигурацию для Shell Script
@@ -66,3 +70,5 @@ TODO:
 39) Flower не показывает задачи со state "started". Только после выполнения показывает задачи со state "success"
 40) Поработать с двумя очередями celery https://habr.com/ru/articles/269347/
 41) dump.sql у всех пользователей в пароли прописать хеши паролей, а не текст
+42) Почитать доку https://aminalaee.dev/sqladmin/
+43) Понять разницу backref и back_populates в sqlalchemy.orm.relationship

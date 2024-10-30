@@ -1,0 +1,10 @@
+from app.admin.views.base import BaseView
+from app.common.helpers.db import get_columns_by_table
+from app.common.tables import Rooms
+
+
+class RoomsView(BaseView, model=Rooms):
+    name = "Номер"
+    name_plural = "Номера"
+
+    column_list = [*get_columns_by_table(Rooms), Rooms.hotel]
