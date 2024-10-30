@@ -30,9 +30,10 @@ from pydantic import SecretStr
 
 class AuthorizationService(BaseService):
     @BaseService.catcher
-    def __init__(self, user_repo: UserRepo):
+    def __init__(self, user_repo: UserRepo, response: Response):
         super().__init__()
         self.user_repo = user_repo
+        self.response = response
 
     @BaseService.catcher
     def get_password_hash(self, password: SecretStr) -> str:
@@ -78,8 +79,10 @@ class AuthorizationService(BaseService):
         if await self.user_repo.is_exists(email=user_input.email):
             raise AlreadyExistsServiceError
         hashed_password_input = self.get_password_hash(user_input.raw_password)
-        new_user = UserCreateSchema(email=user_input.email, hashed_password=hashed_password_input)
-        return await self.user_repo.create(new_user)
+        new_user_create_schema = UserCreateSchema(email=user_input.email, hashed_password=hashed_password_input)
+        new_user = await self.user_repo.create(new_user_create_schema)
+        self.create_and_remember_access_token(email=user_input.email)
+        return new_user
 
     @BaseService.catcher
     async def sign_in(self, user_input: UserInputSchema):
@@ -90,13 +93,14 @@ class AuthorizationService(BaseService):
         hashed_password_input = self.get_password_hash(user_input.raw_password)
         if hashed_password_db != hashed_password_input:
             raise UnauthorizedServiceError
+        self.create_and_remember_access_token(email=user_input.email)
 
     @BaseService.catcher
-    async def sign_out(self, response: Response):
-        response.delete_cookie(settings.JWT_COOKIE_NAME)
+    async def sign_out(self):
+        self.response.delete_cookie(settings.JWT_COOKIE_NAME)
 
     @BaseService.catcher
-    def create_and_remember_access_token(self, response: Response, email: str):
+    def create_and_remember_access_token(self, email: str):
         access_token = self.create_access_token(data=dict(sub=email))
-        response.set_cookie(key=settings.JWT_COOKIE_NAME, value=access_token, httponly=True)
+        self.response.set_cookie(key=settings.JWT_COOKIE_NAME, value=access_token, httponly=True)
         return access_token
