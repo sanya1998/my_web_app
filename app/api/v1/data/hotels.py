@@ -1,6 +1,6 @@
 from typing import List
 
-from app.common.dependencies.auth.moderator import CurrentModeratorUserDep
+from app.common.dependencies.auth.moderator import ModeratorUserDep
 from app.common.dependencies.filters_input.hotels import HotelsFiltersDep
 from app.common.dependencies.input.hotels import (
     HotelInputCreateDep,
@@ -43,7 +43,7 @@ cache = CacheService(
 async def create_hotel_for_moderator(
     hotel_input: HotelInputCreateDep,
     hotel_repo: HotelRepoDep,
-    moderator: CurrentModeratorUserDep,
+    moderator: ModeratorUserDep,
 ) -> OneCreatedHotelReadSchema:
     try:
         hotel_create = HotelCreateSchema.model_validate(hotel_input)
@@ -82,7 +82,7 @@ async def update_hotel_for_moderator(
     object_id: int,
     hotel_input: HotelInputUpdateDep,
     hotel_repo: HotelRepoDep,
-    moderator: CurrentModeratorUserDep,
+    moderator: ModeratorUserDep,
 ) -> OneUpdatedHotelReadSchema:
     try:
         hotel_update = HotelUpdateSchema.model_validate(hotel_input)
@@ -98,7 +98,7 @@ async def update_hotel_for_moderator(
 
 @router.delete("/{object_id}/for_moderator")
 async def delete_hotel_for_moderator(
-    object_id: int, hotel_repo: HotelRepoDep, moderator: CurrentModeratorUserDep
+    object_id: int, hotel_repo: HotelRepoDep, moderator: ModeratorUserDep
 ) -> OneDeletedHotelReadSchema:
     try:
         deleted_hotel = await hotel_repo.delete_object(id=object_id)

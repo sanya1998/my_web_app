@@ -17,3 +17,23 @@ async_session = async_sessionmaker(
     # autocommit=False,
     autoflush=True,
 )
+
+
+def with_session(func):
+    """
+    @with_session
+    async def func(arg, session, kwarg=None):
+        await session.execute("select * from table limit 2")
+
+    await func(1, kwarg=2)
+    """
+
+    async def wrapper(*args, **kwargs):
+        try:
+            async with async_session() as session:
+                return await func(*args, session=session, **kwargs)
+        except Exception as e:
+            await session.rollback()
+            raise e
+
+    return wrapper

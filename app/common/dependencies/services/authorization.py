@@ -19,8 +19,5 @@ def get_authorization_service(user_repo: UserRepoDep, request: Request):
 AuthorizationServiceDep = Annotated[AuthorizationService, Depends(get_authorization_service)]
 
 
-async def get_authorization_service_by_request_and_session(
-    request: Request, session: AsyncSession
-) -> AuthorizationService:
-    auth_service = get_authorization_service(user_repo=get_user_repo(session=session), request=request)
-    return auth_service
+def get_authorization_service_by_request_and_session(request: Request, session: AsyncSession) -> AuthorizationService:
+    return get_authorization_service(user_repo=get_user_repo(session=session), request=request)

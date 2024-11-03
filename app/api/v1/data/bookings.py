@@ -1,7 +1,7 @@
 from typing import List
 
 from app.common.dependencies.auth.base import CurrentUserDep
-from app.common.dependencies.auth.manager import CurrentManagerUserDep
+from app.common.dependencies.auth.manager import ManagerUserDep
 from app.common.dependencies.filters_input.bookings import BookingsFiltersDep
 from app.common.dependencies.input.bookings import (
     BookingInputCreateDep,
@@ -76,7 +76,7 @@ async def get_booking_for_current_user(
 
 @router.get("/{object_id}/for_manager")
 async def get_booking_for_manager(
-    object_id: int, booking_repo: BookingRepoDep, manager: CurrentManagerUserDep
+    object_id: int, booking_repo: BookingRepoDep, manager: ManagerUserDep
 ) -> OneBookingWithJoinReadSchema:
     try:
         return await booking_repo.get_object_with_join(id=object_id)
@@ -93,7 +93,7 @@ async def update_booking_for_manager(
     object_id: int,
     booking_input: BookingInputUpdateDep,
     booking_service: BookingServiceDep,
-    manager: CurrentManagerUserDep,
+    manager: ManagerUserDep,
 ) -> OneUpdatedBookingReadSchema:
     try:
         return await booking_service.update(booking_input, booking_id=object_id)
@@ -105,7 +105,7 @@ async def update_booking_for_manager(
 
 @router.delete("/{object_id}/for_manager")
 async def delete_booking_for_manager(
-    object_id: int, booking_repo: BookingRepoDep, manager: CurrentManagerUserDep
+    object_id: int, booking_repo: BookingRepoDep, manager: ManagerUserDep
 ) -> OneDeletedBookingReadSchema:
     try:
         return await booking_repo.delete_object(id=object_id)
