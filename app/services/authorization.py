@@ -18,7 +18,6 @@ from app.common.tables import Users
 from app.config.main import settings
 from app.repositories.user import UserRepo
 from app.services.base import BaseService
-from fastapi import Response
 from jwt.exceptions import (
     ExpiredSignatureError,
     InvalidAlgorithmError,
@@ -26,14 +25,15 @@ from jwt.exceptions import (
     MissingRequiredClaimError,
 )
 from pydantic import SecretStr
+from starlette.requests import Request
 
 
 class AuthorizationService(BaseService):
     @BaseService.catcher
-    def __init__(self, user_repo: UserRepo, response: Response):
+    def __init__(self, user_repo: UserRepo, request: Request):
         super().__init__()
         self.user_repo = user_repo
-        self.response = response
+        self.request = request
 
     @BaseService.catcher
     def get_password_hash(self, password: SecretStr) -> str:
@@ -97,10 +97,10 @@ class AuthorizationService(BaseService):
 
     @BaseService.catcher
     async def sign_out(self):
-        self.response.delete_cookie(settings.JWT_COOKIE_NAME)
+        self.request.session.pop(settings.JWT_COOKIE_NAME)
 
     @BaseService.catcher
     def create_and_remember_access_token(self, email: str):
         access_token = self.create_access_token(data=dict(sub=email))
-        self.response.set_cookie(key=settings.JWT_COOKIE_NAME, value=access_token, httponly=True)
+        self.request.session.update({settings.JWT_COOKIE_NAME: access_token})
         return access_token

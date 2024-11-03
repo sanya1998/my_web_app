@@ -26,9 +26,11 @@ VALUES
 INSERT INTO
     users (id, email, roles, hashed_password)
 VALUES
-    (1, 'user@example.com', array ['admin', 'manager', 'moderator'], '07ab59f4731b0790d0acfded6a52d2c53e7e3c6a1e241f6dfe3a41f3072e07fb'),
-    (2, 'fedor@moloko.ru', array []::varchar[], 'tut_budet_hashed_password_1'),
-    (3, 'sharik@moloko.ru', array []::varchar[], 'tut_budet_hashed_password_2');
+    (1, 'user@example.com', array ['admin', 'manager', 'moderator'], '07ab59f4731b0790d0acfded6a52d2c53e7e3c6a1e241f6dfe3a41f3072e07fb'), -- Для свагера, чтоб оставлять пароль по умолчанию
+    (2, 'user123@example.com', array ['admin'], 'ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'), -- Для админки, чтобы запомнить легкий пароль в браузере
+    (3, 'fedor@moloko.ru', array []::varchar[], 'tut_budet_hashed_password_1'),
+    (4, 'sharik@moloko.ru', array []::varchar[], 'tut_budet_hashed_password_2');
+
 
 INSERT INTO
     bookings (room_id, user_id, date_from, date_to, price)

@@ -72,3 +72,4 @@ TODO:
 41) dump.sql у всех пользователей в пароли прописать хеши паролей, а не текст
 42) Почитать доку https://aminalaee.dev/sqladmin/
 43) Понять разницу backref и back_populates в sqlalchemy.orm.relationship
+44) Сравнить request.session.update({settings.JWT_COOKIE_NAME: access_token}) и response.set_cookie(key=settings.JWT_COOKIE_NAME, value=access_token, httponly=True)
