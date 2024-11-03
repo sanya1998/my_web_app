@@ -1,3 +1,4 @@
+from app.admin.auth import authentication_backend
 from app.admin.views.bookings import BookingsView
 from app.admin.views.hotels import HotelsView
 from app.admin.views.rooms import RoomsView
@@ -8,7 +9,7 @@ from sqladmin import Admin
 
 
 def add_admin(app: FastAPI):
-    admin = Admin(app=app, engine=engine)  # TODO: мб session_maker ?
+    admin = Admin(app=app, engine=engine, authentication_backend=authentication_backend)  # TODO: мб session_maker ?
     admin.add_view(UsersView)
     admin.add_view(HotelsView)
     admin.add_view(RoomsView)
