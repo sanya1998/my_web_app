@@ -7,10 +7,10 @@ from app.common.schemas.user import OneUserReadSchema
 from fastapi import Depends
 
 
-async def get_current_manager_user(user: Annotated[OneUserReadSchema, Depends(get_current_user)]):
+async def get_manager_user(user: Annotated[OneUserReadSchema, Depends(get_current_user)]):
     if RolesEnum.MANAGER not in user.roles:
         raise ForbiddenApiError
     return user
 
 
-CurrentManagerUserDep = Annotated[OneUserReadSchema, Depends(get_current_manager_user)]
+ManagerUserDep = Annotated[OneUserReadSchema, Depends(get_manager_user)]
