@@ -1,8 +1,11 @@
+from app.common.constants.environments import Environments
 from app.config.main import settings
+from sqlalchemy import AsyncAdaptedQueuePool, NullPool
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 engine = create_async_engine(
     url=settings.POSTGRES_URL,
+    poolclass=NullPool if settings.ENVIRONMENT == Environments.TEST else AsyncAdaptedQueuePool,
     # json_serializer=lambda val: json.dumps(val, default=str),
     # pool_size=settings.DB_POOL_SIZE,
     # max_overflow=settings.DB_MAX_OVERFLOW,

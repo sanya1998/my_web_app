@@ -32,8 +32,8 @@ INSERT INTO
 VALUES
     (1, 'user@example.com', array ['admin', 'manager', 'moderator'], '07ab59f4731b0790d0acfded6a52d2c53e7e3c6a1e241f6dfe3a41f3072e07fb'), -- Для свагера, чтоб оставлять пароль по умолчанию
     (2, 'user123@example.com', array ['admin'], 'ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'), -- Для админки, чтобы запомнить легкий пароль в браузере
-    (3, 'fedor@moloko.ru', array []::varchar[], 'tut_budet_hashed_password_1'),
-    (4, 'sharik@moloko.ru', array []::varchar[], 'tut_budet_hashed_password_2');
+    (3, 'fedor@moloko.ru', array []::varchar[], '962e0437e05964f5983ac12fa343324207a3bbde54779c83b5b9cc3ee2b3143f'),
+    (4, 'sharik@moloko.ru', array []::varchar[], 'b757f284ca76df96dd2d70521a6af2005c335e5a8e3ea074b7cdbaefbb359387');
 SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));
 
 
