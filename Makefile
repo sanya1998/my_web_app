@@ -42,4 +42,4 @@ up-celery-flower:
 	celery --app app.resources.celery:celery flower
 
 up-services:
-	docker-compose --env-file envs/local.env up -d postgres redis celery
+	docker-compose --env-file envs/local.env up -d postgres redis

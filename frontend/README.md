@@ -5,6 +5,7 @@
 1. Установить Node.js из https://nodejs.org
 2. 
 ```
+$ python manage.py runserver 
 $ cd frontend
 $ npx create-react-app my_front
 $ npm install axios --save
@@ -17,6 +18,7 @@ $ npm start
 
 ### Запуск каждый раз
 ```
+$ python manage.py runserver
 $ cd frontend/my_front
 $ npm start
 ```

@@ -7,6 +7,8 @@ VALUES
     (4, 'Гостиница Сыктывкар', 'Коми, адрес', array ['Тренажёрный зал'], 4),
     (5, 'Palace', 'Республика Коми, адрес', array ['Кондиционер'], 5),
     (6, 'Bridge Resort', 'Поселок Сириус, улица, дом', array ['Wi-Fi'], 6);
+SELECT setval(pg_get_serial_sequence('hotels', 'id'), (SELECT MAX(id) FROM hotels));
+
 
 INSERT INTO
     rooms (id, hotel_id, name, price, quantity, services, image_id)
@@ -22,6 +24,8 @@ VALUES
     (9, 5, 'Номер стандарт с 2 односпальными кроватями', 13500, 4, array []::varchar[], 15),
     (10, 5, 'Номер полулюкс премиум (с завтраком)', 15500, 4, array []::varchar[], 16),
     (11, 6, 'Стандарт (типовой корпус)', 26500, 4, array []::varchar[], 17);
+SELECT setval(pg_get_serial_sequence('rooms', 'id'), (SELECT MAX(id) FROM rooms));
+
 
 INSERT INTO
     users (id, email, roles, hashed_password)
@@ -30,6 +34,7 @@ VALUES
     (2, 'user123@example.com', array ['admin'], 'ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'), -- Для админки, чтобы запомнить легкий пароль в браузере
     (3, 'fedor@moloko.ru', array []::varchar[], 'tut_budet_hashed_password_1'),
     (4, 'sharik@moloko.ru', array []::varchar[], 'tut_budet_hashed_password_2');
+SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));
 
 
 INSERT INTO
@@ -38,3 +43,4 @@ VALUES
     (1, 3, '2024-07-15', '2024-07-30', 24500),
     (7, 2, '2024-07-12', '2024-07-21', 4300),
     (3, 1, '2024-07-01', '2024-07-14', 5300);
+SELECT setval(pg_get_serial_sequence('bookings', 'id'), (SELECT MAX(id) FROM bookings));

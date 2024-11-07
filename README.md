@@ -6,6 +6,10 @@
 
 `make forward_migrations_head_local`
 
+Запустить API-сервер:
+
+`python manage.py runserver`
+
 Первый Debug в PyCharm:
 1. Создать новую конфигурацию для Python
 2. Выбрать интерпретатор Python
@@ -20,7 +24,7 @@ Swagger: `http://localhost:8010/docs`
 Панель администратора: `http://localhost:8010/admin/`
 
 Некоторые команды из Makefile не запускаются через конфигурацию Makefile, т.к. там не подключается виртуальное окружение.
-Запуск таких команд из Makefile в PyCharm:
+Запуск таких команд из Makefile в PyCharm (TODO: через python-скрипт):
 1. Создать конфигурацию для Shell Script
 2. Выбрать Script Text
 3. Ввести команду в текстовое поле, например `make alembic_upgrade_head`
@@ -33,6 +37,10 @@ Swagger: `http://localhost:8010/docs`
 Запустить celery flower:
 
 `make up-celery-flower`
+
+Очень простой фронт (2 вида):
+- открыть в браузере http://localhost:8010/api/v1/pages/hotels
+- см. frontend/README.md (react)
 
 Проект разрабатывается с помощью курса https://stepik.org/course/153849/promo
 
@@ -61,6 +69,7 @@ TODO:
 27) pydantic_factory можно использовать для быстрой генерации данных
 30) Одна из ошибок не ловилось в ручке catcher-ом. Из-за отсутствия `await` ошибка в `return booking_service.create_booking(booking_input, user_id=user.id)`
 31) Заново создать бд, запустить dump.sql скрипт. Он создаст 3 пользователя. Потом с помощью ручки sign_up добавить пользователя. Будет ругаться на попытку сгенерировать существующий id. 3 раза ручка возвращает ошибку, а на 4ый раз создает
+32) дело в sqlalchemy или в postgres?
 32) поиграть с ручками, когда таблицы будут пустыми
 33) во все методы прописать типы для параметров
 35) почитать про aioredis[hiredis], в проекте используется redis.asyncio
@@ -73,3 +82,5 @@ TODO:
 42) Почитать доку https://aminalaee.dev/sqladmin/
 43) Понять разницу backref и back_populates в sqlalchemy.orm.relationship
 44) Сравнить request.session.update({settings.JWT_COOKIE_NAME: access_token}) и response.set_cookie(key=settings.JWT_COOKIE_NAME, value=access_token, httponly=True)
+45) Подсчитываемые поля бд сделать только для чтения в админке
+46) Конфигурационные файлы ini, может быть, в одну директорию https://stackoverflow.com/questions/12756976/use-different-ini-file-for-alembic-ini или в pyproject.toml
