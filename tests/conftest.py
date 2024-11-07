@@ -6,7 +6,7 @@ from app.common.constants.environments import Environments
 from app.common.tables.base import metadata
 from app.config.main import settings
 from app.resources.postgres import async_session, engine
-from httpx import AsyncClient
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +15,6 @@ ALLOWED_POSTGRES_HOSTS = ["localhost"]  # TODO: возможно, для ci/cd �
 
 @pytest.fixture(scope="session", autouse=True)
 async def prepare_db():
-    # TODO: Если это не выполняется, то надо остановить все тесты. pytest.exit("")
     assert settings.ENVIRONMENT == Environments.TEST
     assert settings.POSTGRES_HOST in ALLOWED_POSTGRES_HOSTS
 
@@ -34,6 +33,6 @@ async def session() -> AsyncIterator[AsyncSession]:
 
 
 @pytest.fixture(scope="function")
-async def client():
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+async def client() -> AsyncClient:
+    async with AsyncClient(transport=ASGITransport(app), base_url="http://test") as ac:
         yield ac

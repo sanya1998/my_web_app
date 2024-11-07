@@ -43,3 +43,6 @@ up-celery-flower:
 
 up-services:
 	docker-compose --env-file envs/local.env up -d postgres redis
+
+run-tests:
+	pytest -v -s
