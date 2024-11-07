@@ -1,6 +1,6 @@
 from app.config.main import settings
 from fastapi import Query
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel, ConfigDict, computed_field
 
 
 class BaseFiltersInput(BaseModel):
@@ -13,5 +13,4 @@ class BaseFiltersInput(BaseModel):
     def pagination(self) -> tuple[int, int] | None:
         return self.limit, self.offset
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)

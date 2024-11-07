@@ -1,5 +1,4 @@
-from typing import Literal
-
+from app.common.constants.environments import Environments
 from app.config.api import ApiSettings
 from app.config.celery import CelerySettings
 from app.config.db import DbSettings
@@ -9,7 +8,7 @@ from pydantic_settings import SettingsConfigDict
 
 
 class Settings(ApiSettings, DbSettings, HashSettings, CelerySettings, EmailSettings):
-    ENVIRONMENT: Literal["test", "local", "dev", "prod"]  # TODO: мб enum ? здесь и там, где будет использоваться
+    ENVIRONMENT: Environments
 
     model_config = SettingsConfigDict(env_file="envs/local.env", env_file_encoding="utf-8")
 

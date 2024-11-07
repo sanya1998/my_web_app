@@ -5,10 +5,7 @@ from app.common.dependencies.services.authorization import (
     get_authorization_service_by_request_and_session,
 )
 from app.common.exceptions.api.base import BaseApiError
-from app.common.exceptions.api.forbidden import ForbiddenApiError
-from app.common.exceptions.api.unauthorized import MissingTokenApiError, ExpiredSignatureApiError
 from app.common.exceptions.services.base import BaseServiceError
-from app.common.exceptions.services.unauthorized import ExpiredSignatureServiceError
 from app.common.schemas.user import UserInputSchema
 from app.config.main import settings
 from app.resources.postgres import with_session
