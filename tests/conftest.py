@@ -1,6 +1,6 @@
 from typing import AsyncIterator
 
-import pytest
+import pytest_asyncio
 from app.app import app
 from app.common.constants.environments import Environments
 from app.common.tables.base import metadata
@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 ALLOWED_POSTGRES_HOSTS = ["localhost"]  # TODO: возможно, для ci/cd здесь понадобится postgres
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(loop_scope="session", scope="session", autouse=True)
 async def prepare_db():
     assert settings.ENVIRONMENT == Environments.TEST
     assert settings.POSTGRES_HOST in ALLOWED_POSTGRES_HOSTS
@@ -26,13 +26,13 @@ async def prepare_db():
         [await conn.execute(text(cmd)) for cmd in commands.split(sep=";") if cmd.strip()]
 
 
-@pytest.fixture(scope="function")
-async def session() -> AsyncIterator[AsyncSession]:
-    async with async_session() as session:
-        yield session
-
-
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(loop_scope="session", scope="session")
 async def client() -> AsyncClient:
     async with AsyncClient(transport=ASGITransport(app), base_url="http://test") as ac:
         yield ac
+
+
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
+async def session() -> AsyncIterator[AsyncSession]:
+    async with async_session() as _session:
+        yield _session
