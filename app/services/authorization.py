@@ -75,7 +75,7 @@ class AuthorizationService(BaseService):
         return user
 
     @BaseService.catcher
-    async def sign_up(self, user_input: UserInputSchema):
+    async def sign_up(self, user_input: UserInputSchema) -> OneUserReadSchema:
         if await self.user_repo.is_exists(email=user_input.email):
             raise AlreadyExistsServiceError
         hashed_password_input = self.get_password_hash(user_input.raw_password)

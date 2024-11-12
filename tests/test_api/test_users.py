@@ -1,4 +1,5 @@
 import pytest
+from app.common.schemas.user import OneUserReadSchema
 from httpx import AsyncClient
 from starlette import status
 
@@ -35,3 +36,8 @@ async def test_sign_in(client: AsyncClient, email, password, status_code):
         data={"email": email, "raw_password": password},
     )
     assert response.status_code == status_code
+
+
+async def test_get_users(admin_user: OneUserReadSchema, client: AsyncClient):
+    response = await client.get(f"{BASE_URL}for_admin")
+    assert response.status_code == status.HTTP_200_OK
