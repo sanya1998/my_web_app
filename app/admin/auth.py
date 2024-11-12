@@ -26,6 +26,7 @@ class AdminAuth(AuthenticationBackend):
         try:
             auth_service = get_authorization_service_by_request_and_session(request, session)
             await auth_service.sign_in(UserInputSchema(email=email, raw_password=password))
+            # todo проверить, что роль админа или модератора (await get_admin_or_moderator_by_request(request))
             return True
         except BaseServiceError:
             return False

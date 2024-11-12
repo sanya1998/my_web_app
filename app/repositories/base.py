@@ -44,14 +44,14 @@ class BaseRepository:
     @catcher
     async def execute(self, statement: Union[ReturningInsert, Select, Update, Delete]) -> Result:
         try:
-            print(statement.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
+            # print(statement.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
             return await self.session.execute(statement)
         except ConnectionRefusedError:
             raise ConnectionRefusedRepoError
         except SQLAlchemyError:
             # TODO: 1) to logs
             # TODO: 2) SQLAlchemyError не такой содержательный, как если без него
-            print(statement.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
+            # print(statement.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
             raise WrongQueryError
 
     @catcher
