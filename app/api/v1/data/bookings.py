@@ -59,6 +59,16 @@ async def get_bookings_for_current_user(
         raise BaseApiError
 
 
+@router.get("/for_manager")
+async def get_bookings_for_manager(
+    raw_filters: BookingsFiltersDep, user_id: int, booking_repo: BookingRepoDep, manager: ManagerUserDep
+) -> List[ManyBookingsReadSchema]:
+    try:
+        return await booking_repo.get_objects(raw_filters=raw_filters, user_id=user_id)
+    except BaseRepoError:
+        raise BaseApiError
+
+
 @router.get("/{object_id}/for_current_user")
 async def get_booking_for_current_user(
     object_id: int, booking_repo: BookingRepoDep, user: CurrentUserDep

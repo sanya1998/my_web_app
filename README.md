@@ -86,3 +86,4 @@ TODO:
 46) Конфигурационные файлы ini, может быть, в одну директорию https://stackoverflow.com/questions/12756976/use-different-ini-file-for-alembic-ini или в pyproject.toml
 47) Возможно, правильнее использовать статус код HTTP_201_CREATED после создания
 48) Перед использованием соединения пингует БД (SELECT 1), если соединение мертво, оно будет закрыто DB_POOL_PRE_PING: bool = True
+49) В декортаор роутера вставлять dependencies=, которые не используются внутри ендпоинта

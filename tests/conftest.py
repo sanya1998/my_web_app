@@ -3,7 +3,6 @@ from typing import AsyncIterator
 import pytest_asyncio
 from app.app import app
 from app.common.constants.environments import Environments
-from app.common.schemas.user import OneUserReadSchema
 from app.common.tables.base import metadata
 from app.config.main import settings
 from app.resources.postgres import async_session, engine
@@ -40,29 +39,40 @@ async def client() -> AsyncClient:
         yield ac
 
 
-async def sign_in(client: AsyncClient, email: str, raw_password: str):
+# TODO: в идеале использовать только client, но при этом должен отрабатывать test_multy_clients
+client_for_admin = client_for_manager = client_for_user = client
+
+
+async def sign_in(client: AsyncClient, email: str, raw_password: str, expected_status=status.HTTP_200_OK):
     """
-    Аутентифицирует пользователя и возвращает его
+    Аутентифицирует пользователя
     """
     response_sign_in = await client.post("/api/v1/users/sign_in", data=dict(email=email, raw_password=raw_password))
-    assert response_sign_in.status_code == status.HTTP_200_OK
-
-    response_user = await client.get("/api/v1/users/current")
-    assert response_user.status_code == status.HTTP_200_OK
-    return OneUserReadSchema.model_validate(response_user.json())
+    assert response_sign_in.status_code == expected_status
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def admin_user(client: AsyncClient) -> OneUserReadSchema:
+async def admin_client(client_for_admin: AsyncClient) -> AsyncClient:
     """
     Аутентификация пользователя с правами админа
     """
-    return await sign_in(client=client, email="fedor@moloko.ru", raw_password="hard_password")
+    await sign_in(client=client_for_admin, email="fedor@moloko.ru", raw_password="hard_password")
+    return client_for_admin
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def user(client: AsyncClient) -> OneUserReadSchema:
+async def manager_client(client_for_manager: AsyncClient) -> AsyncClient:
+    """
+    Аутентификация пользователя с правами менеджера
+    """
+    await sign_in(client=client_for_manager, email="kot@pes.ru", raw_password="easy_password")
+    return client_for_manager
+
+
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
+async def user_client(client_for_user: AsyncClient) -> AsyncClient:
     """
     Аутентификация обычного пользователя
     """
-    return await sign_in(client=client, email="sharik@moloko.ru", raw_password="easy_password")
+    await sign_in(client=client_for_user, email="sharik@moloko.ru", raw_password="easy_password")
+    return client_for_user
