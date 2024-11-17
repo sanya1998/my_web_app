@@ -1,11 +1,14 @@
-flake8-check:
-	flake8 --config=linters/.flake8
-
 black-check:
-	black . --config linters/.black --check --diff
+	black . --config linters/.black --check --diff --color
 
 isort-check:
 	isort . --settings-file linters/.isort --check-only  --diff
+
+flake8-check:
+	flake8 --config=linters/.flake8
+
+autoflake-check:
+	autoflake . --config linters/.autoflake
 
 black:
 	black . --config linters/.black
@@ -13,9 +16,16 @@ black:
 isort:
 	isort . --settings-file linters/.isort
 
-linters-check: isort-check black-check flake8-check
+# TODO: verbose не работает на этом примере
+autoflake:
+	autoflake . --config linters/.autoflake --in-place
 
-linters: black isort flake8-check
+#linters-check: black-check isort-check autoflake-check flake8-check  # autoflake долгий
+linters-check: black-check isort-check flake8-check
+
+# autoflake лечит не все проблемы, которые находит flake, поэтому вызывается flake8-check
+#linters: autoflake isort black flake8-check # autoflake долгий
+linters: isort black flake8-check
 
 set_local_env:
 	export $(grep -v '^#' envs/local.env | xargs)
