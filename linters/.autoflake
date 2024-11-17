@@ -1,0 +1,6 @@
+[autoflake]
+recursive=true
+remove-all-unused-imports=true
+exclude =
+    __init__.py:F401
+    frontend/my_front/node_modules/flatted/python/*:E302,E305,E501,E703,E713,E712,E722
