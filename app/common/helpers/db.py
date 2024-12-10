@@ -14,3 +14,8 @@ def get_ordering_enum_by_columns(enum_name="OrderingEnum", *args):
         key_value[name.upper()] = name
         key_value[f"{name.upper()}_"] = f"-{name}"
     return Enum(enum_name, key_value)
+
+
+def get_back_populates(field) -> str:
+    # TODO: если есть возможность, то надо красивее получить
+    return str(field).split(".")[-1]
