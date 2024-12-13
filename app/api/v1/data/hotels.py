@@ -1,5 +1,6 @@
 from typing import List
 
+from app.common.constants.cache_prefixes import HOTELS_CACHE_PREFIX
 from app.common.dependencies.auth.moderator import ModeratorUserDep
 from app.common.dependencies.filters_input.hotels import HotelsFiltersDep
 from app.common.dependencies.input.hotels import (
@@ -22,6 +23,7 @@ from app.common.schemas.hotel import (
     OneHotelWithJoinReadSchema,
     OneUpdatedHotelReadSchema,
 )
+from app.config.main import settings
 from app.services.cache.cache import CacheService
 from app.services.cache.key_builders.listing import (
     build_key_by_listing,
@@ -32,8 +34,8 @@ from fastapi import APIRouter
 
 router = APIRouter(prefix="/hotels", tags=["Hotels"])
 cache = CacheService(
-    prefix_key="Hotels:",
-    expire=60,
+    prefix_key=HOTELS_CACHE_PREFIX,
+    expire=settings.REDIS_CACHE_EXPIRE_HOTELS,
     build_key_for_clear=build_key_by_object_id,
     build_key_pattern_for_clear=build_key_pattern_by_listing,
 )

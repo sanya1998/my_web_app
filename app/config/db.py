@@ -16,7 +16,8 @@ class DbSettings(BaseSettings):
     REDIS_PASSWORD: str
     REDIS_DB: str
     REDIS_MAX_CONNECTIONS: int = 10
-    REDIS_CACHE_EXPIRE: int = 120
+    REDIS_CACHE_EXPIRE_DEFAULT: int = 120
+    REDIS_CACHE_EXPIRE_HOTELS: int = 60
 
     @computed_field
     @property

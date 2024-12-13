@@ -1,29 +1,22 @@
-from itertools import cycle
-
 import redis.asyncio as aioredis
 from app.config.main import settings
 
+pool = aioredis.ConnectionPool.from_url(url=settings.REDIS_URL, max_connections=settings.REDIS_MAX_CONNECTIONS)
 
-class RedisResource:
+
+def with_redis_client(func):
     """
-    Документация redis говорит, что нужно выполнять `await client.aclose()`, если используется redis.asyncio
-    TODO: не создается ли копия клиента при вызове `await RedisResource().new_client()` ?
-    TODO: Не получилось реализовать так, чтоб один раз создать pool, а в дальнейшем создавать только сессии
-    TODO: из-за ошибки при остановке приложения (pool уже закрыт, но снова пытается закрыть)
+    @with_redis_client
+    async def func(arg, redis_client, kwarg=None):
+        pass
+
+    await func(1, kwarg=2)
     """
 
-    def __init__(self):
-        self.client_generator = self._clients_cycle()
+    async def wrapper(*args, **kwargs):
+        redis_client = aioredis.Redis.from_pool(pool)
+        result = await func(*args, redis_client=redis_client, **kwargs)
+        await redis_client.aclose()
+        return result
 
-    @staticmethod
-    async def _clients_cycle():
-        while cycle:
-            client = aioredis.Redis.from_url(url=settings.REDIS_URL)
-            yield client
-            await client.aclose()
-
-    async def new_client(self):
-        return await anext(self.client_generator)
-
-
-get_redis_client = RedisResource().new_client
+    return wrapper

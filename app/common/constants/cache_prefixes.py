@@ -1,0 +1,1 @@
+HOTELS_CACHE_PREFIX = "Hotels:"

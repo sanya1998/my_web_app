@@ -2,7 +2,7 @@ import asyncio
 from typing import Coroutine
 
 
-# TODO: попробовать asyncio.run()
+# TODO: также можно попробовать asyncio.run()
 def execute_async(func: Coroutine):
     """
     Использовать следующим образом:

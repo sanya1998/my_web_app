@@ -29,19 +29,15 @@ class HotelRepo(BaseRepository):
 
     @BaseRepository.catcher
     def _create_query_for_getting_objects(self) -> Select:
-        return (
-            select(get_columns_by_table(self.db_model))
-            .outerjoin(Rooms, Rooms.hotel_id == Hotels.id)
-            .group_by(self.db_model)
-        )
+        return select(get_columns_by_table(self.db_model)).outerjoin(Rooms).group_by(self.db_model)
 
     @BaseRepository.catcher
-    def _append_query_for_getting_objects(self, query: Select) -> Select:
+    def _modify_query_for_getting_objects(self, query: Select) -> Select:
         # TODO: это работает, но мне не нравится, что есть константы, и что pycharm подчеркивает t.name
         joined_tables = {t.name for t in query.columns_clause_froms if hasattr(t, "name")}
 
-        # Если есть join с Rooms и Bookings
-        if "rooms" in joined_tables and "booked_rooms" in joined_tables:
+        # Если есть join с Bookings
+        if "booked_rooms" in joined_tables:
             remain_by_hotel = label("remain_by_hotel", func.sum(Rooms.quantity - func.coalesce(Column("occupied"), 0)))
             query = query.with_only_columns(
                 get_columns_by_table(self.db_model)
@@ -55,7 +51,7 @@ class HotelRepo(BaseRepository):
         return (
             select(self.db_model, label("rooms_quantity", func.count(Rooms.id)))
             .filter_by(**filters)
-            .outerjoin(Rooms, Rooms.hotel_id == self.db_model.id)
+            .outerjoin(Rooms)
             .group_by(self.db_model)
         )
 

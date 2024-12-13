@@ -2,8 +2,8 @@ import pickle
 from functools import wraps
 from typing import Callable, Dict, Tuple
 
-from app.common.helpers.execute_async import execute_async
-from app.resources.cache_redis import get_redis_client
+from app.config.main import settings
+from app.resources.cache_redis import with_redis_client
 from app.services.base import BaseService
 from app.services.cache.key_builders.default import build_key_default
 from redis.asyncio import Redis
@@ -15,11 +15,10 @@ class CacheService(BaseService):
         self,
         *args,
         prefix_key: str = "",
-        expire: int = 60,
+        expire: int = settings.REDIS_CACHE_EXPIRE_DEFAULT,
         build_key: Callable[[Callable, Tuple, Dict], str] = build_key_default,
         build_key_for_clear: Callable[[Callable, Tuple, Dict], str] = build_key_default,
         build_key_pattern_for_clear: Callable[[Callable, Tuple, Dict], str] = build_key_default,
-        client: Redis = execute_async(get_redis_client()),
         **kwargs,
     ):
         """
@@ -35,7 +34,6 @@ class CacheService(BaseService):
         self.build_key = build_key
         self.build_key_for_clear = build_key_for_clear
         self.build_key_pattern_for_clear = build_key_pattern_for_clear
-        self.client = client
 
     @BaseService.catcher
     async def clear(
@@ -68,17 +66,18 @@ class CacheService(BaseService):
             await self.delete_cache_by_pattern(pattern=pattern)
 
     @BaseService.catcher
-    async def delete_cache_by_pattern(self, pattern: str):
-        client = self.client or await get_redis_client()
+    @with_redis_client
+    async def delete_cache_by_pattern(self, pattern: str, redis_client: Redis):
         # TODO: найти способ удаления по паттерну, чтобы выполнить одной командой
-        async for key in client.scan_iter(pattern):
+        async for key in redis_client.scan_iter(pattern):
             await self.delete_cache_by_key(key)
 
     @BaseService.catcher
-    async def delete_cache_by_key(self, key: str):
-        client = self.client or await get_redis_client()
-        await client.delete(key)
+    @with_redis_client
+    async def delete_cache_by_key(self, key: str, redis_client: Redis):
+        await redis_client.delete(key)
 
+    @BaseService.catcher
     def caching(
         self,
         expire: int | None = None,
@@ -95,8 +94,10 @@ class CacheService(BaseService):
 
         def wrapper(func):
             @wraps(func)
+            @with_redis_client
             async def inner(
                 *args,
+                redis_client: Redis,
                 **kwargs,
             ):
                 nonlocal expire, prefix_key, build_key
@@ -105,15 +106,12 @@ class CacheService(BaseService):
                 build_key = build_key or self.build_key
 
                 key = f"{prefix_key}{build_key(func, *args, **kwargs)}"
-
-                client = await get_redis_client()
-                old_serialized_response = await client.get(key)
+                old_serialized_response = await redis_client.get(key)
                 if old_serialized_response is not None:
                     return pickle.loads(old_serialized_response)
                 new_response = await func(*args, **kwargs)
                 serialized_response = pickle.dumps(new_response)
-                await client.set(key, serialized_response, ex=expire)
-
+                await redis_client.set(key, serialized_response, ex=expire)
                 return new_response
 
             return inner
