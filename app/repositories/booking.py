@@ -30,11 +30,11 @@ class BookingRepo(BaseRepository):
 
     @BaseRepository.catcher
     def _create_query_for_getting_object_with_join(self, **filters) -> Select:
-        return select(self.db_model, Rooms).filter_by(**filters).join(Rooms)
+        return select(self.db_model, Rooms).filter_by(**filters).outerjoin(Rooms)
 
     @BaseRepository.catcher
     def _create_query_for_getting_objects(self) -> Select:
-        return select(get_columns_by_table(self.db_model), get_columns_by_table(Rooms)).join(Rooms)
+        return select(get_columns_by_table(self.db_model), get_columns_by_table(Rooms)).outerjoin(Rooms)
 
     @BaseRepository.catcher
     async def get_room_info_by_id_and_dates(self, data: CheckData):
