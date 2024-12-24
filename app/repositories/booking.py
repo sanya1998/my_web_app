@@ -12,7 +12,7 @@ from app.common.schemas.booking import (
 )
 from app.common.tables import Bookings, Rooms
 from app.repositories.base import BaseRepository
-from sqlalchemy import Select, and_, func, label, or_, select
+from sqlalchemy import ColumnElement, Select, and_, func, label, or_, select
 
 
 class BookingRepo(BaseRepository):
@@ -35,6 +35,42 @@ class BookingRepo(BaseRepository):
     @BaseRepository.catcher
     def _create_query_for_getting_objects(self) -> Select:
         return select(get_columns_by_table(self.db_model), get_columns_by_table(Rooms)).outerjoin(Rooms)
+
+    @staticmethod
+    @BaseRepository.catcher
+    def clause_for_checking_dates(check_into, check_out) -> ColumnElement[bool]:
+        """
+        Если выполняется это условие, то планируемые даты задевают существующее бронирование
+            bookings.date_from >= check_into AND bookings.date_from < check_out
+            OR
+            bookings.date_from < check_into AND bookings.date_to > check_into
+        :param check_into: планируемая дата заезда
+        :param check_out: планируемая дата выезда
+        :return:
+        """
+        if check_into and check_out:
+            clause = or_(
+                and_(Bookings.date_from >= check_into, Bookings.date_from < check_out),
+                and_(Bookings.date_from < check_into, Bookings.date_to > check_into),
+            )
+        else:
+            clause = False
+        return clause
+
+    @classmethod
+    @BaseRepository.catcher
+    def query_for_getting_bookings_by_check_dates(cls, check_into, check_out) -> Select:
+        """
+        Создать запрос для получения бронирований, задевающие выбранные (проверяемые) даты заезда и выезда.
+        SELECT bookings.room_id
+        FROM bookings
+        WHERE date_from >= check_into AND date_from < check_out OR date_from < check_into AND date_to > check_into
+        :param check_into: планируемая дата заезда
+        :param check_out: планируемая дата выезда
+        :return: сформированный запрос
+        """
+        booked_rooms = select(Bookings.room_id).where(cls.clause_for_checking_dates(check_into, check_out))
+        return booked_rooms
 
     @BaseRepository.catcher
     async def get_room_info_by_id_and_dates(self, data: CheckData):

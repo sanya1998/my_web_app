@@ -2,7 +2,7 @@ from typing import List
 
 from app.common.dependencies.auth.admin import AdminUserDep
 from app.common.dependencies.auth.base import CurrentUserDep
-from app.common.dependencies.filters_input.users import UsersFiltersDep
+from app.common.dependencies.parameters.users import UsersParametersDep
 from app.common.dependencies.repositories.user import UserRepoDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.repositories.base import BaseRepoError
@@ -14,10 +14,10 @@ get_router = APIRouter()
 
 @get_router.get("/for_admin")
 async def get_users_for_admin(
-    raw_filters: UsersFiltersDep, user_repo: UserRepoDep, admin: AdminUserDep
+    parameters: UsersParametersDep, user_repo: UserRepoDep, admin: AdminUserDep
 ) -> List[OneUserReadSchema]:
     try:
-        return await user_repo.get_objects(raw_filters=raw_filters)
+        return await user_repo.get_objects(parameters=parameters)
     except BaseRepoError:
         raise BaseApiError
 

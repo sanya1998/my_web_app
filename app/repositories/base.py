@@ -1,10 +1,10 @@
-from typing import Any, List, Sequence, Union
+from typing import Any, List, Union
 
-from app.common.dependencies.filters_input.base import BaseFiltersInput
+from app.common.dependencies.parameters.base import Parameters
 from app.common.exceptions.catcher import catch_exception
 from app.common.exceptions.repositories.base import BaseRepoError
 
-# TODO: сделать в одну строку. Пусть длина импорта будет равна длина обычной строке
+# TODO: сделать в одну строку. Пусть длина импорта будет равна длине обычной строке
 from app.common.exceptions.repositories.connection_refused import (
     ConnectionRefusedRepoError,
 )
@@ -12,10 +12,14 @@ from app.common.exceptions.repositories.multiple_results import MultipleResultsR
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.exceptions.repositories.wrong_query import WrongQueryError
 from app.common.filtersets.base import BaseFiltersSet
-from app.common.helpers.db import get_columns_by_table
+from app.common.helpers.db import append_sorts_to_statement, get_columns_by_table
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
-from sqlalchemy import Result, Row, Select, delete, insert, select, update
+from pydantic_filters.drivers.sqlalchemy import (
+    append_filter_to_statement,
+    append_pagination_to_statement,
+)
+from sqlalchemy import Result, Select, delete, insert, select, update
 from sqlalchemy.exc import MultipleResultsFound, NoResultFound, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.dml import Delete, ReturningInsert, Update
@@ -33,7 +37,7 @@ class BaseRepository:
     create_schema = BaseSchema
     update_schema = BaseSchema
 
-    filter_set = BaseFiltersSet
+    filter_set = BaseFiltersSet  # TODO: убрать отсюда и из всех потомков или изменить
 
     catcher = catch_exception(base_error=BaseRepoError, description="repository exception")
 
@@ -59,27 +63,28 @@ class BaseRepository:
         return select(get_columns_by_table(self.db_model))
 
     @catcher
-    def _modify_query_for_getting_objects(self, query: Select) -> Select:
+    def _modify_query_for_getting_objects(self, query: Select, parameters: Parameters) -> Select:
         return query
 
     @catcher
-    def _model_validate_for_getting_objects(self, filtered_objects: Sequence[Row]) -> List[many_read_schema]:
+    def _validate_result_for_getting_objects(self, result: Result) -> List[many_read_schema]:
+        filtered_objects = result.all()
         return [self.many_read_schema.model_validate(obj) for obj in filtered_objects]
 
     @catcher
-    async def get_objects(
-        self, raw_filters: BaseFiltersInput = BaseFiltersInput(), **add_filters
-    ) -> List[many_read_schema]:
-        filter_params = raw_filters.model_dump(exclude_none=True)
-        filter_params.update(add_filters)
-
+    async def get_objects(self, parameters: Parameters, **add_eq_filters) -> List[many_read_schema]:
         query = self._create_query_for_getting_objects()
-        query = self.filter_set(query).filter_query(filter_params)
-        query = self._modify_query_for_getting_objects(query)
+
+        query = append_filter_to_statement(statement=query, model=self.db_model, filter_=parameters.filters)
+        query = query.filter_by(**add_eq_filters)
+
+        query = append_sorts_to_statement(statement=query, model=self.db_model, sorts=parameters.sorts)
+        query = append_pagination_to_statement(statement=query, pagination=parameters.pagination)
+
+        query = self._modify_query_for_getting_objects(query, parameters)
 
         result = await self.execute(query)
-        filtered_objects = result.all()
-        return self._model_validate_for_getting_objects(filtered_objects)
+        return self._validate_result_for_getting_objects(result)
 
     @catcher
     def _create_query_for_getting_object(self, **filters) -> Select:
