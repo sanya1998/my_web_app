@@ -1,6 +1,6 @@
 from typing import List
 
-from app.common.dependencies.filters_input.rooms import RoomsFiltersDep
+from app.common.dependencies.parameters.rooms import RoomsParametersDep
 from app.common.dependencies.repositories.room import RoomRepoDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.api.multiple_results import MultipleResultsApiError
@@ -27,12 +27,12 @@ async def get_room(object_id: int, room_repo: RoomRepoDep) -> OneRoomReadSchema:
 
 
 @router.get("/")
-async def get_rooms(raw_filters: RoomsFiltersDep, room_repo: RoomRepoDep) -> List[ManyRoomsReadSchema]:
+async def get_rooms(parameters: RoomsParametersDep, room_repo: RoomRepoDep) -> List[ManyRoomsReadSchema]:
     """
     Возвращает все типы комнат.
     Поля remain_by_room, total_cost заполняются, только если есть date_to и date_from
     """
     try:
-        return await room_repo.get_objects(raw_filters=raw_filters)
+        return await room_repo.get_objects(parameters=parameters)
     except BaseRepoError:
         raise BaseApiError

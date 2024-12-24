@@ -1,8 +1,9 @@
 from typing import List
 
 from app.common.schemas.base import BaseSchema
+from app.common.schemas.room import ManyRoomsReadSchema
 from fastapi import Form
-from pydantic import Field
+from pydantic import Field, model_validator
 
 
 class HotelBaseSchema(BaseSchema):
@@ -56,7 +57,14 @@ class OneHotelWithJoinReadSchema(HotelReadSchema):
 
 
 class ManyHotelsReadSchema(HotelReadSchema):
-    remain_by_hotel: int | None = None  # Если не указаны даты, то None, потому что невозможно посчитать
+    remain_by_hotel: int | None = None
+    rooms: List[ManyRoomsReadSchema] = Field(list(), exclude=True)  # TODO: мб поднять в родителя
+
+    @model_validator(mode="after")
+    def validate_model(self):
+        if self.remain_by_hotel is None:  # TODO: нужна ли будет в дальнейшем проверка?
+            self.remain_by_hotel = sum([r.remain_by_room for r in self.rooms if r.remain_by_room])
+        return self
 
 
 class OneDeletedHotelReadSchema(HotelReadSchema):

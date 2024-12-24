@@ -5,9 +5,8 @@ mark_many = "M"
 
 
 def build_key_by_listing(*args, **kwargs) -> str:
-    raw_filters: BaseModel = kwargs.get("raw_filters")
-    # Есть pagination, который синонимичен limit и offset
-    filters = raw_filters.model_dump_json(exclude_none=True, exclude={"limit", "offset"}) if raw_filters else "{}"
+    parameters: BaseModel = kwargs.get("parameters")
+    filters = parameters.model_dump_json(exclude_none=True) if parameters else "{}"
     key = f"{delimiter}".join([mark_many, filters])
     return key
 

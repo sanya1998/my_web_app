@@ -93,3 +93,7 @@ TODO:
 55) Добавить схему в readme https://stackoverflow.com/questions/14494747/how-to-add-images-to-readme-md-on-github
 56) Скрипт, который проверяет, что во всех енвах одни и те же переменные
 57) CELERY_BROKER_URL целиком. А остальные разделены на юзер, пароль, хост и тд
+58) Перейти с sqlalchemy-filterset на pydantic-filters для уменьшения кода
+59) В pydantic-filters.BaseFilter не получилось добавить обязательное поле в Depends
+60) Написать свой filters взяв лучшее из pydantic-filters, fastapi-filter, sqlalchemy-filters, использовать как свою либу. удалить остальные либы из проекта
+61) бронирование делать внутри транзакции
