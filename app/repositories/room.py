@@ -1,11 +1,10 @@
-from app.common.dependencies.parameters.base import Parameters
-from app.common.filtersets.rooms import RoomsFiltersSet
+from app.common.dependencies.filters.rooms import RoomsFilters
 from app.common.schemas.room import (
     ManyRoomsReadSchema,
     OneRoomReadSchema,
     RoomCreateSchema,
 )
-from app.common.tables import Bookings, Rooms
+from app.common.tables import Bookings, Hotels, Rooms
 from app.repositories.base import BaseRepository
 from app.repositories.booking import BookingRepo
 from sqlalchemy import Select, and_, func, label
@@ -18,23 +17,27 @@ class RoomRepo(BaseRepository):
     many_read_schema = ManyRoomsReadSchema
     create_schema = RoomCreateSchema
 
-    filter_set = RoomsFiltersSet
-
     @BaseRepository.catcher
-    def _modify_query_for_getting_objects(self, query: Select, parameters: Parameters) -> Select:
-        return self.free_rooms_by_check_dates(query, parameters.filters.check_into, parameters.filters.check_out)
+    def _modify_query_for_getting_objects(
+        self, query: Select, filters: RoomsFilters, **additional_filters
+    ) -> Select:  # TODO: types
+        query = self.free_rooms_by_check_dates(query, filters.check_into, filters.check_out).join(
+            Hotels, and_(Rooms.hotel_id == Hotels.id)
+        )
+        return query
 
+    @classmethod
     @BaseRepository.catcher
-    def free_rooms_by_check_dates(self, query: Select, check_into, check_out) -> Select:
+    def free_rooms_by_check_dates(cls, query: Select, check_into, check_out) -> Select:
         """
         Сколько будет свободных комнат (для всех типов комнат) в выбранные (проверяемые) даты заезда и выезда.
             SELECT rooms.id, rooms.quantity - count(rooms.id) AS remain
             FROM rooms LEFT OUTER JOIN bookings ON
                 bookings.room_id = rooms.id
                 AND (
-                    bookings.date_from >= check_into AND bookings.date_from < check_out
+                    check_into <= bookings.date_from AND bookings.date_from < check_out
                     OR
-                    bookings.date_from < check_into AND bookings.date_to > check_into
+                    bookings.date_from < check_into AND check_into < bookings.date_to
                 )
             GROUP BY rooms.id, rooms.quantity
             HAVING rooms.quantity - count(rooms.id) > 0
@@ -43,10 +46,15 @@ class RoomRepo(BaseRepository):
         :param check_out: планируемая дата выезда
         :return: сформированный запрос
         """
-        # TODO: "remain_by_room" вынести в константы
-        remain_field = label("remain_by_room", Rooms.quantity - func.count(Bookings.id))
+
+        days = (check_out - check_into).days if check_out and check_into else 0
+        total_cost = label("total_cost", days * Rooms.price)
+
+        # TODO: "remain_by_room" потом используется в качестве поля. То есть при изменении могут быть проблемы
+        remain_by_room = label("remain_by_room", Rooms.quantity - func.count(Bookings.id))
+
         query = (
-            query.add_columns(remain_field)
+            query.add_columns(remain_by_room, total_cost)
             .outerjoin(
                 Bookings,
                 onclause=and_(
@@ -54,7 +62,7 @@ class RoomRepo(BaseRepository):
                     BookingRepo.clause_for_checking_dates(check_into, check_out),
                 ),
             )
-            .group_by(Rooms.id, Rooms.quantity)
-            .having(remain_field > 0)
+            .group_by(Rooms)
+            .having(remain_by_room > 0)  # TODO: remain_by_room в фильтры?, + отели без комнат тоже выводить
         )
         return query

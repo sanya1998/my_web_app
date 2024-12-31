@@ -27,7 +27,7 @@ class BookingService(BaseService):
         selected_room = await self.booking_repo.get_room_info_by_id_and_dates(data=self.check_data)
         if selected_room is None:
             raise NotFoundServiceError
-        if selected_room.remain < 1:
+        if selected_room.remain_by_room < 1:
             raise UnavailableServiceError
         return selected_room
 

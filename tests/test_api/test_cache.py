@@ -13,7 +13,7 @@ async def clear_cache():
     await cache.clear(clear_by_pattern=True)
 
 
-async def fake_response(self, raw_filters):
+async def fake_response(self, filters):
     """
     Mock response HotelRepo.get_objects
     """

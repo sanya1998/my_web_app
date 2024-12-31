@@ -1,1 +1,1 @@
-PREFIX_DESC = "--"
+PREFIX_DESC = "-"

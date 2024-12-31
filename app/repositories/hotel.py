@@ -1,7 +1,4 @@
-from typing import List
-
-from app.common.dependencies.parameters.base import Parameters
-from app.common.filtersets.hotels import HotelsFiltersSet
+from app.common.dependencies.filters.hotels import HotelsFilters
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.hotel import (
     HotelCreateSchema,
@@ -14,8 +11,8 @@ from app.common.schemas.hotel import (
 )
 from app.common.tables import Hotels, Rooms
 from app.repositories.base import BaseRepository
-from sqlalchemy import Column, Result, Select, func, label, select
-from sqlalchemy.orm import selectinload
+from app.repositories.room import RoomRepo
+from sqlalchemy import Select, and_, func, label, select
 
 
 class HotelRepo(BaseRepository):
@@ -29,30 +26,26 @@ class HotelRepo(BaseRepository):
     one_deleted_read_schema = OneDeletedHotelReadSchema
     create_schema = HotelCreateSchema
 
-    filter_set = HotelsFiltersSet
-
     @BaseRepository.catcher
-    def _create_query_for_getting_objects(self) -> Select:
-        return select(self.db_model).options(selectinload(self.db_model.rooms)).group_by(self.db_model)
-
-    @BaseRepository.catcher
-    def _modify_query_for_getting_objects(self, query: Select, parameters: Parameters) -> Select:
-        # TODO: это работает, но мне не нравится, что есть константы, и что pycharm подчеркивает t.name
-        joined_tables = {t.name for t in query.columns_clause_froms if hasattr(t, "name")}
-
-        # Если есть join с Bookings
-        if "booked_rooms" in joined_tables:
-            remain_by_hotel = label("remain_by_hotel", func.sum(Rooms.quantity - func.coalesce(Column("occupied"), 0)))
-            query = query.with_only_columns(
-                get_columns_by_table(self.db_model)
-            ).add_columns(  # Чтобы не брать remain_by_room
-                remain_by_hotel
+    def _modify_query_for_getting_objects(
+        self, query: Select, filters: HotelsFilters, **additional_filters
+    ) -> Select:  # TODO types
+        rooms = select(get_columns_by_table(Rooms))
+        free_rooms = RoomRepo.free_rooms_by_check_dates(rooms, filters.rooms.check_into, filters.rooms.check_out).cte(
+            "free_rooms"
+        )
+        free_rooms_c = free_rooms.c
+        filters.rooms._db_model = free_rooms_c
+        # TODO: "remain_by_hotel" вынести в константы. Либо по-другому решить то, что потом оно используется как поле
+        remain_field = label("remain_by_hotel", func.sum(free_rooms_c.remain_by_room))
+        query = (
+            query.join(
+                free_rooms, onclause=and_(Hotels.id == free_rooms_c.hotel_id, *filters.rooms.get_where_clauses())
             )
+            .add_columns(remain_field)
+            .group_by(Hotels)
+        )
         return query
-
-    def _validate_result_for_getting_objects(self, result: Result) -> List[many_read_schema]:
-        filtered_objects = result.scalars().all()
-        return [self.many_read_schema.model_validate(obj) for obj in filtered_objects]
 
     @BaseRepository.catcher
     def _create_query_for_getting_object_with_join(self, **filters) -> Select:

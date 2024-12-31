@@ -2,11 +2,11 @@ from typing import List
 
 from app.common.constants.cache_prefixes import HOTELS_CACHE_PREFIX
 from app.common.dependencies.auth.moderator import ModeratorUserDep
+from app.common.dependencies.filters.hotels import HotelsFiltersDep
 from app.common.dependencies.input.hotels import (
     HotelInputCreateDep,
     HotelInputUpdateDep,
 )
-from app.common.dependencies.parameters.hotels import HotelsParametersDep
 from app.common.dependencies.repositories.hotel import HotelRepoDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.api.multiple_results import MultipleResultsApiError
@@ -59,9 +59,9 @@ async def create_hotel_for_moderator(
 
 @router.get("/")
 @cache.caching(build_key=build_key_by_listing)
-async def get_hotels(parameters: HotelsParametersDep, hotel_repo: HotelRepoDep) -> List[ManyHotelsReadSchema]:
+async def get_hotels(filters: HotelsFiltersDep, hotel_repo: HotelRepoDep) -> List[ManyHotelsReadSchema]:
     try:
-        return await hotel_repo.get_objects(parameters=parameters)
+        return await hotel_repo.get_objects(filters=filters)
     except BaseRepoError:
         raise BaseApiError
 

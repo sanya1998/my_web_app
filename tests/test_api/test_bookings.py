@@ -1,5 +1,6 @@
 from datetime import date
 
+import pytest_asyncio
 from app.common.schemas.booking import ManyBookingsReadSchema
 from app.common.schemas.room import ManyRoomsReadSchema
 from app.common.schemas.user import OneUserReadSchema
@@ -9,7 +10,15 @@ from starlette import status
 BASE_BOOKINGS_URL = "/api/v1/bookings/"
 
 
-async def test_create_bookings(client: AsyncClient):
+@pytest_asyncio.fixture(loop_scope="function", scope="function")
+def mock_send_email(mocker):
+    def fake_send_email(booking: dict, email_to: str):
+        print(f"Имитация отправки сообщения на почту {email_to}. {booking}.")
+
+    mocker.patch("app.common.tasks.email.send_booking_notify_email.delay", fake_send_email)
+
+
+async def test_create_bookings(client: AsyncClient, mock_send_email):
     """Неавторизованный пользователь не может бронировать"""
     response = await client.post(
         f"{BASE_BOOKINGS_URL}for_current_user",
@@ -22,7 +31,7 @@ async def test_create_bookings(client: AsyncClient):
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
-async def test_busy_bookings(user_client: AsyncClient):
+async def test_busy_bookings(user_client: AsyncClient, mock_send_email):
     """
     Тест, который показывает, что нельзя забронировать комнату, когда все занято
     """
@@ -73,6 +82,8 @@ async def test_delete_bookings(user_client: AsyncClient, manager_client: AsyncCl
     bookings_self_response = await user_client.get(f"{BASE_BOOKINGS_URL}for_current_user")
     bookings_self = bookings_self_response.json()
 
+    for booking_by_id in bookings_by_id:
+        booking_by_id.pop("user")
     assert bookings_self == bookings_by_id
 
     for booking_json in bookings_by_id:
