@@ -1186,21 +1186,6 @@ files = [
 typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
-name = "pydantic-filters"
-version = "0.3.4"
-description = "A declarative and intuitive way to describe data filtering and sorting in your application."
-category = "main"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "pydantic_filters-0.3.4-py3-none-any.whl", hash = "sha256:c9d66334eb1248ccf7f4410b9e33fd4acde36b230c8cc5d618a87dfa5422416b"},
-    {file = "pydantic_filters-0.3.4.tar.gz", hash = "sha256:4fc6adf212850e8352e5cc90eb6051830e3217127ff0591a862127149e05331c"},
-]
-
-[package.dependencies]
-pydantic = ">=2,<3"
-
-[[package]]
 name = "pydantic-settings"
 version = "2.7.0"
 description = "Settings management using Pydantic"
@@ -1517,7 +1502,7 @@ files = [
 ]
 
 [package.dependencies]
-greenlet = {version = "!=0.4.17", optional = true, markers = "python_version < \"3.13\" and platform_machine == \"aarch64\" or python_version < \"3.13\" and platform_machine == \"ppc64le\" or python_version < \"3.13\" and platform_machine == \"x86_64\" or python_version < \"3.13\" and platform_machine == \"amd64\" or python_version < \"3.13\" and platform_machine == \"AMD64\" or python_version < \"3.13\" and platform_machine == \"win32\" or python_version < \"3.13\" and platform_machine == \"WIN32\" or extra == \"asyncio\""}
+greenlet = {version = "!=0.4.17", markers = "python_version < \"3.13\" and platform_machine == \"aarch64\" or python_version < \"3.13\" and platform_machine == \"ppc64le\" or python_version < \"3.13\" and platform_machine == \"x86_64\" or python_version < \"3.13\" and platform_machine == \"amd64\" or python_version < \"3.13\" and platform_machine == \"AMD64\" or python_version < \"3.13\" and platform_machine == \"win32\" or python_version < \"3.13\" and platform_machine == \"WIN32\""}
 typing-extensions = ">=4.6.0"
 
 [package.extras]
@@ -1544,21 +1529,6 @@ postgresql-psycopg2cffi = ["psycopg2cffi"]
 postgresql-psycopgbinary = ["psycopg[binary] (>=3.0.7)"]
 pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3_binary"]
-
-[[package]]
-name = "sqlalchemy-filterset"
-version = "2.3.0"
-description = "An easy way to filter, sort, paginate SQLAlchemy queries"
-category = "main"
-optional = false
-python-versions = "<4.0.0,>=3.7"
-files = [
-    {file = "sqlalchemy_filterset-2.3.0-py3-none-any.whl", hash = "sha256:3524fdbda14adf04dfde6e36d6422fa3c1fe0e220232c8db13eb0efa4e96ca9c"},
-    {file = "sqlalchemy_filterset-2.3.0.tar.gz", hash = "sha256:169912379434f2427dfe8a3fe54894dcc9f32f3132877de18e3c9970a5248d12"},
-]
-
-[package.dependencies]
-SQLAlchemy = {version = ">=2,<3", extras = ["asyncio"]}
 
 [[package]]
 name = "starlette"
@@ -1730,4 +1700,4 @@ email = ["email-validator"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "9cd8c3442344ba5193bd0aaadc4f6810b21477d537e62d74acb76df2f7ea45ea"
+content-hash = "839d49d1466bd4e454257b03dd0052525b6ccdf7da34f09d965c62aaebf80908"

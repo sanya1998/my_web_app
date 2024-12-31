@@ -1,5 +1,4 @@
-from app.common.filtersets.bookings import BookingsFiltersSet
-from app.common.helpers.db import get_columns_by_table
+from app.common.dependencies.filters.bookings import BookingsFilters
 from app.common.schemas.booking import (
     BookingCreateSchema,
     CheckData,
@@ -10,7 +9,7 @@ from app.common.schemas.booking import (
     OneDeletedBookingReadSchema,
     OneUpdatedBookingReadSchema,
 )
-from app.common.tables import Bookings, Rooms
+from app.common.tables import Bookings, Hotels, Rooms, Users
 from app.repositories.base import BaseRepository
 from sqlalchemy import ColumnElement, Select, and_, func, label, or_, select
 
@@ -26,32 +25,38 @@ class BookingRepo(BaseRepository):
     one_deleted_read_schema = OneDeletedBookingReadSchema
     create_schema = BookingCreateSchema
 
-    filter_set = BookingsFiltersSet
+    def _modify_query_for_getting_objects(
+        self, query: Select, filters: BookingsFilters, **additional_filters
+    ) -> Select:
+        # TODO: мб в фильтры засунуть
+        return (
+            query.join(Rooms, Bookings.room_id == Rooms.id)  # TODO: pycharm подчеркивает только это почему-то
+            .join(Hotels, Rooms.hotel_id == Hotels.id)
+            .join(Users, Bookings.user_id == Users.id)
+            .select_from(Bookings)
+            .add_columns(Users, Rooms)
+        )
 
     @BaseRepository.catcher
     def _create_query_for_getting_object_with_join(self, **filters) -> Select:
         return select(self.db_model, Rooms).filter_by(**filters).outerjoin(Rooms)
-
-    @BaseRepository.catcher
-    def _create_query_for_getting_objects(self) -> Select:
-        return select(get_columns_by_table(self.db_model), get_columns_by_table(Rooms)).outerjoin(Rooms)
 
     @staticmethod
     @BaseRepository.catcher
     def clause_for_checking_dates(check_into, check_out) -> ColumnElement[bool]:
         """
         Если выполняется это условие, то планируемые даты задевают существующее бронирование
-            bookings.date_from >= check_into AND bookings.date_from < check_out
+            check_into <= bookings.date_from AND bookings.date_from < check_out
             OR
-            bookings.date_from < check_into AND bookings.date_to > check_into
+            bookings.date_from < check_into AND check_into < bookings.date_to
         :param check_into: планируемая дата заезда
         :param check_out: планируемая дата выезда
         :return:
         """
         if check_into and check_out:
             clause = or_(
-                and_(Bookings.date_from >= check_into, Bookings.date_from < check_out),
-                and_(Bookings.date_from < check_into, Bookings.date_to > check_into),
+                and_(check_into <= Bookings.date_from, Bookings.date_from < check_out),
+                and_(Bookings.date_from < check_into, check_into < Bookings.date_to),
             )
         else:
             clause = False
@@ -64,13 +69,13 @@ class BookingRepo(BaseRepository):
         Создать запрос для получения бронирований, задевающие выбранные (проверяемые) даты заезда и выезда.
         SELECT bookings.room_id
         FROM bookings
-        WHERE date_from >= check_into AND date_from < check_out OR date_from < check_into AND date_to > check_into
+        WHERE check_into <= date_from AND date_from < check_out OR date_from < check_into AND check_into < date_to
         :param check_into: планируемая дата заезда
         :param check_out: планируемая дата выезда
         :return: сформированный запрос
         """
-        booked_rooms = select(Bookings.room_id).where(cls.clause_for_checking_dates(check_into, check_out))
-        return booked_rooms
+        rooms_bookings = select(Bookings.room_id).where(cls.clause_for_checking_dates(check_into, check_out))
+        return rooms_bookings
 
     @BaseRepository.catcher
     async def get_room_info_by_id_and_dates(self, data: CheckData):
@@ -89,8 +94,8 @@ class BookingRepo(BaseRepository):
                         NOT bookings.id = ANY (exclude_booking_ids)
                     ) AND
                     (
-                        date_from >= check_into AND date_from < check_out OR
-                        date_from < check_into AND date_to > check_into
+                         check_into <= date_from AND date_from < check_out OR
+                        date_from < check_into AND check_into < date_to
                     )
             )
         -- Получить id, цену и остаток данного типа комнат
@@ -101,32 +106,22 @@ class BookingRepo(BaseRepository):
         WHERE rooms.id = selected_room_id
         GROUP BY rooms.id, rooms.price;
         """
-        booked_rooms = (
-            select(self.db_model.room_id).where(
+        room_bookings = (
+            self.query_for_getting_bookings_by_check_dates(data.check_into, data.check_out).where(
                 and_(
                     self.db_model.room_id == data.selected_room_id,
                     or_(len(data.exclude_booking_ids) == 0, self.db_model.id.notin_(data.exclude_booking_ids)),
-                    or_(
-                        and_(
-                            self.db_model.date_from >= data.check_into,
-                            self.db_model.date_from < data.check_out,
-                        ),
-                        and_(
-                            self.db_model.date_from < data.check_into,
-                            self.db_model.date_to > data.check_into,
-                        ),
-                    ),
                 )
             )
         ).cte()
 
-        # TODO: привести к единообразию remain, remain_by_room, remain_by_hotel
+        remain_by_room = label("remain_by_room", Rooms.quantity - func.count(room_bookings.c.room_id))
         selected_room_query = (
-            select(Rooms.id, Rooms.price, label("remain", Rooms.quantity - func.count(booked_rooms.c.room_id)))
+            select(Rooms.id, Rooms.price, remain_by_room)
             .select_from(Rooms)
-            .outerjoin(target=booked_rooms, onclause=booked_rooms.c.room_id == Rooms.id)
+            .outerjoin(target=room_bookings, onclause=and_(room_bookings.c.room_id == Rooms.id))
             .where(and_(Rooms.id == data.selected_room_id))  # TODO: без `and_` можно?
-            .group_by(Rooms.id, Rooms.price)
+            .group_by(Rooms)
         )
         selected_room_answer = await self.session.execute(selected_room_query)
         return selected_room_answer.one_or_none()

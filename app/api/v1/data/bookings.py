@@ -2,7 +2,10 @@ from typing import List
 
 from app.common.dependencies.auth.base import CurrentUserDep
 from app.common.dependencies.auth.manager import ManagerUserDep
-from app.common.dependencies.filters_input.bookings import BookingsFiltersDep
+from app.common.dependencies.filters.bookings import (
+    BookingsFiltersDep,
+    CurrentUserBookingsFiltersDep,
+)
 from app.common.dependencies.input.bookings import (
     BookingInputCreateDep,
     BookingInputUpdateDep,
@@ -20,6 +23,7 @@ from app.common.exceptions.services.base import BaseServiceError
 from app.common.exceptions.services.not_found import NotFoundServiceError
 from app.common.exceptions.services.unavailable import UnavailableServiceError
 from app.common.schemas.booking import (
+    CurrentUserManyBookingsReadSchema,
     ManyBookingsReadSchema,
     OneBookingWithJoinReadSchema,
     OneCreatedBookingReadSchema,
@@ -49,22 +53,22 @@ async def create_booking_for_current_user(
         raise BaseApiError
 
 
-@router.get("/for_current_user")
+@router.get("/for_current_user", response_model_by_alias=False)
 async def get_bookings_for_current_user(
-    raw_filters: BookingsFiltersDep, booking_repo: BookingRepoDep, user: CurrentUserDep
-) -> List[ManyBookingsReadSchema]:
+    filters: CurrentUserBookingsFiltersDep, booking_repo: BookingRepoDep, user: CurrentUserDep
+) -> List[CurrentUserManyBookingsReadSchema]:
     try:
-        return await booking_repo.get_objects(parameters=raw_filters, user_id=user.id)
+        return await booking_repo.get_objects(filters=filters, user_id=user.id)
     except BaseRepoError:
         raise BaseApiError
 
 
-@router.get("/for_manager")
+@router.get("/for_manager", response_model_by_alias=False)
 async def get_bookings_for_manager(
-    raw_filters: BookingsFiltersDep, user_id: int, booking_repo: BookingRepoDep, manager: ManagerUserDep
+    filters: BookingsFiltersDep, booking_repo: BookingRepoDep, manager: ManagerUserDep
 ) -> List[ManyBookingsReadSchema]:
     try:
-        return await booking_repo.get_objects(parameters=raw_filters, user_id=user_id)
+        return await booking_repo.get_objects(filters=filters)
     except BaseRepoError:
         raise BaseApiError
 

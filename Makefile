@@ -51,6 +51,9 @@ up-celery-worker:
 up-celery-flower:
 	celery --app app.resources.celery:celery flower
 
+clear-celery-tasks:
+	celery -A app.resources.celery:celery purge
+
 up-services:
 	docker-compose --env-file envs/local.env up -d postgres redis
 

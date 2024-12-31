@@ -25,10 +25,7 @@ def create_booking_notify_template(
 
 
 @celery.task
-def send_booking_notify_email(
-    booking: dict,
-    email_to: str,
-):
+def send_booking_notify_email(booking: dict, email_to: str):
     email_to = settings.SMTP_USER  # TODO: remove this mock
     msg_content = create_booking_notify_template(booking, email_to)
 

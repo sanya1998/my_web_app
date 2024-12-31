@@ -1,6 +1,6 @@
 from typing import Any, List, Union
 
-from app.common.dependencies.parameters.base import Parameters
+from app.common.dependencies.filters.base import BaseFilters
 from app.common.exceptions.catcher import catch_exception
 from app.common.exceptions.repositories.base import BaseRepoError
 
@@ -11,14 +11,9 @@ from app.common.exceptions.repositories.connection_refused import (
 from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.exceptions.repositories.wrong_query import WrongQueryError
-from app.common.filtersets.base import BaseFiltersSet
-from app.common.helpers.db import append_sorts_to_statement, get_columns_by_table
+from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
-from pydantic_filters.drivers.sqlalchemy import (
-    append_filter_to_statement,
-    append_pagination_to_statement,
-)
 from sqlalchemy import Result, Select, delete, insert, select, update
 from sqlalchemy.exc import MultipleResultsFound, NoResultFound, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,8 +32,6 @@ class BaseRepository:
     create_schema = BaseSchema
     update_schema = BaseSchema
 
-    filter_set = BaseFiltersSet  # TODO: убрать отсюда и из всех потомков или изменить
-
     catcher = catch_exception(base_error=BaseRepoError, description="repository exception")
 
     @catcher
@@ -46,45 +39,33 @@ class BaseRepository:
         self.session = session
 
     @catcher
-    async def execute(self, statement: Union[ReturningInsert, Select, Update, Delete]) -> Result:
+    async def execute(self, query: Union[ReturningInsert, Select, Update, Delete]) -> Result:
         try:
-            print(statement.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
-            return await self.session.execute(statement)
+            # print(query.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
+            return await self.session.execute(query)
         except ConnectionRefusedError:
             raise ConnectionRefusedRepoError
         except SQLAlchemyError:
             # TODO: 1) to logs
             # TODO: 2) SQLAlchemyError не такой содержательный, как если без него
-            # print(statement.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
+            print(query.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
             raise WrongQueryError
 
     @catcher
-    def _create_query_for_getting_objects(self) -> Select:
-        return select(get_columns_by_table(self.db_model))
-
-    @catcher
-    def _modify_query_for_getting_objects(self, query: Select, parameters: Parameters) -> Select:
+    def _modify_query_for_getting_objects(self, query: Select, filters: BaseFilters, **additional_filters) -> Select:
         return query
 
     @catcher
-    def _validate_result_for_getting_objects(self, result: Result) -> List[many_read_schema]:
-        filtered_objects = result.all()
-        return [self.many_read_schema.model_validate(obj) for obj in filtered_objects]
+    async def get_objects(self, filters: BaseFilters, **additional_filters) -> List[many_read_schema]:
+        query = select(get_columns_by_table(self.db_model))
 
-    @catcher
-    async def get_objects(self, parameters: Parameters, **add_eq_filters) -> List[many_read_schema]:
-        query = self._create_query_for_getting_objects()
-
-        query = append_filter_to_statement(statement=query, model=self.db_model, filter_=parameters.filters)
-        query = query.filter_by(**add_eq_filters)
-
-        query = append_sorts_to_statement(statement=query, model=self.db_model, sorts=parameters.sorts)
-        query = append_pagination_to_statement(statement=query, pagination=parameters.pagination)
-
-        query = self._modify_query_for_getting_objects(query, parameters)
+        # TODO: какой порядок лучше? учесть динамически созданные поля
+        query = filters.modify_query(query, **additional_filters)
+        query = self._modify_query_for_getting_objects(query, filters, **additional_filters)
 
         result = await self.execute(query)
-        return self._validate_result_for_getting_objects(result)
+        filtered_objects = result.all()
+        return [self.many_read_schema.model_validate(obj) for obj in filtered_objects]
 
     @catcher
     def _create_query_for_getting_object(self, **filters) -> Select:

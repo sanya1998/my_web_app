@@ -27,6 +27,6 @@ class OneRoomReadSchema(BaseRoomReadSchema):
 
 
 class ManyRoomsReadSchema(BaseRoomReadSchema):
-    # Если не указаны даты, то None, потому что невозможно посчитать
-    remain_by_room: int | None = None
-    total_cost: int | None = None
+    remain_by_room: int
+    # Если не указаны даты, то 0, потому что невозможно посчитать
+    total_cost: int

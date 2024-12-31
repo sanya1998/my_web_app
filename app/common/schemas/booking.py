@@ -3,7 +3,8 @@ from typing import List
 
 from app.common.constants.datetimes import TODAY, TOMORROW
 from app.common.schemas.base import BaseSchema
-from app.common.schemas.room import RoomBaseSchema
+from app.common.schemas.room import OneRoomReadSchema
+from app.common.schemas.user import OneUserReadSchema
 from fastapi import Form
 from pydantic import Field
 
@@ -58,16 +59,15 @@ class OneUpdatedBookingReadSchema(BaseBookingReadSchema):
 
 
 class OneBookingWithJoinReadSchema(BaseBookingReadSchema):
-    room: RoomBaseSchema
+    room: OneRoomReadSchema  # TODO: оптимизировать наследование
 
 
-class ManyBookingsReadSchema(BaseBookingReadSchema):
-    # TODO: prefix room_
-    # TODO: не дублировать поля из Rooms
-    name: str
-    description: str | None = None
-    services: List[str] = Field(default=list())
-    image_id: int | None = None
+class CurrentUserManyBookingsReadSchema(BaseBookingReadSchema):
+    room: OneRoomReadSchema = Field(None, alias="Rooms")  # TODO: в родителя, если ничему не помешает
+
+
+class ManyBookingsReadSchema(CurrentUserManyBookingsReadSchema):
+    user: OneUserReadSchema = Field(None, alias="Users")  # TODO: в родителя, если ничему не помешает
 
 
 class OneDeletedBookingReadSchema(BaseBookingReadSchema):

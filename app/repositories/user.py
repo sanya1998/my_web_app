@@ -1,4 +1,3 @@
-from app.common.filtersets.users import UsersFiltersSet
 from app.common.schemas.user import (
     ManyUsersReadSchema,
     OneCreatedUserReadSchema,
@@ -16,5 +15,3 @@ class UserRepo(BaseRepository):
     many_read_schema = ManyUsersReadSchema
     one_created_read_schema = OneCreatedUserReadSchema
     create_schema = UserCreateSchema
-
-    filter_set = UsersFiltersSet
