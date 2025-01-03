@@ -3,14 +3,14 @@ from typing import Annotated
 from app.common.constants.roles import RolesEnum
 from app.common.dependencies.auth.base import get_current_user
 from app.common.exceptions.api.forbidden import ForbiddenApiError
-from app.common.schemas.user import OneUserReadSchema
+from app.common.schemas.user import UserBaseReadSchema
 from fastapi import Depends
 
 
-async def get_moderator_user(user: Annotated[OneUserReadSchema, Depends(get_current_user)]):
+async def get_moderator_user(user: Annotated[UserBaseReadSchema, Depends(get_current_user)]):
     if RolesEnum.MODERATOR not in user.roles:
         raise ForbiddenApiError
     return user
 
 
-ModeratorUserDep = Annotated[OneUserReadSchema, Depends(get_moderator_user)]
+ModeratorUserDep = Annotated[UserBaseReadSchema, Depends(get_moderator_user)]

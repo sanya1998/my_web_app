@@ -13,7 +13,7 @@ HotelsOrderingEnum = get_ordering_enum_by_columns("HotelsOrderingEnum", columns.
 
 
 class HotelsFilters(MainFilters, HotelBaseFilters):
-    location__ilike: str | None = None  # TODO: show sql-query
+    location__ilike: str | None = None
     order_by: List[HotelsOrderingEnum] | None = Field(Query([HotelsOrderingEnum.ID]))
     rooms: RoomsBaseFilters
 

@@ -16,7 +16,7 @@ from app.common.exceptions.services.unauthorized import (
     InvalidTokenServiceError,
     MissingRequiredClaimServiceError,
 )
-from app.common.schemas.user import OneUserReadSchema
+from app.common.schemas.user import UserBaseReadSchema
 from app.config.main import settings
 from fastapi import Depends, Request
 
@@ -30,7 +30,7 @@ def get_token(request: Request) -> str:
 
 async def get_current_user(
     auth_service: AuthorizationServiceDep, token: Annotated[str, Depends(get_token)]
-) -> OneUserReadSchema:
+) -> UserBaseReadSchema:
     try:
         return await auth_service.get_user_by_access_token(token)
     except MissingRequiredClaimServiceError:
@@ -45,4 +45,4 @@ async def get_current_user(
         raise BaseApiError
 
 
-CurrentUserDep = Annotated[OneUserReadSchema, Depends(get_current_user)]
+CurrentUserDep = Annotated[UserBaseReadSchema, Depends(get_current_user)]

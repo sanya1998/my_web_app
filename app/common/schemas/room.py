@@ -1,7 +1,8 @@
 from typing import List
 
 from app.common.schemas.base import BaseSchema
-from pydantic import Field
+from app.common.schemas.hotel import HotelBaseReadSchema
+from pydantic import AliasChoices, Field
 
 
 class RoomBaseSchema(BaseSchema):
@@ -14,19 +15,15 @@ class RoomBaseSchema(BaseSchema):
     image_id: int | None = None
 
 
-class RoomCreateSchema(RoomBaseSchema):
-    pass
-
-
-class BaseRoomReadSchema(RoomCreateSchema):
+class RoomBaseReadSchema(RoomBaseSchema):
     id: int
 
 
-class OneRoomReadSchema(BaseRoomReadSchema):
-    pass
+class RoomReadSchema(RoomBaseReadSchema):
+    hotel: HotelBaseReadSchema = Field(validation_alias=AliasChoices("hotel", "Hotels"))
 
 
-class ManyRoomsReadSchema(BaseRoomReadSchema):
+class ManyRoomsReadSchema(RoomBaseReadSchema):
     remain_by_room: int
     # Если не указаны даты, то 0, потому что невозможно посчитать
     total_cost: int

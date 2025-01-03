@@ -1,0 +1,5 @@
+BASE_BOOKINGS_URL = "/api/v1/bookings/"
+BASE_ROOMS_URL = "/api/v1/rooms/"
+BASE_HOTELS_URL = "/api/v1/hotels/"
+BASE_USERS_URL = "/api/v1/users/"
+BASE_SRV_URL = "/"

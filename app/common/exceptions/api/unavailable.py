@@ -1,5 +1,5 @@
 from app.common.exceptions.api.base import BaseApiError
-from fastapi import status
+from starlette import status
 
 
 class UnavailableApiError(BaseApiError):

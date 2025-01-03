@@ -3,32 +3,32 @@ from typing import List
 
 from app.common.constants.datetimes import TODAY, TOMORROW
 from app.common.schemas.base import BaseSchema
-from app.common.schemas.room import OneRoomReadSchema
-from app.common.schemas.user import OneUserReadSchema
+from app.common.schemas.room import RoomBaseReadSchema
+from app.common.schemas.user import UserBaseReadSchema
 from fastapi import Form
-from pydantic import Field
+from pydantic import AliasChoices, Field
 
 
-class BookingBaseSchema(BaseSchema):
-    date_from: date
-    date_to: date
-
-
-class BookingBaseInputSchema(BookingBaseSchema):
-    date_from: date = Field(Form(TODAY))
-    date_to: date = Field(Form(TOMORROW))
+class BookingBaseInputSchema(BaseSchema):
+    date_from: date = Field(Form(description=f"Example: {TODAY}"))
+    date_to: date = Field(Form(description=f"Example: {TOMORROW}"))
 
 
 class BookingCreateInputSchema(BookingBaseInputSchema):
     """Бронирование создает пользователь, он не может указать цену. А room_id можно указать только при создании"""
 
-    room_id: int = Field(Form(1))
+    room_id: int = Field(Form())
 
 
 class BookingUpdateInputSchema(BookingBaseInputSchema):
     """Бронирование редактирует менеджер, он не может изменить room_id, но может изменить цену"""
 
-    price: int = Field(Form(0))
+    price: int = Field(Form(ge=0))
+
+
+class BookingBaseSchema(BaseSchema):
+    date_from: date
+    date_to: date
 
 
 class BookingUpdateSchema(BookingBaseSchema):
@@ -40,40 +40,22 @@ class BookingCreateSchema(BookingUpdateSchema):
     user_id: int
 
 
-class BaseBookingReadSchema(BookingCreateSchema):
+class BookingBaseReadSchema(BookingCreateSchema):
     id: int
     total_days: int
     total_cost: int
 
 
-class OneBookingReadSchema(BaseBookingReadSchema):
-    pass
+class CurrentUserBookingReadSchema(BookingBaseReadSchema):
+    # TODO: room: RoomReadSchema (С hotel)
+    room: RoomBaseReadSchema = Field(validation_alias=AliasChoices("room", "Rooms"))
 
 
-class OneCreatedBookingReadSchema(BaseBookingReadSchema):
-    pass
+class BookingReadSchema(CurrentUserBookingReadSchema):
+    user: UserBaseReadSchema = Field(validation_alias=AliasChoices("user", "Users"))
 
 
-class OneUpdatedBookingReadSchema(BaseBookingReadSchema):
-    pass
-
-
-class OneBookingWithJoinReadSchema(BaseBookingReadSchema):
-    room: OneRoomReadSchema  # TODO: оптимизировать наследование
-
-
-class CurrentUserManyBookingsReadSchema(BaseBookingReadSchema):
-    room: OneRoomReadSchema = Field(None, alias="Rooms")  # TODO: в родителя, если ничему не помешает
-
-
-class ManyBookingsReadSchema(CurrentUserManyBookingsReadSchema):
-    user: OneUserReadSchema = Field(None, alias="Users")  # TODO: в родителя, если ничему не помешает
-
-
-class OneDeletedBookingReadSchema(BaseBookingReadSchema):
-    pass
-
-
+# TODO: точно здесь ?
 class CheckData(BaseSchema):
     selected_room_id: int
     check_into: date

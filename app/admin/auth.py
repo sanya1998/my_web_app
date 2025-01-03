@@ -1,9 +1,5 @@
-from app.common.dependencies.auth.admin_moderator import (
-    get_admin_or_moderator_by_request,
-)
-from app.common.dependencies.services.authorization import (
-    get_authorization_service_by_request_and_session,
-)
+from app.common.dependencies.auth.admin_moderator import get_admin_or_moderator_by_request
+from app.common.dependencies.services.authorization import get_authorization_service_by_request_and_session
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.services.base import BaseServiceError
 from app.common.schemas.user import UserInputSchema

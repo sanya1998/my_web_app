@@ -1,9 +1,5 @@
 from app.common.dependencies.filters.rooms import RoomsFilters
-from app.common.schemas.room import (
-    ManyRoomsReadSchema,
-    OneRoomReadSchema,
-    RoomCreateSchema,
-)
+from app.common.schemas.room import ManyRoomsReadSchema, RoomBaseReadSchema, RoomReadSchema
 from app.common.tables import Bookings, Hotels, Rooms
 from app.repositories.base import BaseRepository
 from app.repositories.booking import BookingRepo
@@ -13,9 +9,9 @@ from sqlalchemy import Select, and_, func, label
 class RoomRepo(BaseRepository):
     db_model = Rooms
 
-    one_read_schema = OneRoomReadSchema
+    one_read_schema = RoomReadSchema
     many_read_schema = ManyRoomsReadSchema
-    create_schema = RoomCreateSchema
+    create_schema = RoomBaseReadSchema
 
     @BaseRepository.catcher
     def _modify_query_for_getting_objects(
@@ -24,6 +20,11 @@ class RoomRepo(BaseRepository):
         query = self.free_rooms_by_check_dates(query, filters.check_into, filters.check_out).join(
             Hotels, and_(Rooms.hotel_id == Hotels.id)
         )
+        return query
+
+    @BaseRepository.catcher
+    def _modify_query_for_getting_object(self, query: Select, **filters):
+        query = query.outerjoin(Hotels, Hotels.id == Rooms.hotel_id).add_columns(Hotels)
         return query
 
     @classmethod
@@ -63,6 +64,6 @@ class RoomRepo(BaseRepository):
                 ),
             )
             .group_by(Rooms)
-            .having(remain_by_room > 0)  # TODO: remain_by_room в фильтры?, + отели без комнат тоже выводить
+            .having(remain_by_room > 0)  # TODO: remain_by_room>0 в фильтры?, + отели без комнат тоже выводить
         )
         return query

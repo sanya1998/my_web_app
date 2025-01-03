@@ -8,14 +8,14 @@ from app.common.exceptions.api.not_found import NotFoundApiError
 from app.common.exceptions.repositories.base import BaseRepoError
 from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
-from app.common.schemas.room import ManyRoomsReadSchema, OneRoomReadSchema
+from app.common.schemas.room import ManyRoomsReadSchema, RoomReadSchema
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
 
 
-@router.get("/{object_id}")
-async def get_room(object_id: int, room_repo: RoomRepoDep) -> OneRoomReadSchema:
+@router.get("/{object_id}", response_model_by_alias=False)
+async def get_room(object_id: int, room_repo: RoomRepoDep) -> RoomReadSchema:
     try:
         return await room_repo.get_object(id=object_id)
     except NotFoundRepoError:

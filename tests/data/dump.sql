@@ -19,7 +19,7 @@ VALUES
     (4, 2, 'Номер на 3-х человек', 29500, 2, array []::varchar[], 10),
     (5, 3, 'Полулюкс', 7500, 10, array []::varchar[], 11),
     (6, 3, '2-комнатный люкс комфорт', 8000, 3, array []::varchar[], 12),
-    (7, 4, 'Стандпрт двухместный', 4300, 4, array []::varchar[], 13),
+    (7, 4, 'Стандарт двухместный', 4300, 4, array []::varchar[], 13),
     (8, 4, 'Стандарт улучшенный ПЛЮС', 6500, 7, array []::varchar[], 14),
     (9, 5, 'Номер стандарт с 2 односпальными кроватями', 13500, 4, array []::varchar[], 15),
     (10, 5, 'Номер полулюкс премиум (с завтраком)', 15500, 4, array []::varchar[], 16),
@@ -34,7 +34,8 @@ VALUES
     (2, 'user123@example.com', array ['admin'], 'ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'), -- Для админки, чтобы запомнить легкий пароль в браузере
     (3, 'fedor@moloko.ru', array ['admin']::varchar[], '962e0437e05964f5983ac12fa343324207a3bbde54779c83b5b9cc3ee2b3143f'),
     (4, 'sharik@moloko.ru', array []::varchar[], 'b757f284ca76df96dd2d70521a6af2005c335e5a8e3ea074b7cdbaefbb359387'),
-    (5, 'kot@pes.ru', array ['manager']::varchar[], 'b757f284ca76df96dd2d70521a6af2005c335e5a8e3ea074b7cdbaefbb359387');
+    (5, 'kot@pes.ru', array ['manager']::varchar[], 'b757f284ca76df96dd2d70521a6af2005c335e5a8e3ea074b7cdbaefbb359387'),
+    (6, 'mod@mod.ru', array ['moderator']::varchar[], 'b757f284ca76df96dd2d70521a6af2005c335e5a8e3ea074b7cdbaefbb359387');
 SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));
 
 

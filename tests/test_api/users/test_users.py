@@ -1,10 +1,9 @@
 import pytest
-from app.common.schemas.user import OneUserReadSchema
+from app.common.schemas.user import UserBaseReadSchema
 from httpx import AsyncClient
 from starlette import status
 from tests.conftest import sign_in
-
-BASE_URL = "/api/v1/users/"
+from tests.constants import BASE_USERS_URL
 
 
 @pytest.mark.parametrize(
@@ -17,7 +16,7 @@ BASE_URL = "/api/v1/users/"
 )
 async def test_sign_up(client: AsyncClient, email, password, status_code):
     response = await client.post(
-        url=f"{BASE_URL}sign_up",
+        url=f"{BASE_USERS_URL}sign_up",
         data={"email": email, "raw_password": password},
     )
     assert response.status_code == status_code
@@ -36,12 +35,18 @@ async def test_sign_in(client: AsyncClient, email, password, status_code):
 
 
 async def test_current_user(user_client: AsyncClient):
-    response_user = await user_client.get("/api/v1/users/current")
+    response_user = await user_client.get(f"{BASE_USERS_URL}current")
+    user = UserBaseReadSchema.model_validate(response_user.json())
     assert response_user.status_code == status.HTTP_200_OK
-    user = OneUserReadSchema.model_validate(response_user.json())
     assert user.email == "sharik@moloko.ru"
+
+    response_sign_out = await user_client.post(f"{BASE_USERS_URL}sign_out")
+    assert response_sign_out.status_code == 200
+
+    response_user = await user_client.get(f"{BASE_USERS_URL}current")
+    assert response_user.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 async def test_get_users(admin_client: AsyncClient):
-    response = await admin_client.get(f"{BASE_URL}for_admin")
+    response = await admin_client.get(f"{BASE_USERS_URL}for_admin")
     assert response.status_code == status.HTTP_200_OK

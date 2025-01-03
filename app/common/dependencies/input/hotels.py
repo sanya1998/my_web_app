@@ -1,7 +1,7 @@
 from typing import Annotated
 
-from app.common.schemas.hotel import HotelCreateInputSchema, HotelUpdateInputSchema
+from app.common.schemas.hotel import HotelBaseInputSchema
 from fastapi import Depends
 
-HotelInputCreateDep = Annotated[HotelCreateInputSchema, Depends(HotelCreateInputSchema)]
-HotelInputUpdateDep = Annotated[HotelUpdateInputSchema, Depends(HotelUpdateInputSchema)]
+HotelInputCreateDep = Annotated[HotelBaseInputSchema, Depends(HotelBaseInputSchema)]
+HotelInputUpdateDep = Annotated[HotelBaseInputSchema, Depends(HotelBaseInputSchema)]

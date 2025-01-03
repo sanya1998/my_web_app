@@ -1,14 +1,5 @@
 from app.common.dependencies.filters.bookings import BookingsFilters
-from app.common.schemas.booking import (
-    BookingCreateSchema,
-    CheckData,
-    ManyBookingsReadSchema,
-    OneBookingReadSchema,
-    OneBookingWithJoinReadSchema,
-    OneCreatedBookingReadSchema,
-    OneDeletedBookingReadSchema,
-    OneUpdatedBookingReadSchema,
-)
+from app.common.schemas.booking import BookingBaseReadSchema, BookingCreateSchema, BookingReadSchema, CheckData
 from app.common.tables import Bookings, Hotels, Rooms, Users
 from app.repositories.base import BaseRepository
 from sqlalchemy import ColumnElement, Select, and_, func, label, or_, select
@@ -17,29 +8,34 @@ from sqlalchemy import ColumnElement, Select, and_, func, label, or_, select
 class BookingRepo(BaseRepository):
     db_model = Bookings
 
-    one_read_schema = OneBookingReadSchema
-    one_read_join_schema = OneBookingWithJoinReadSchema
-    many_read_schema = ManyBookingsReadSchema
-    one_created_read_schema = OneCreatedBookingReadSchema
-    one_updated_read_schema = OneUpdatedBookingReadSchema
-    one_deleted_read_schema = OneDeletedBookingReadSchema
+    one_read_schema = BookingReadSchema
+    many_read_schema = BookingReadSchema
+    one_created_read_schema = BookingBaseReadSchema
+    one_updated_read_schema = BookingBaseReadSchema
+    one_deleted_read_schema = BookingBaseReadSchema
     create_schema = BookingCreateSchema
 
     def _modify_query_for_getting_objects(
         self, query: Select, filters: BookingsFilters, **additional_filters
     ) -> Select:
-        # TODO: мб в фильтры засунуть
+        # TODO: .outerjoin(Hotels, Rooms.hotel_id == Hotels.id),
         return (
-            query.join(Rooms, Bookings.room_id == Rooms.id)  # TODO: pycharm подчеркивает только это почему-то
-            .join(Hotels, Rooms.hotel_id == Hotels.id)
-            .join(Users, Bookings.user_id == Users.id)
-            .select_from(Bookings)
+            query.join(Users, Bookings.user_id == Users.id)  # TODO: pycharm подчеркивает только это почему-то
+            .join(Rooms, Bookings.room_id == Rooms.id)
+            .join(Hotels, Rooms.hotel_id == Hotels.id)  # TODO: сравнить с get object
+            .select_from(Bookings)  # TODO: check
             .add_columns(Users, Rooms)
         )
 
     @BaseRepository.catcher
-    def _create_query_for_getting_object_with_join(self, **filters) -> Select:
-        return select(self.db_model, Rooms).filter_by(**filters).outerjoin(Rooms)
+    def _modify_query_for_getting_object(self, query: Select, **filters):
+        # TODO: {"booking: "{"room": {"hotel": {...}}}}
+        # TODO: .outerjoin(Hotels, Rooms.hotel_id == Hotels.id),
+        return (
+            query.outerjoin(Users, Bookings.user_id == Users.id)
+            .outerjoin(Rooms, Bookings.room_id == Rooms.id)
+            .add_columns(Users, Rooms)
+        )
 
     @staticmethod
     @BaseRepository.catcher
@@ -106,6 +102,8 @@ class BookingRepo(BaseRepository):
         WHERE rooms.id = selected_room_id
         GROUP BY rooms.id, rooms.price;
         """
+        # TODO: нет ли ничего общего с RoomRepo.free_rooms_by_check_dates ?
+
         room_bookings = (
             self.query_for_getting_bookings_by_check_dates(data.check_into, data.check_out).where(
                 and_(
@@ -120,7 +118,7 @@ class BookingRepo(BaseRepository):
             select(Rooms.id, Rooms.price, remain_by_room)
             .select_from(Rooms)
             .outerjoin(target=room_bookings, onclause=and_(room_bookings.c.room_id == Rooms.id))
-            .where(and_(Rooms.id == data.selected_room_id))  # TODO: без `and_` можно?
+            .where(Rooms.id == data.selected_room_id)  # TODO: 2 раза
             .group_by(Rooms)
         )
         selected_room_answer = await self.session.execute(selected_room_query)

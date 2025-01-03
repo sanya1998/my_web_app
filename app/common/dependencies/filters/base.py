@@ -7,10 +7,9 @@ from app.config.main import settings
 from fastapi import Depends
 from fastapi.params import Query
 from pydantic import BaseModel, ConfigDict, Field, create_model
-from sqlalchemy import Select, select
+from sqlalchemy import Select
 from sqlalchemy.orm import DeclarativeBase, selectinload
 
-# TODO: фильтры для joined моделей
 # TODO: обработать поиск сразу в нескольких полях
 
 
@@ -47,11 +46,6 @@ class BaseFilters(BaseModel):
             "is_distinct_from": lambda field, value: field.is_distinct_from(value),
             "is_not_distinct_from": lambda field, value: field.isnot_distinct_from(value),
         }
-
-    def create_query(self, db_model: Type[DeclarativeBase] = None) -> Select:
-        db_model = db_model or self._db_model
-        base_query = select(db_model)
-        return self.modify_query(base_query)
 
     def add_nested_filters(self, query: Select) -> Select:
         for field_name, value in self._nested_filters.items():
