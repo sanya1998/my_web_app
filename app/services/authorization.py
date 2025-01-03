@@ -3,6 +3,7 @@ import hashlib
 from datetime import datetime, timedelta
 
 import jwt
+from app.common.dependencies.input.users import UserInput
 from app.common.exceptions.services.already_exists import AlreadyExistsServiceError
 from app.common.exceptions.services.not_found import NotFoundServiceError
 from app.common.exceptions.services.unauthorized import (
@@ -13,7 +14,7 @@ from app.common.exceptions.services.unauthorized import (
     UnauthorizedServiceError,
 )
 from app.common.helpers.db import get_columns_by_table
-from app.common.schemas.user import UserBaseReadSchema, UserCreateSchema, UserInputSchema
+from app.common.schemas.user import UserBaseReadSchema, UserCreateSchema
 from app.common.tables import Users
 from app.config.main import settings
 from app.repositories.user import UserRepo
@@ -70,22 +71,22 @@ class AuthorizationService(BaseService):
         return user
 
     @BaseService.catcher
-    async def sign_up(self, user_input: UserInputSchema) -> UserBaseReadSchema:
+    async def sign_up(self, user_input: UserInput) -> UserBaseReadSchema:
         if await self.user_repo.is_exists(email=user_input.email):
             raise AlreadyExistsServiceError
-        hashed_password_input = self.get_password_hash(user_input.raw_password)
+        hashed_password_input = self.get_password_hash(user_input.password)
         new_user_create_schema = UserCreateSchema(email=user_input.email, hashed_password=hashed_password_input)
         new_user = await self.user_repo.create(new_user_create_schema)
         self.create_and_remember_access_token(email=user_input.email)
         return new_user
 
     @BaseService.catcher
-    async def sign_in(self, user_input: UserInputSchema):
+    async def sign_in(self, user_input: UserInput):
         if await self.user_repo.is_not_exists(email=user_input.email):
             raise NotFoundServiceError
         password_field = get_columns_by_table(Users).hashed_password.name
         hashed_password_db = await self.user_repo.get_object_field(key=password_field, email=user_input.email)
-        hashed_password_input = self.get_password_hash(user_input.raw_password)
+        hashed_password_input = self.get_password_hash(user_input.password)
         if hashed_password_db != hashed_password_input:
             raise UnauthorizedServiceError
         self.create_and_remember_access_token(email=user_input.email)

@@ -28,6 +28,8 @@ async def test_get_by_check_dates(client, params, status_code):
         ({"limit": 2, "offset": 2, "order_by": "-id"}, 8),
         ({"hotel_id": 6}, 11),
         ({"hotel_name": "Bridge Resort"}, 11),
+        ({"order_by": ["price", "id"], "price__gt": 26000, "price__lt": 27000, "limit": 1}, 3),
+        ({"order_by": ["price", "-id"], "price__gt": 26000, "price__lt": 27000, "limit": 1}, 11),
     ],
 )
 async def test_get_by_params(client, params, id_):

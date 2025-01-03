@@ -97,8 +97,6 @@ TODO:
 61) бронирование делать внутри транзакции
 62) добавить тесты на получение списков по фильтрам родительских и дочерних сущностей
 63) мб применить from sqlalchemy.inspection import inspect; thing_relations = inspect(Thing).relationships.items()
-65) эндпоинт hotels возвращает объекты отелей. У тех отелей, у которых пустой serviсes, почему-то возвращается '"services": [""]', а не '"services": []'
 67) все print() заменить на logger
 68) В mocker.patch передается путь (в 2 местах) в виде строки. А путь может поменяться. Подумать над этим
-71) Можно ли response_model_by_alias задать сразу для нескольких эндпоинтов?
-72) мб input schema вместе с фильтрами к dependency? чтобы не мешались в моделях
+71) Можно ли response_model_by_alias задать сразу для нескольких эндпоинтов? почитать про check populate_by_name=True

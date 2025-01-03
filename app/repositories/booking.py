@@ -1,5 +1,6 @@
 from app.common.dependencies.filters.bookings import BookingsFilters
-from app.common.schemas.booking import BookingBaseReadSchema, BookingCreateSchema, BookingReadSchema, CheckData
+from app.common.helpers.check_data import CheckData
+from app.common.schemas.booking import BookingBaseReadSchema, BookingCreateSchema, BookingReadSchema
 from app.common.tables import Bookings, Hotels, Rooms, Users
 from app.repositories.base import BaseRepository
 from sqlalchemy import ColumnElement, Select, and_, func, label, or_, select

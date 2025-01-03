@@ -1,12 +1,12 @@
 INSERT INTO
-    hotels (id, name, location, services, image_id)
+    hotels (id, name, location, services, stars, image_id)
 VALUES
-    (1, 'Cosmos Collection Altay', 'Республика Алтай, +точный адрес', array ['Wi-Fi', 'Парковка'], 1),
-    (2, 'Skala', 'Адрес Skala', array ['Wi-Fi'], 2),
-    (3, 'Ару-Кёль', 'республика, район, улица, дом', array ['Парковка'], 3),
-    (4, 'Гостиница Сыктывкар', 'Коми, адрес', array ['Тренажёрный зал'], 4),
-    (5, 'Palace', 'Республика Коми, адрес', array ['Кондиционер'], 5),
-    (6, 'Bridge Resort', 'Поселок Сириус, улица, дом', array ['Wi-Fi'], 6);
+    (1, 'Cosmos Collection Altay', 'Республика Алтай, +точный адрес', array ['Wi-Fi', 'Парковка'], 4, 1),
+    (2, 'Skala', 'Адрес Skala', array ['Wi-Fi'], 4, 2),
+    (3, 'Ару-Кёль', 'республика, район, улица, дом', array ['Парковка'], 2, 3),
+    (4, 'Гостиница Сыктывкар', 'Коми, адрес', array ['Тренажёрный зал'], 1, 4),
+    (5, 'Palace', 'Республика Коми, адрес', array ['Кондиционер', 'SPA'], 3, 5),
+    (6, 'Bridge Resort', 'Поселок Сириус, улица, дом', array ['Wi-Fi'], 4, 6);
 SELECT setval(pg_get_serial_sequence('hotels', 'id'), (SELECT MAX(id) FROM hotels));
 
 

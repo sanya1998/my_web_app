@@ -3,7 +3,7 @@ from typing import List
 from app.common.constants.cache_prefixes import HOTELS_CACHE_PREFIX
 from app.common.dependencies.auth.moderator import ModeratorUserDep
 from app.common.dependencies.filters.hotels import HotelsFiltersDep
-from app.common.dependencies.input.hotels import HotelInputCreateDep, HotelInputUpdateDep
+from app.common.dependencies.input.hotels import HotelBaseInput, HotelInputCreateDep, HotelInputUpdateDep
 from app.common.dependencies.repositories.hotel import HotelRepoDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.api.multiple_results import MultipleResultsApiError
@@ -11,7 +11,7 @@ from app.common.exceptions.api.not_found import NotFoundApiError
 from app.common.exceptions.repositories.base import BaseRepoError
 from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
-from app.common.schemas.hotel import HotelBaseInputSchema, HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
+from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
 from app.config.main import settings
 from app.services.cache.cache import CacheService
 from app.services.cache.key_builders.listing import build_key_by_listing, build_key_pattern_by_listing
@@ -34,7 +34,7 @@ async def create_hotel_for_moderator(
     moderator: ModeratorUserDep,
 ) -> HotelBaseReadSchema:
     try:
-        hotel_create = HotelBaseInputSchema.model_validate(hotel_input)
+        hotel_create = HotelBaseInput.model_validate(hotel_input)
         new_hotel = await hotel_repo.create(hotel_create)
         # TODO: отправлять в консюмер команду на очистку кеша
         await cache.clear(clear_by_pattern=True)
@@ -73,7 +73,7 @@ async def update_hotel_for_moderator(
     moderator: ModeratorUserDep,
 ) -> HotelBaseReadSchema:
     try:
-        hotel_update = HotelBaseInputSchema.model_validate(hotel_input)
+        hotel_update = HotelBaseInput.model_validate(hotel_input)
         updated_hotel = await hotel_repo.update(hotel_update, id=object_id)
         # TODO: отправлять в консюмер команду на очистку кеша
         await cache.clear(clear_by_key=True, clear_by_pattern=True, object_id=object_id)

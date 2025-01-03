@@ -14,12 +14,10 @@ HotelsOrderingEnum = get_ordering_enum_by_columns("HotelsOrderingEnum", columns.
 
 class HotelsFilters(MainFilters, SearchFilters, HotelBaseFilters):
     location__ilike: str | None = None
+    stars__ge: int | None = None
+    services__contains: List[str] | None = Field(Query(None))
     order_by: List[HotelsOrderingEnum] | None = Field(Query([HotelsOrderingEnum.ID]))
     rooms: RoomsBaseFilters
-
-    # TODO:
-    # has_spa
-    # stars
 
     class Helper(SearchFilters.Helper):
         search_fields = [columns.name, columns.location]
