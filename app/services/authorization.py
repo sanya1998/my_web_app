@@ -13,17 +13,12 @@ from app.common.exceptions.services.unauthorized import (
     UnauthorizedServiceError,
 )
 from app.common.helpers.db import get_columns_by_table
-from app.common.schemas.user import OneUserReadSchema, UserCreateSchema, UserInputSchema
+from app.common.schemas.user import UserBaseReadSchema, UserCreateSchema, UserInputSchema
 from app.common.tables import Users
 from app.config.main import settings
 from app.repositories.user import UserRepo
 from app.services.base import BaseService
-from jwt.exceptions import (
-    ExpiredSignatureError,
-    InvalidAlgorithmError,
-    InvalidTokenError,
-    MissingRequiredClaimError,
-)
+from jwt.exceptions import ExpiredSignatureError, InvalidAlgorithmError, InvalidTokenError, MissingRequiredClaimError
 from pydantic import SecretStr
 from starlette.requests import Request
 
@@ -69,13 +64,13 @@ class AuthorizationService(BaseService):
             raise InvalidTokenServiceError
 
     @BaseService.catcher
-    async def get_user_by_access_token(self, token: str) -> OneUserReadSchema:
+    async def get_user_by_access_token(self, token: str) -> UserBaseReadSchema:
         payload = self.decrypt_access_token(token)
         user = await self.user_repo.get_object(email=payload.get("sub"))
         return user
 
     @BaseService.catcher
-    async def sign_up(self, user_input: UserInputSchema) -> OneUserReadSchema:
+    async def sign_up(self, user_input: UserInputSchema) -> UserBaseReadSchema:
         if await self.user_repo.is_exists(email=user_input.email):
             raise AlreadyExistsServiceError
         hashed_password_input = self.get_password_hash(user_input.raw_password)

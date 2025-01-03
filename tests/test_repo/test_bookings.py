@@ -29,7 +29,7 @@ async def test_bookings_total_cost(session: AsyncSession):
     assert updated_booking.total_cost == update_schema.price * (update_schema.date_to - update_schema.date_from).days
 
 
-async def test_crud_bookings(session):
+async def test_repo_crud_bookings(session):
     booking_repo = BookingRepo(session)
 
     create_schema = BookingCreateSchema(

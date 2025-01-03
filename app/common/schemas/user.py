@@ -20,6 +20,7 @@ class UserCreateSchema(UserBaseSchema):
     hashed_password: str
 
 
+# TODO: пока не используется
 class UserPasswordUpdateSchema(UserBaseSchema):
     old_password: SecretStr = PASSWORD_FIELD
     new_password: SecretStr = PASSWORD_FIELD
@@ -31,16 +32,8 @@ class UserDataUpdateSchema(UserBaseSchema):
 
 
 class UserRolesUpdateSchema(UserBaseSchema):
-    roles: List[RolesEnum] = []
+    roles: List[RolesEnum] = list()
 
 
-class OneUserReadSchema(UserDataUpdateSchema, UserRolesUpdateSchema):
+class UserBaseReadSchema(UserDataUpdateSchema, UserRolesUpdateSchema):
     id: int
-
-
-class OneCreatedUserReadSchema(OneUserReadSchema):
-    pass
-
-
-class ManyUsersReadSchema(OneUserReadSchema):
-    pass

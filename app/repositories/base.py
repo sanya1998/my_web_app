@@ -5,9 +5,7 @@ from app.common.exceptions.catcher import catch_exception
 from app.common.exceptions.repositories.base import BaseRepoError
 
 # TODO: сделать в одну строку. Пусть длина импорта будет равна длине обычной строке
-from app.common.exceptions.repositories.connection_refused import (
-    ConnectionRefusedRepoError,
-)
+from app.common.exceptions.repositories.connection_refused import ConnectionRefusedRepoError
 from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.exceptions.repositories.wrong_query import WrongQueryError
@@ -24,11 +22,14 @@ class BaseRepository:
     db_model = BaseTable
 
     one_read_schema = BaseSchema
-    one_read_join_schema = BaseSchema
     many_read_schema = BaseSchema
     one_created_read_schema = BaseSchema
+    many_created_read_schema = BaseSchema
     one_updated_read_schema = BaseSchema
+    many_updated_read_schema = BaseSchema
+    upserted_read_schema = BaseSchema
     one_deleted_read_schema = BaseSchema
+    many_deleted_read_schema = BaseSchema
     create_schema = BaseSchema
     update_schema = BaseSchema
 
@@ -58,53 +59,29 @@ class BaseRepository:
     @catcher
     async def get_objects(self, filters: BaseFilters, **additional_filters) -> List[many_read_schema]:
         query = select(get_columns_by_table(self.db_model))
-
-        # TODO: какой порядок лучше? учесть динамически созданные поля
-        query = filters.modify_query(query, **additional_filters)
         query = self._modify_query_for_getting_objects(query, filters, **additional_filters)
-
+        query = filters.modify_query(query, **additional_filters)
         result = await self.execute(query)
         filtered_objects = result.all()
         return [self.many_read_schema.model_validate(obj) for obj in filtered_objects]
 
     @catcher
-    def _create_query_for_getting_object(self, **filters) -> Select:
-        return select(self.db_model).filter_by(**filters)
+    def _modify_query_for_getting_object(self, query: Select, **filters):
+        return query
 
     @catcher
     async def get_object(self, **filters) -> one_read_schema:
-        query = self._create_query_for_getting_object(**filters)
+        # TODO: use BaseFilters
+        query = select(get_columns_by_table(self.db_model)).filter_by(**filters)
+        query = self._modify_query_for_getting_object(query, **filters)
         result = await self.execute(query)
         try:
-            obj = result.scalar_one()
+            obj = result.one()
         except NoResultFound:
             raise NotFoundRepoError
         except MultipleResultsFound:
             raise MultipleResultsRepoError
         return self.one_read_schema.model_validate(obj)
-
-    @catcher
-    def _create_query_for_getting_object_with_join(self, **filters) -> Select:
-        raise NotImplementedError
-
-    @catcher
-    def _model_validate_for_getting_object_with_join(self, *objects) -> one_read_join_schema:
-        # TODO: мб получится без objects[0] и objects[1], если sqlalchemy правильно объяснить связи?
-        return self.one_read_join_schema.model_validate(objects[0])
-
-    @catcher
-    async def get_object_with_join(self, **filters) -> one_read_join_schema:
-        query = self._create_query_for_getting_object_with_join(**filters)
-        result = await self.execute(query)
-        try:
-            # TODO: код рабочий, но стоит поискать, как работать с вложенными моделями после join
-            # TODO: методы _model_validate_for_getting_object_with_join не самые красивые из-за objects[0]
-            objects = result.one()
-        except NoResultFound:
-            raise NotFoundRepoError
-        except MultipleResultsFound:
-            raise MultipleResultsRepoError
-        return self._model_validate_for_getting_object_with_join(*objects)
 
     @catcher
     async def get_object_field(self, key: str, **filters) -> Any:
@@ -126,7 +103,7 @@ class BaseRepository:
         return self.one_created_read_schema.model_validate(obj)
 
     @catcher
-    async def create_bulk(self, data: List[create_schema]) -> List[many_read_schema]:  # TODO: many_created_read_schema
+    async def create_bulk(self, data: List[create_schema]) -> List[many_created_read_schema]:
         raise NotImplementedError
 
     @catcher
@@ -143,7 +120,7 @@ class BaseRepository:
         return not (await self.is_exists(**filters))
 
     @catcher
-    async def upsert(self, data):
+    async def upsert(self, data) -> upserted_read_schema:
         raise NotImplementedError
 
     @catcher
@@ -158,7 +135,7 @@ class BaseRepository:
         return self.one_updated_read_schema.model_validate(obj)
 
     @catcher
-    async def update_bulk(self, data: update_schema, **filters) -> List[many_read_schema]:
+    async def update_bulk(self, data: update_schema, **filters) -> List[many_updated_read_schema]:
         raise NotImplementedError
 
     @catcher
@@ -177,5 +154,5 @@ class BaseRepository:
         return self.one_deleted_read_schema.model_validate(obj)
 
     @catcher
-    async def delete_bulk(self, **filters) -> List[many_read_schema]:
+    async def delete_bulk(self, **filters) -> List[many_deleted_read_schema]:
         raise NotImplementedError

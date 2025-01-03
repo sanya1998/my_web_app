@@ -6,7 +6,7 @@ from app.common.dependencies.filters.users import UsersFiltersDep
 from app.common.dependencies.repositories.user import UserRepoDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.repositories.base import BaseRepoError
-from app.common.schemas.user import OneUserReadSchema
+from app.common.schemas.user import UserBaseReadSchema
 from fastapi import APIRouter
 
 get_router = APIRouter()
@@ -15,7 +15,7 @@ get_router = APIRouter()
 @get_router.get("/for_admin")
 async def get_users_for_admin(
     filters: UsersFiltersDep, user_repo: UserRepoDep, admin: AdminUserDep
-) -> List[OneUserReadSchema]:
+) -> List[UserBaseReadSchema]:
     try:
         return await user_repo.get_objects(filters=filters)
     except BaseRepoError:
@@ -23,5 +23,5 @@ async def get_users_for_admin(
 
 
 @get_router.get("/current")
-async def get_current_user(user: CurrentUserDep) -> OneUserReadSchema:
+async def get_current_user(user: CurrentUserDep) -> UserBaseReadSchema:
     return user

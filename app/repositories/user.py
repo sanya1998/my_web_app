@@ -1,9 +1,4 @@
-from app.common.schemas.user import (
-    ManyUsersReadSchema,
-    OneCreatedUserReadSchema,
-    OneUserReadSchema,
-    UserCreateSchema,
-)
+from app.common.schemas.user import UserBaseReadSchema, UserCreateSchema
 from app.common.tables import Users
 from app.repositories.base import BaseRepository
 
@@ -11,7 +6,7 @@ from app.repositories.base import BaseRepository
 class UserRepo(BaseRepository):
     db_model = Users
 
-    one_read_schema = OneUserReadSchema
-    many_read_schema = ManyUsersReadSchema
-    one_created_read_schema = OneCreatedUserReadSchema
+    one_read_schema = UserBaseReadSchema
+    many_read_schema = UserBaseReadSchema
+    one_created_read_schema = UserBaseReadSchema
     create_schema = UserCreateSchema

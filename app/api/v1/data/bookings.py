@@ -2,14 +2,8 @@ from typing import List
 
 from app.common.dependencies.auth.base import CurrentUserDep
 from app.common.dependencies.auth.manager import ManagerUserDep
-from app.common.dependencies.filters.bookings import (
-    BookingsFiltersDep,
-    CurrentUserBookingsFiltersDep,
-)
-from app.common.dependencies.input.bookings import (
-    BookingInputCreateDep,
-    BookingInputUpdateDep,
-)
+from app.common.dependencies.filters.bookings import BookingsFiltersDep, CurrentUserBookingsFiltersDep
+from app.common.dependencies.input.bookings import BookingInputCreateDep, BookingInputUpdateDep
 from app.common.dependencies.repositories.booking import BookingRepoDep
 from app.common.dependencies.services.booking import BookingServiceDep
 from app.common.exceptions.api.base import BaseApiError
@@ -22,14 +16,7 @@ from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.exceptions.services.base import BaseServiceError
 from app.common.exceptions.services.not_found import NotFoundServiceError
 from app.common.exceptions.services.unavailable import UnavailableServiceError
-from app.common.schemas.booking import (
-    CurrentUserManyBookingsReadSchema,
-    ManyBookingsReadSchema,
-    OneBookingWithJoinReadSchema,
-    OneCreatedBookingReadSchema,
-    OneDeletedBookingReadSchema,
-    OneUpdatedBookingReadSchema,
-)
+from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
 from app.common.tasks.email import send_booking_notify_email
 from fastapi import APIRouter
 
@@ -39,7 +26,7 @@ router = APIRouter(prefix="/bookings", tags=["Bookings"])
 @router.post("/for_current_user")
 async def create_booking_for_current_user(
     booking_input: BookingInputCreateDep, booking_service: BookingServiceDep, user: CurrentUserDep
-) -> OneCreatedBookingReadSchema:
+) -> BookingBaseReadSchema:
     try:
         booking = await booking_service.create(booking_input, user_id=user.id)
         booking_dict = booking.model_dump()
@@ -56,7 +43,7 @@ async def create_booking_for_current_user(
 @router.get("/for_current_user", response_model_by_alias=False)
 async def get_bookings_for_current_user(
     filters: CurrentUserBookingsFiltersDep, booking_repo: BookingRepoDep, user: CurrentUserDep
-) -> List[CurrentUserManyBookingsReadSchema]:
+) -> List[CurrentUserBookingReadSchema]:
     try:
         return await booking_repo.get_objects(filters=filters, user_id=user.id)
     except BaseRepoError:
@@ -66,20 +53,20 @@ async def get_bookings_for_current_user(
 @router.get("/for_manager", response_model_by_alias=False)
 async def get_bookings_for_manager(
     filters: BookingsFiltersDep, booking_repo: BookingRepoDep, manager: ManagerUserDep
-) -> List[ManyBookingsReadSchema]:
+) -> List[BookingReadSchema]:
     try:
         return await booking_repo.get_objects(filters=filters)
     except BaseRepoError:
         raise BaseApiError
 
 
-@router.get("/{object_id}/for_current_user")
+@router.get("/{object_id}/for_current_user", response_model_by_alias=False)
 async def get_booking_for_current_user(
     object_id: int, booking_repo: BookingRepoDep, user: CurrentUserDep
-) -> OneBookingWithJoinReadSchema:
+) -> CurrentUserBookingReadSchema:
     """Если запрашиваемое бронирование существует, но не принадлежит пользователю, то ответ NotFoundApiError"""
     try:
-        return await booking_repo.get_object_with_join(id=object_id, user_id=user.id)
+        return await booking_repo.get_object(id=object_id, user_id=user.id)
     except NotFoundRepoError:
         raise NotFoundApiError
     except MultipleResultsRepoError:
@@ -88,12 +75,13 @@ async def get_booking_for_current_user(
         raise BaseApiError
 
 
-@router.get("/{object_id}/for_manager")
+@router.get("/{object_id}/for_manager", response_model_by_alias=False)
 async def get_booking_for_manager(
     object_id: int, booking_repo: BookingRepoDep, manager: ManagerUserDep
-) -> OneBookingWithJoinReadSchema:
+) -> BookingReadSchema:
+    # TODO: add field user, но не добавлять его к предыдущему ендпоинту
     try:
-        return await booking_repo.get_object_with_join(id=object_id)
+        return await booking_repo.get_object(id=object_id)
     except NotFoundRepoError:
         raise NotFoundApiError
     except MultipleResultsRepoError:
@@ -108,7 +96,7 @@ async def update_booking_for_manager(
     booking_input: BookingInputUpdateDep,
     booking_service: BookingServiceDep,
     manager: ManagerUserDep,
-) -> OneUpdatedBookingReadSchema:
+) -> BookingBaseReadSchema:
     try:
         return await booking_service.update(booking_input, booking_id=object_id)
     except NotFoundServiceError:
@@ -120,7 +108,7 @@ async def update_booking_for_manager(
 @router.delete("/{object_id}/for_manager")
 async def delete_booking_for_manager(
     object_id: int, booking_repo: BookingRepoDep, manager: ManagerUserDep
-) -> OneDeletedBookingReadSchema:
+) -> BookingBaseReadSchema:
     try:
         return await booking_repo.delete_object(id=object_id)
     except NotFoundRepoError:
