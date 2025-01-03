@@ -79,7 +79,6 @@ async def get_booking_for_current_user(
 async def get_booking_for_manager(
     object_id: int, booking_repo: BookingRepoDep, manager: ManagerUserDep
 ) -> BookingReadSchema:
-    # TODO: add field user, но не добавлять его к предыдущему ендпоинту
     try:
         return await booking_repo.get_object(id=object_id)
     except NotFoundRepoError:

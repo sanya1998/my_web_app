@@ -1,29 +1,16 @@
 from typing import List
 
-from app.common.constants.password import PASSWORD_FIELD
 from app.common.constants.roles import RolesEnum
 from app.common.schemas.base import BaseSchema
-from fastapi import Form
-from pydantic import EmailStr, Field, SecretStr
+from pydantic import EmailStr
 
 
 class UserBaseSchema(BaseSchema):
     email: EmailStr
 
 
-class UserInputSchema(UserBaseSchema):
-    email: EmailStr = Field(Form())
-    raw_password: SecretStr = PASSWORD_FIELD
-
-
 class UserCreateSchema(UserBaseSchema):
     hashed_password: str
-
-
-# TODO: пока не используется
-class UserPasswordUpdateSchema(UserBaseSchema):
-    old_password: SecretStr = PASSWORD_FIELD
-    new_password: SecretStr = PASSWORD_FIELD
 
 
 class UserDataUpdateSchema(UserBaseSchema):
@@ -31,9 +18,6 @@ class UserDataUpdateSchema(UserBaseSchema):
     last_name: str | None = None
 
 
-class UserRolesUpdateSchema(UserBaseSchema):
-    roles: List[RolesEnum] = list()
-
-
-class UserBaseReadSchema(UserDataUpdateSchema, UserRolesUpdateSchema):
+class UserBaseReadSchema(UserDataUpdateSchema):
     id: int
+    roles: List[RolesEnum] = list()

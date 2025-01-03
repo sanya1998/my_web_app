@@ -44,11 +44,11 @@ async def client() -> AsyncClient:
 client_for_admin = client_for_manager = client_for_moderator = client_for_user = client
 
 
-async def sign_in(client: AsyncClient, email: str, raw_password: str, expected_status=status.HTTP_200_OK):
+async def sign_in(client: AsyncClient, email: str, password: str, expected_status=status.HTTP_200_OK):
     """
     Аутентифицирует пользователя
     """
-    response_sign_in = await client.post(f"{BASE_USERS_URL}sign_in", data=dict(email=email, raw_password=raw_password))
+    response_sign_in = await client.post(f"{BASE_USERS_URL}sign_in", data=dict(email=email, password=password))
     assert response_sign_in.status_code == expected_status
 
 
@@ -57,7 +57,7 @@ async def admin_client(client_for_admin: AsyncClient) -> AsyncClient:
     """
     Аутентификация пользователя с правами админа
     """
-    await sign_in(client=client_for_admin, email="fedor@moloko.ru", raw_password="hard_password")
+    await sign_in(client=client_for_admin, email="fedor@moloko.ru", password="hard_password")
     return client_for_admin
 
 
@@ -66,7 +66,7 @@ async def manager_client(client_for_manager: AsyncClient) -> AsyncClient:
     """
     Аутентификация пользователя с правами менеджера
     """
-    await sign_in(client=client_for_manager, email="kot@pes.ru", raw_password="easy_password")
+    await sign_in(client=client_for_manager, email="kot@pes.ru", password="easy_password")
     return client_for_manager
 
 
@@ -75,7 +75,7 @@ async def moderator_client(client_for_moderator: AsyncClient) -> AsyncClient:
     """
     Аутентификация пользователя с правами менеджера
     """
-    await sign_in(client=client_for_moderator, email="mod@mod.ru", raw_password="easy_password")
+    await sign_in(client=client_for_moderator, email="mod@mod.ru", password="easy_password")
     return client_for_moderator
 
 
@@ -84,7 +84,7 @@ async def user_client(client_for_user: AsyncClient) -> AsyncClient:
     """
     Аутентификация обычного пользователя
     """
-    await sign_in(client=client_for_user, email="sharik@moloko.ru", raw_password="easy_password")
+    await sign_in(client=client_for_user, email="sharik@moloko.ru", password="easy_password")
     return client_for_user
 
 

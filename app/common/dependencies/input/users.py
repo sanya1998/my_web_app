@@ -1,6 +1,19 @@
 from typing import Annotated
 
-from app.common.schemas.user import UserInputSchema
-from fastapi import Depends
+from app.common.constants.password import PASSWORD_FIELD
+from app.common.dependencies.input.base import BaseInput
+from fastapi import Depends, Form
+from pydantic import EmailStr, Field, SecretStr
 
-UserInputDep = Annotated[UserInputSchema, Depends(UserInputSchema)]
+
+class UserInput(BaseInput):
+    email: EmailStr = Field(Form())
+    password: SecretStr = PASSWORD_FIELD
+
+
+# TODO: пока не используется: смена паролей, изменение ролей
+class UserPasswordUpdateInputSchema(UserInput):
+    new_password: SecretStr = PASSWORD_FIELD
+
+
+UserInputDep = Annotated[UserInput, Depends(UserInput)]

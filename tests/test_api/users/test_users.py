@@ -17,7 +17,7 @@ from tests.constants import BASE_USERS_URL
 async def test_sign_up(client: AsyncClient, email, password, status_code):
     response = await client.post(
         url=f"{BASE_USERS_URL}sign_up",
-        data={"email": email, "raw_password": password},
+        data={"email": email, "password": password},
     )
     assert response.status_code == status_code
 
@@ -31,7 +31,7 @@ async def test_sign_up(client: AsyncClient, email, password, status_code):
     ],
 )
 async def test_sign_in(client: AsyncClient, email, password, status_code):
-    await sign_in(client=client, email=email, raw_password=password, expected_status=status_code)
+    await sign_in(client=client, email=email, password=password, expected_status=status_code)
 
 
 async def test_current_user(user_client: AsyncClient):

@@ -1,6 +1,7 @@
 from app.common.dependencies.filters.hotels import HotelsFilters
+from app.common.dependencies.input.hotels import HotelBaseInput
 from app.common.helpers.db import get_columns_by_table
-from app.common.schemas.hotel import HotelBaseInputSchema, HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
+from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
 from app.common.tables import Hotels, Rooms
 from app.repositories.base import BaseRepository
 from app.repositories.room import RoomRepo
@@ -15,7 +16,7 @@ class HotelRepo(BaseRepository):
     one_created_read_schema = HotelBaseReadSchema
     one_updated_read_schema = HotelBaseReadSchema
     one_deleted_read_schema = HotelBaseReadSchema
-    create_schema = HotelBaseInputSchema
+    create_schema = HotelBaseInput
 
     @BaseRepository.catcher
     def _modify_query_for_getting_objects(

@@ -44,6 +44,7 @@ class BaseFilters(BaseModel):
             "is_not": lambda field, value: field.is_not(value),
             "is_distinct_from": lambda field, value: field.is_distinct_from(value),
             "is_not_distinct_from": lambda field, value: field.isnot_distinct_from(value),
+            "contains": lambda field, values: field.contains(values),
         }
 
     def get_where_clauses(self, _exclude_fields=None, **additional_filters) -> List:
@@ -99,7 +100,7 @@ class LimitOffsetFilters(BaseFilters):
 
 
 class OrderByFilters(BaseFilters):
-    order_by: Tuple | None = Field(Query(None))
+    order_by: List | None = Field(Query(None))
 
     def add__order_by(self, query: Select, _exclude_fields: Set = None) -> Select:
         if _exclude_fields is None:

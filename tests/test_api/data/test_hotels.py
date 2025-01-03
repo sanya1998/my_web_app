@@ -85,6 +85,7 @@ async def test_get_hotels_without_dates(client):
         ({"name": "Palace"}, 5),
         ({"search": "bridge"}, 6),
         ({"search": "район"}, 3),
+        ({"services__contains": "SPA"}, 5),
     ],
 )
 async def test_hotels_params(client, params, id_):

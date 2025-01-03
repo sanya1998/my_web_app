@@ -1,22 +1,23 @@
 """Initial migration
 
 Revision ID:
-d239cb747a71
+2cdc75da7730
 
 Revises:
 
 
 Create Date:
-2024-09-06 14:10:10.561478
+2025-01-03 18:16:02.523877
 """
 
 from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = "d239cb747a71"
+revision: str = "2cdc75da7730"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -28,7 +29,8 @@ def upgrade() -> None:
         "hotels",
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("location", sa.String(), nullable=False),
-        sa.Column("services", sa.ARRAY(sa.String()), nullable=False),
+        sa.Column("services", postgresql.ARRAY(sa.String()), nullable=False),
+        sa.Column("stars", sa.Integer(), nullable=True),
         sa.Column("image_id", sa.Integer(), nullable=True),
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.PrimaryKeyConstraint("id"),

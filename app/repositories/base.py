@@ -3,8 +3,6 @@ from typing import Any, List, Union
 from app.common.dependencies.filters.base import BaseFilters
 from app.common.exceptions.catcher import catch_exception
 from app.common.exceptions.repositories.base import BaseRepoError
-
-# TODO: сделать в одну строку. Пусть длина импорта будет равна длине обычной строке
 from app.common.exceptions.repositories.connection_refused import ConnectionRefusedRepoError
 from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
@@ -42,7 +40,7 @@ class BaseRepository:
     @catcher
     async def execute(self, query: Union[ReturningInsert, Select, Update, Delete]) -> Result:
         try:
-            print(query.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
+            # print(query.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
             return await self.session.execute(query)
         except ConnectionRefusedError:
             raise ConnectionRefusedRepoError

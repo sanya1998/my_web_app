@@ -1,13 +1,9 @@
+from app.common.dependencies.input.bookings import BookingCreateInputSchema, BookingUpdateInputSchema
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.exceptions.services.not_found import NotFoundServiceError
 from app.common.exceptions.services.unavailable import UnavailableServiceError
-from app.common.schemas.booking import (
-    BookingCreateInputSchema,
-    BookingCreateSchema,
-    BookingUpdateInputSchema,
-    BookingUpdateSchema,
-    CheckData,
-)
+from app.common.helpers.check_data import CheckData
+from app.common.schemas.booking import BookingCreateSchema, BookingUpdateSchema
 from app.repositories.booking import BookingRepo
 from app.services.base import BaseService
 
