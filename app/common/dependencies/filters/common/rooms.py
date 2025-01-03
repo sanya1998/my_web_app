@@ -16,7 +16,7 @@ class BaseBaseFilters(BaseFilters):
 
 class RoomBaseFilters(BaseBaseFilters):
     name: str | None = None
-    hotel_id: int | None = None  # TODO: check
+    hotel_id: int | None = None
     hotel: HotelBaseFilters
 
 
@@ -33,7 +33,3 @@ class RoomsBaseFilters(BaseBaseFilters):
             if days <= 0 or days > 30:
                 raise UnprocessableEntityApiError(detail="Invalid dates. Must be between 1 and 30 days.")
         return self
-
-    class Helper(BaseFilters.Helper):
-        is_children = True
-        select_in_load = False

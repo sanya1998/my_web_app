@@ -1,6 +1,6 @@
 from typing import Annotated, List
 
-from app.common.dependencies.filters.base import MainFilters, filter_depends
+from app.common.dependencies.filters.base import MainFilters, SearchFilters, filter_depends
 from app.common.dependencies.filters.common.hotels import HotelBaseFilters
 from app.common.dependencies.filters.common.rooms import RoomsBaseFilters
 from app.common.helpers.db import get_columns_by_table, get_ordering_enum_by_columns
@@ -12,7 +12,7 @@ columns = get_columns_by_table(Hotels)
 HotelsOrderingEnum = get_ordering_enum_by_columns("HotelsOrderingEnum", columns.id, columns.name, columns.location)
 
 
-class HotelsFilters(MainFilters, HotelBaseFilters):
+class HotelsFilters(MainFilters, SearchFilters, HotelBaseFilters):
     location__ilike: str | None = None
     order_by: List[HotelsOrderingEnum] | None = Field(Query([HotelsOrderingEnum.ID]))
     rooms: RoomsBaseFilters
@@ -20,6 +20,9 @@ class HotelsFilters(MainFilters, HotelBaseFilters):
     # TODO:
     # has_spa
     # stars
+
+    class Helper(SearchFilters.Helper):
+        search_fields = [columns.name, columns.location]
 
 
 HotelsFiltersDep = Annotated[HotelsFilters, filter_depends(HotelsFilters)]

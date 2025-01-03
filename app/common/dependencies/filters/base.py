@@ -7,25 +7,24 @@ from app.config.main import settings
 from fastapi import Depends
 from fastapi.params import Query
 from pydantic import BaseModel, ConfigDict, Field, create_model
-from sqlalchemy import Select
-from sqlalchemy.orm import DeclarativeBase, selectinload
-
-# TODO: обработать поиск сразу в нескольких полях
+from sqlalchemy import Select, or_
+from sqlalchemy.orm import DeclarativeBase
+from typing_extensions import Self
 
 
 class BaseFilters(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
 
-    # TODO добавить тест (тут, а не в Helper, так как они могут изменяться в ходе работы)
-    _nested_filters: Dict = dict()
     _db_model = DeclarativeBase
+
+    def set_db_model(self, model) -> Self:
+        self._db_model = model
+        return self
 
     class Helper:
         delimiter = "__"
         operator_eq = "eq"
         prefix_desc = PREFIX_DESC
-        is_children = False
-        select_in_load = True  # TODO: мб обойтись без этого поля?
 
         operators_execution = {
             operator_eq: lambda field, value: field == value,
@@ -34,7 +33,7 @@ class BaseFilters(BaseModel):
             "ge": lambda field, value: field >= value,
             "lt": lambda field, value: field < value,
             "le": lambda field, value: field <= value,
-            "between": lambda field, values: field.between(*values),  # TODO: check
+            "between": lambda field, values: field.between(*values),
             "like": lambda field, value: field.like(value),
             "ilike": lambda field, value: field.ilike(value),
             "not_like": lambda field, value: field.notlike(value),
@@ -46,17 +45,6 @@ class BaseFilters(BaseModel):
             "is_distinct_from": lambda field, value: field.is_distinct_from(value),
             "is_not_distinct_from": lambda field, value: field.isnot_distinct_from(value),
         }
-
-    def add_nested_filters(self, query: Select) -> Select:
-        for field_name, value in self._nested_filters.items():
-            if value.Helper.is_children and value.Helper.select_in_load:
-                # Подгрузка детей
-                field = getattr(self._db_model, field_name)
-                where_clauses = value.get_where_clauses()
-                query = query.options(selectinload(field.and_(*where_clauses)))
-            elif not value.Helper.is_children:
-                query = value.modify_query(query)
-        return query
 
     def get_where_clauses(self, _exclude_fields=None, **additional_filters) -> List:
         if _exclude_fields is None:
@@ -73,7 +61,7 @@ class BaseFilters(BaseModel):
             if value is None:
                 continue
             if isinstance(value, BaseFilters):
-                self._nested_filters[field_name] = value
+                where_clauses.extend(value.get_where_clauses())
                 continue
             if self.Helper.delimiter in field_name:
                 field_name, operator = field_name.rsplit(self.Helper.delimiter, maxsplit=1)
@@ -82,7 +70,6 @@ class BaseFilters(BaseModel):
             if operator not in self.Helper.operators_execution:
                 continue
             if (field := getattr(self._db_model, field_name, None)) is None:
-                # TODO: мб проверить поля, которые есть в query (динамически созданные), но нет в db_model
                 continue
             clause = self.Helper.operators_execution[operator](field, value)
             where_clauses.append(clause)
@@ -90,18 +77,21 @@ class BaseFilters(BaseModel):
 
     def modify_query(self, query: Select, _exclude_fields=None, **additional_filters) -> Select:
         """Добавляет фильтры к sqlalchemy-запросу"""
+        for method in dir(self):
+            if method.startswith("add__"):
+                query = getattr(self, method)(query=query, _exclude_fields=_exclude_fields)
+
         if where_clauses := self.get_where_clauses(_exclude_fields, **additional_filters):
             query = query.where(*where_clauses)
 
-        query = self.add_nested_filters(query)
         return query
 
 
-class LimitOffsetFilters:
+class LimitOffsetFilters(BaseFilters):
     limit: int | None = Field(settings.LIMIT_DEFAULT, ge=1, le=settings.LIMIT_MAX)
     offset: int | None = Field(settings.OFFSET_DEFAULT, ge=0)
 
-    def add_limit_offset(self, query: Select, _exclude_fields: Set = None) -> Select:
+    def add__limit_offset(self, query: Select, _exclude_fields: Set = None) -> Select:
         if _exclude_fields is None:
             _exclude_fields = set()
         _exclude_fields.update({"limit", "offset"})
@@ -111,7 +101,7 @@ class LimitOffsetFilters:
 class OrderByFilters(BaseFilters):
     order_by: Tuple | None = Field(Query(None))
 
-    def add_order_by(self, query: Select, _exclude_fields: Set = None) -> Select:
+    def add__order_by(self, query: Select, _exclude_fields: Set = None) -> Select:
         if _exclude_fields is None:
             _exclude_fields = set()
         _exclude_fields.add("order_by")
@@ -127,7 +117,6 @@ class OrderByFilters(BaseFilters):
                 else:
                     direction = "asc"
                 if not (field := getattr(self._db_model, field_name, None)):
-                    # TODO: мб проверить поля, которые есть в query (динамически созданные), но нет в db_model
                     continue
 
                 field_with_direction = getattr(field, direction)()
@@ -137,13 +126,26 @@ class OrderByFilters(BaseFilters):
 
 
 class MainFilters(LimitOffsetFilters, OrderByFilters):
-    def modify_query(self, query: Select, _exclude_fields: Set = None, **additional_filters) -> Select:
+    pass
+
+
+class SearchFilters(BaseFilters):
+    search: str | None = None
+
+    class Helper(BaseFilters.Helper):
+        search_fields = list()
+
+    def add__search_filter(self, query: Select, _exclude_fields: Set = None) -> Select:
         if _exclude_fields is None:
             _exclude_fields = set()
+        _exclude_fields.add("search")
 
-        query = self.add_limit_offset(query, _exclude_fields)
-        query = self.add_order_by(query, _exclude_fields)
-        return super().modify_query(query, _exclude_fields=_exclude_fields, **additional_filters)
+        if self.search:
+            search_filters = []
+            for field in self.Helper.search_fields:
+                search_filters.append(field.ilike(f"%{self.search}%"))
+            query = query.where(or_(*search_filters))
+        return query
 
 
 def filter_depends(filter_model: type[BaseFilters], *args, **kwargs):
@@ -162,7 +164,7 @@ def filter_depends(filter_model: type[BaseFilters], *args, **kwargs):
         return annotation, annotation_class
 
     def prepare_fields(prefix: str, filter_model_: Type[BaseFilters], swagger_fields_, field_map_):
-        for name, f in filter_model_.model_fields.items():  # TODO: pycharm подчеркивает
+        for name, f in filter_model_.model_fields.items():
             swagger_field_name = f"{prefix}{name}"
             annotation, annotation_class = prepare_annotation(f.annotation)
             if issubclass(annotation_class, BaseFilters):

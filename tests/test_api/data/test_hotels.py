@@ -83,6 +83,8 @@ async def test_get_hotels_without_dates(client):
         ({"location": "Адрес Skala"}, 2),
         ({"rooms_price__lt": 5000}, 4),
         ({"name": "Palace"}, 5),
+        ({"search": "bridge"}, 6),
+        ({"search": "район"}, 3),
     ],
 )
 async def test_hotels_params(client, params, id_):

@@ -20,6 +20,7 @@ class RoomBaseReadSchema(RoomBaseSchema):
 
 
 class RoomReadSchema(RoomBaseReadSchema):
+    hotel_id: int | None = Field(None, exclude=True)
     hotel: HotelBaseReadSchema = Field(validation_alias=AliasChoices("hotel", "Hotels"))
 
 

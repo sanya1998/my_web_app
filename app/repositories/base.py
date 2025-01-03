@@ -42,7 +42,7 @@ class BaseRepository:
     @catcher
     async def execute(self, query: Union[ReturningInsert, Select, Update, Delete]) -> Result:
         try:
-            # print(query.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
+            print(query.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
             return await self.session.execute(query)
         except ConnectionRefusedError:
             raise ConnectionRefusedRepoError
@@ -71,8 +71,8 @@ class BaseRepository:
 
     @catcher
     async def get_object(self, **filters) -> one_read_schema:
-        # TODO: use BaseFilters
-        query = select(get_columns_by_table(self.db_model)).filter_by(**filters)
+        query = select(get_columns_by_table(self.db_model))
+        query = BaseFilters().set_db_model(self.db_model).modify_query(query, **filters)
         query = self._modify_query_for_getting_object(query, **filters)
         result = await self.execute(query)
         try:

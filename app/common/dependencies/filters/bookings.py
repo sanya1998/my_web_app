@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated, List, Tuple
 
 from app.common.dependencies.filters.base import MainFilters, filter_depends
 from app.common.dependencies.filters.common.rooms import RoomBaseFilters
@@ -18,6 +18,7 @@ class CurrentUserBookingsFilters(MainFilters):
     _db_model = Bookings
     room_id: int | None = None
     room: RoomBaseFilters
+    total_cost__between: Tuple[int, int] | None = Field(Query(None))
     order_by: List[BookingsOrderingEnum] | None = Field(Query(None))
 
 
