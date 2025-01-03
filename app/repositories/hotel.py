@@ -26,7 +26,7 @@ class HotelRepo(BaseRepository):
             "free_rooms"
         )
         free_rooms_c = free_rooms.c
-        filters.rooms._db_model = free_rooms_c
+        filters.rooms.set_db_model(free_rooms_c)
         # TODO: "remain_by_hotel" вынести в константы. Либо по-другому решить то, что потом оно используется как поле
         remain_field = label("remain_by_hotel", func.sum(free_rooms_c.remain_by_room))
         query = (
