@@ -5,6 +5,7 @@ from app.common.exceptions.services.unavailable import UnavailableServiceError
 from app.common.helpers.check_data import CheckData
 from app.common.schemas.booking import BookingCreateSchema, BookingUpdateSchema
 from app.repositories.booking import BookingRepo
+from app.repositories.room import RoomRepo
 from app.services.base import BaseService
 
 
@@ -13,24 +14,27 @@ class BookingService(BaseService):
     def __init__(
         self,
         booking_repo: BookingRepo,
+        room_repo: RoomRepo,
     ):
         super().__init__()
         self.booking_repo = booking_repo
+        self.room_repo = room_repo
         self.check_data: CheckData | None = None
+        self.selected_room_id = None
 
     @BaseService.catcher
     async def select_room_and_check_dates(self):
-        selected_room = await self.booking_repo.get_room_info_by_id_and_dates(data=self.check_data)
+        selected_room = await self.room_repo.get_room_by_id_and_dates(
+            check_data=self.check_data, room_id=self.selected_room_id
+        )
         if selected_room is None:
-            raise NotFoundServiceError
-        if selected_room.remain_by_room < 1:
             raise UnavailableServiceError
         return selected_room
 
     @BaseService.catcher
     async def create(self, booking_input: BookingCreateInputSchema, user_id: int):
+        self.selected_room_id = booking_input.room_id
         self.check_data = CheckData(
-            selected_room_id=booking_input.room_id,
             check_into=booking_input.date_from,
             check_out=booking_input.date_to,
         )
@@ -42,10 +46,10 @@ class BookingService(BaseService):
     async def update(self, booking_input: BookingUpdateInputSchema, booking_id: int):
         try:
             unchanged_booking = await self.booking_repo.get_object(id=booking_id)
+            self.selected_room_id = unchanged_booking.room_id
         except NotFoundRepoError:
             raise NotFoundServiceError
         self.check_data = CheckData(
-            selected_room_id=unchanged_booking.room_id,
             check_into=booking_input.date_from,
             check_out=booking_input.date_to,
             exclude_booking_ids=[booking_id],

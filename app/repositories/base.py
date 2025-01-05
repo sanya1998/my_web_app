@@ -2,6 +2,7 @@ from typing import Any, List, Union
 
 from app.common.dependencies.filters.base import BaseFilters
 from app.common.exceptions.catcher import catch_exception
+from app.common.exceptions.repositories.attribute import AttributeRepoError
 from app.common.exceptions.repositories.base import BaseRepoError
 from app.common.exceptions.repositories.connection_refused import ConnectionRefusedRepoError
 from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
@@ -10,7 +11,7 @@ from app.common.exceptions.repositories.wrong_query import WrongQueryError
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
-from sqlalchemy import Result, Select, delete, insert, select, update
+from sqlalchemy import Result, Select, delete, exists, insert, select, update
 from sqlalchemy.exc import MultipleResultsFound, NoResultFound, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.dml import Delete, ReturningInsert, Update
@@ -83,17 +84,20 @@ class BaseRepository:
 
     @catcher
     async def get_object_field(self, key: str, **filters) -> Any:
-        query = select(getattr(self.db_model, key)).filter_by(**filters)  # TODO: обработать кейс, если key отсутствует
+        if (field := getattr(self.db_model, key, None)) is None:
+            raise AttributeRepoError
+        query = select(field).filter_by(**filters)
         result = await self.execute(query)
-        value = result.scalar_one_or_none()  # TODO: обработать кейс, если по filters несколько строк подходит
-        if value is None:
+        try:
+            return result.scalar_one()
+        except MultipleResultsFound:
+            raise MultipleResultsRepoError
+        except NoResultFound:
             raise NotFoundRepoError
-        return value
 
     @catcher
     async def create(self, data: create_schema) -> one_created_read_schema:
         # TODO: можно ли упростить values(**data.model_dump()) - возможно, SQLModel решит проблему
-        # TODO: вместо insert(self.db_model) можно написать только поля из read_schema (что эффективнее?)
         query = insert(self.db_model).values(**data.model_dump()).returning(self.db_model)
         result = await self.execute(query)
         await self.session.commit()
@@ -106,15 +110,13 @@ class BaseRepository:
 
     @catcher
     async def is_exists(self, **filters) -> bool:
-        # TODO: можно ли упростить query
-        query = select(self.db_model).filter_by(**filters).exists().select()
+        query = select(exists(select(self.db_model).filter_by(**filters)))
         result = await self.execute(query)
         value = result.scalar_one()
         return value
 
     @catcher
     async def is_not_exists(self, **filters) -> bool:
-        # TODO: not перенести из python в sql
         return not (await self.is_exists(**filters))
 
     @catcher

@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 
 class CheckData(BaseModel):
-    selected_room_id: int
-    check_into: date
-    check_out: date
+    check_into: date | None = None
+    check_out: date | None = None
     exclude_booking_ids: List[int] = list()

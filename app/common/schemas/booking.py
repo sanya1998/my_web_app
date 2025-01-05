@@ -1,7 +1,7 @@
 from datetime import date
 
 from app.common.schemas.base import BaseSchema
-from app.common.schemas.room import RoomBaseReadSchema
+from app.common.schemas.room import RoomReadSchema
 from app.common.schemas.user import UserBaseReadSchema
 from pydantic import AliasChoices, Field
 
@@ -28,8 +28,7 @@ class BookingBaseReadSchema(BookingCreateSchema):
 
 class CurrentUserBookingReadSchema(BookingBaseReadSchema):
     room_id: int | None = Field(None, exclude=True)
-    # TODO: room: RoomReadSchema (С hotel)
-    room: RoomBaseReadSchema = Field(validation_alias=AliasChoices("room", "Rooms"))
+    room: RoomReadSchema = Field(validation_alias=AliasChoices("room", "Rooms"))
 
 
 class BookingReadSchema(CurrentUserBookingReadSchema):
