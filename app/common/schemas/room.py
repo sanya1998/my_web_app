@@ -24,7 +24,7 @@ class RoomReadSchema(RoomBaseReadSchema):
     hotel: HotelBaseReadSchema = Field(validation_alias=AliasChoices("hotel", "Hotels"))
 
 
-class ManyRoomsReadSchema(RoomBaseReadSchema):
+class ManyRoomsReadSchema(RoomReadSchema):
     remain_by_room: int
     # Если не указаны даты, то 0, потому что невозможно посчитать
     total_cost: int

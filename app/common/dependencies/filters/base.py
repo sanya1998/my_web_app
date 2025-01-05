@@ -1,6 +1,6 @@
 from copy import deepcopy
 from types import UnionType
-from typing import Dict, List, Set, Tuple, Type, Union, get_args, get_origin
+from typing import Dict, List, Set, Type, Union, get_args, get_origin
 
 from app.common.constants.order_by import PREFIX_DESC
 from app.config.main import settings

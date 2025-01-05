@@ -15,8 +15,9 @@ def with_redis_client(func):
 
     async def wrapper(*args, **kwargs):
         redis_client = aioredis.Redis.from_pool(pool)
-        result = await func(*args, redis_client=redis_client, **kwargs)
-        await redis_client.aclose()  # TODO: try: finally:
-        return result
+        try:
+            return await func(*args, redis_client=redis_client, **kwargs)
+        finally:
+            await redis_client.aclose()
 
     return wrapper

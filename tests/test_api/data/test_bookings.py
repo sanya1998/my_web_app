@@ -48,8 +48,9 @@ async def test_api_crud_booking(
     assert got_response.status_code == status.HTTP_200_OK
 
     got_response = await manager_client.get(f"{BASE_BOOKINGS_URL}{booking.id}/for_manager")
-    _ = BookingReadSchema.model_validate(got_response.json())
+    booking = BookingReadSchema.model_validate(got_response.json())
     assert got_response.status_code == status.HTTP_200_OK
+    assert booking.room.hotel.name is not None
 
     # update
     updated_response = await manager_client.put(
@@ -110,13 +111,13 @@ async def test_getting_and_deleting_bookings(user_client: AsyncClient, manager_c
     bookings_by_user_response = await manager_client.get(
         f"{BASE_BOOKINGS_URL}for_manager", params=QueryParams(user_id=user.id)
     )
-    bookings_by_user = bookings_by_user_response.json()
+    bookings_by_user = [BookingReadSchema.model_validate(b) for b in bookings_by_user_response.json()]
+    assert bookings_by_user[0].room.hotel.name is not None
 
     bookings_self_response = await user_client.get(f"{BASE_BOOKINGS_URL}for_current_user")
-    bookings_self = bookings_self_response.json()
-    _ = [CurrentUserBookingReadSchema.model_validate(b) for b in bookings_self]
+    bookings_self = [CurrentUserBookingReadSchema.model_validate(b) for b in bookings_self_response.json()]
 
-    assert set(b["id"] for b in bookings_self) == set(b["id"] for b in bookings_by_user)
+    assert set(b.id for b in bookings_self) == set(b.id for b in bookings_by_user)
 
     for booking_json in bookings_by_user:
         booking = BookingReadSchema.model_validate(booking_json)
@@ -124,5 +125,5 @@ async def test_getting_and_deleting_bookings(user_client: AsyncClient, manager_c
         assert response_delete.status_code == status.HTTP_200_OK
 
     bookings_self_response = await user_client.get(f"{BASE_BOOKINGS_URL}for_current_user")
-    bookings_self = bookings_self_response.json()
+    bookings_self = [CurrentUserBookingReadSchema.model_validate(b) for b in bookings_self_response.json()]
     assert len(bookings_self) == 0
