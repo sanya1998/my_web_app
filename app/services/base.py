@@ -3,7 +3,7 @@ from app.common.exceptions.services.base import BaseServiceError
 
 
 class BaseService:
-    catcher = catch_exception(base_error=BaseServiceError, description="service exception")
+    catcher = catch_exception(base_error=BaseServiceError, description="Service exception")
 
     @catcher
     def __init__(self, *args, **kwargs) -> None:

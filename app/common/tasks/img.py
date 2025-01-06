@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from app.resources.celery import celery
+from app.resources.celery_ import celery
 from PIL import Image
 
 

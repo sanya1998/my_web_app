@@ -14,7 +14,8 @@ config = context.config
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if not strtobool(os.environ.get("TEST", "false")):
-    # Не выполняем настройку логирования, если alembic вызывается во время запуска тестов
+    # Не выполнять настройку логирования, если alembic вызывается во время запуска тестов
+    # TODO: что здесь происходит?
     fileConfig(str(config.config_file_name))
 
 # add your model's MetaData object here
