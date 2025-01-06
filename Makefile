@@ -20,6 +20,9 @@ isort:
 autoflake:
 	autoflake . --config linters/.autoflake --in-place
 
+pyright:
+	pyright
+
 #linters-check: black-check isort-check autoflake-check flake8-check  # autoflake долгий
 linters-check: black-check isort-check flake8-check
 
