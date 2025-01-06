@@ -11,6 +11,7 @@ from pydantic_settings import SettingsConfigDict
 class Settings(ApiSettings, DbSettings, HashSettings, CelerySettings, EmailSettings):
     ENVIRONMENT: Environments
     LOG_LEVEL: LogLevel
+    HAWK_TOKEN: str
 
     model_config = SettingsConfigDict(env_file="envs/local.env", env_file_encoding="utf-8")
 
