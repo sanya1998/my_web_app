@@ -19,8 +19,8 @@ class BookingService(BaseService):
         super().__init__()
         self.booking_repo = booking_repo
         self.room_repo = room_repo
-        self.check_data: CheckData | None = None
-        self.selected_room_id = None
+        self.check_data: CheckData
+        self.selected_room_id: int
 
     @BaseService.catcher
     async def select_room_and_check_dates(self):

@@ -17,6 +17,7 @@ class HotelRepo(BaseRepository):
     one_created_read_schema = HotelBaseReadSchema
     one_updated_read_schema = HotelBaseReadSchema
     one_deleted_read_schema = HotelBaseReadSchema
+
     create_schema = HotelBaseInput
 
     @BaseRepository.catcher

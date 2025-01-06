@@ -9,4 +9,5 @@ class UserRepo(BaseRepository):
     one_read_schema = UserBaseReadSchema
     many_read_schema = UserBaseReadSchema
     one_created_read_schema = UserBaseReadSchema
+
     create_schema = UserCreateSchema

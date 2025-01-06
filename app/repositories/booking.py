@@ -13,6 +13,7 @@ class BookingRepo(BaseRepository):
     one_created_read_schema = BookingBaseReadSchema
     one_updated_read_schema = BookingBaseReadSchema
     one_deleted_read_schema = BookingBaseReadSchema
+
     create_schema = BookingCreateSchema
 
     def _add_user_room_hotel(self, query: Select) -> Select:

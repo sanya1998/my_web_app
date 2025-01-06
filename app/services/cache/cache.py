@@ -82,7 +82,7 @@ class CacheService(BaseService):
         self,
         expire: int | None = None,
         prefix_key: str | None = None,
-        build_key: Callable[[Callable, Tuple, Dict], str] = None,
+        build_key: Callable[[Callable, Tuple, Dict], str] | None = None,
     ):
         """
         Записать результат функции в кеш или считать результат функции, если он имеется в кеше

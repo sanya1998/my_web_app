@@ -13,6 +13,7 @@ class RoomRepo(BaseRepository):
 
     one_read_schema = RoomReadSchema
     many_read_schema = ManyRoomsReadSchema
+
     create_schema = RoomBaseReadSchema
 
     @BaseRepository.catcher

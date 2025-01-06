@@ -1,4 +1,4 @@
-from typing import Any, List, Union
+from typing import Any, List, TypeVar, Union
 
 from app.common.dependencies.filters.base import BaseFilters
 from app.common.exceptions.catcher import catch_exception
@@ -20,17 +20,19 @@ from sqlalchemy.sql.dml import Delete, ReturningInsert, Update
 class BaseRepository:
     db_model = BaseTable
 
-    one_read_schema = BaseSchema
-    many_read_schema = BaseSchema
-    one_created_read_schema = BaseSchema
-    many_created_read_schema = BaseSchema
-    one_updated_read_schema = BaseSchema
-    many_updated_read_schema = BaseSchema
-    upserted_read_schema = BaseSchema
-    one_deleted_read_schema = BaseSchema
-    many_deleted_read_schema = BaseSchema
-    create_schema = BaseSchema
-    update_schema = BaseSchema
+    one_read_schema = TypeVar("one_read_schema", bound=BaseSchema)
+    many_read_schema = TypeVar("many_read_schema", bound=BaseSchema)
+    one_created_read_schema = TypeVar("one_created_read_schema", bound=BaseSchema)
+    many_created_read_schema = TypeVar("many_created_read_schema", bound=BaseSchema)
+    one_updated_read_schema = TypeVar("one_updated_read_schema", bound=BaseSchema)
+    many_updated_read_schema = TypeVar("many_updated_read_schema", bound=BaseSchema)
+    upserted_read_schema = TypeVar("upserted_read_schema", bound=BaseSchema)
+    one_deleted_read_schema = TypeVar("one_deleted_read_schema", bound=BaseSchema)
+    many_deleted_read_schema = TypeVar("many_deleted_read_schema", bound=BaseSchema)
+
+    create_schema = TypeVar("create_schema", bound=BaseSchema)
+    update_schema = TypeVar("update_schema", bound=BaseSchema)
+    filters_schema = TypeVar("filters_schema", bound=BaseFilters)
 
     catcher = catch_exception(base_error=BaseRepoError, description="repository exception")
 
@@ -52,7 +54,7 @@ class BaseRepository:
             raise WrongQueryError
 
     @catcher
-    def _modify_query_for_getting_objects(self, query: Select, filters: BaseFilters, **additional_filters) -> Select:
+    def _modify_query_for_getting_objects(self, query: Select, filters: filters_schema, **additional_filters) -> Select:
         return query
 
     @catcher

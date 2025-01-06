@@ -1,4 +1,4 @@
-from typing import AsyncIterator
+from typing import Any, AsyncGenerator, AsyncIterator
 
 import pytest_asyncio
 from app.app import app
@@ -35,7 +35,7 @@ async def session() -> AsyncIterator[AsyncSession]:
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def client() -> AsyncClient:
+async def client() -> AsyncGenerator[AsyncClient, Any]:
     async with AsyncClient(transport=ASGITransport(app), base_url="http://test") as ac:
         yield ac
 
