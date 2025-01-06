@@ -2,7 +2,7 @@ import smtplib
 from email.message import EmailMessage
 
 from app.config.main import settings
-from app.resources.celery import celery
+from app.resources.celery_ import celery
 
 
 def create_booking_notify_template(

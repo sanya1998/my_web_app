@@ -3,8 +3,10 @@ from contextlib import contextmanager
 from functools import wraps
 from typing import Callable, Type
 
+from app.common.logger import logger
 
-def catch_exception(base_error: Type[Exception], description: str = "exception", verbose=True) -> Callable:
+
+def catch_exception(base_error: Type[Exception], description: str = "Exception description", exc_info=True) -> Callable:
     """Декоратор, который позволяет ловить все исключения в методе с помощью 'except <base_error>'"""
 
     def wrapper(method: Callable) -> Callable:
@@ -21,24 +23,24 @@ def catch_exception(base_error: Type[Exception], description: str = "exception",
                 #     # Если при создании придет поле, которого нет в таблице. (по идее должно решиться SQLModel)
                 #     raise BaseRepoError(e, self.model_name, kwargs)
                 class UnitingException(ex.__class__, base_error):
-                    """
-                    `raise UnitingException` можно поймать с помощью `except base_error`,
-                    ex.__class__ содержит информацию об ошибке,
-                    method_args, method_kwargs - входные данные.
-                    """
+                    pass
 
-                    method_args = args
-                    method_kwargs = kwargs
+                if (exception_name := ex.__class__.__name__) != "UnitingException":
+                    # TODO: check: иногда тут неполная инфа, например SQLAlchemyError, ValidationError
+                    extra = {
+                        "class": self.__class__.__name__,
+                        "method": method.__name__,
+                        "method_args": args,
+                        "method_kwargs": kwargs,
+                        "ex_class": exception_name,
+                        "ex": ex,
+                    }
+                    # TODO: не всегда logger.error, иногда warning или info
+                    # TODO: весь трейс в sentry, hawk
+                    logger.error(description, extra=extra, exc_info=exc_info)
 
-                method_name = method.__name__
-                model_name = self.__class__.__name__
-                exception_name = ex.__class__.__name__
-                message = f"{exception_name}: \n{ex}\n{description}. Model: {model_name}. Method: {method_name}."
-                # TODO: иногда тут неполная инфа, например SQLAlchemyError, ValidationError
-                message = "\n\t".join(message.split("\n"))
-                if verbose:
-                    print(f"{message}")  # TODO: весь трейс в логи logger, sentry etc
-                raise UnitingException(message) from ex
+                # `raise UnitingException` можно поймать с помощью `except base_error`
+                raise UnitingException from ex
 
         @wraps(method)
         def executor(self, *args, **kwargs):

@@ -16,6 +16,7 @@ class BookingRepo(BaseRepository):
 
     create_schema = BookingCreateSchema
 
+    @BaseRepository.catcher
     def _add_user_room_hotel(self, query: Select) -> Select:
         return (
             query.outerjoin(Users, Bookings.user_id == Users.id)  # TODO: pycharm подчеркивает при добавлении ': Select'
@@ -24,6 +25,7 @@ class BookingRepo(BaseRepository):
             .add_columns(Users, Rooms, Hotels)
         )
 
+    @BaseRepository.catcher
     def _modify_query_for_getting_objects(
         self, query: Select, filters: BookingsFilters, **additional_filters
     ) -> Select:
