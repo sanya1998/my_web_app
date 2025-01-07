@@ -1,4 +1,7 @@
 import click
+from app.resources.sentry_ import init_sentry
+
+init_sentry()
 
 
 @click.group()

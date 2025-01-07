@@ -34,7 +34,9 @@ class BaseRepository:
     update_schema = TypeVar("update_schema", bound=BaseSchema)
     filters_schema = TypeVar("filters_schema", bound=BaseFilters)
 
-    catcher = catch_exception(base_error=BaseRepoError, description="Repository exception")
+    catcher = catch_exception(
+        base_error=BaseRepoError, description="Repository exception", warnings=[NotFoundRepoError]
+    )
 
     @catcher
     def __init__(self, session: AsyncSession):

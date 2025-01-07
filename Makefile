@@ -49,13 +49,13 @@ forward_migrations_head_local: set_local_env alembic_upgrade_head
 rollback_one_migration_local: set_local_env alembic_downgrade_1
 
 up-celery-worker:
-	celery --app app.resources.celery:celery worker --loglevel=INFO --pool=solo
+	celery --app app.resources.celery_:celery worker --loglevel=INFO --pool=solo
 
 up-celery-flower:
-	celery --app app.resources.celery:celery flower
+	celery --app app.resources.celery_:celery flower
 
 clear-celery-tasks:
-	celery -A app.resources.celery:celery purge
+	celery -A app.resources.celery_:celery purge
 
 up-services:
 	docker-compose --env-file envs/local.env up -d postgres redis

@@ -53,7 +53,7 @@ async def get_hotels(filters: HotelsFiltersDep, hotel_repo: HotelRepoDep) -> Lis
 
 
 @router.get("/{object_id}")
-@cache.caching(build_key=build_key_by_object_id)
+@cache.caching(build_key=build_key_by_object_id)  # TODO: pycharm подчеркивает
 async def get_hotel(object_id: int, hotel_repo: HotelRepoDep) -> HotelReadSchema:
     try:
         return await hotel_repo.get_object(id=object_id)

@@ -35,11 +35,12 @@ def with_session(func):
     """
 
     async def wrapper(*args, **kwargs):
-        try:
-            async with async_session() as session:
-                return await func(*args, session=session, **kwargs)
-        except Exception as e:
-            await session.rollback()
-            raise e
+        async with async_session() as session:
+            return await func(*args, session=session, **kwargs)
+        # try:
+        #     ...
+        # except Exception:
+        #     # TODO: await session.rollback()
+        #     raise
 
     return wrapper
