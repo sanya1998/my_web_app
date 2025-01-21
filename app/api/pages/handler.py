@@ -1,8 +1,9 @@
-from app.api.v1.data.hotels import get_hotels
-from fastapi import APIRouter, Depends, Request
+from app.api.data.hotels import get_hotels
+from app.common.helpers.api_version import VersionedAPIRouter
+from fastapi import Depends, Request
 from fastapi.templating import Jinja2Templates
 
-router = APIRouter(prefix="/pages", tags=["Fronted"])
+router = VersionedAPIRouter(prefix="/pages", tags=["Fronted"])
 
 templates = Jinja2Templates(directory="app/templates")
 

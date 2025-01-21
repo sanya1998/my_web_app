@@ -6,10 +6,10 @@ from app.common.dependencies.filters.users import UsersFiltersDep
 from app.common.dependencies.repositories.user import UserRepoDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.repositories.base import BaseRepoError
+from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.user import UserBaseReadSchema
-from fastapi import APIRouter
 
-get_router = APIRouter()
+get_router = VersionedAPIRouter()
 
 
 @get_router.get("/for_admin")
