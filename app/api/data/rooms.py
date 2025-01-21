@@ -8,10 +8,10 @@ from app.common.exceptions.api.not_found import NotFoundApiError
 from app.common.exceptions.repositories.base import BaseRepoError
 from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
+from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.room import ManyRoomsReadSchema, RoomReadSchema
-from fastapi import APIRouter
 
-router = APIRouter(prefix="/rooms", tags=["Rooms"])
+router = VersionedAPIRouter(prefix="/rooms", tags=["Rooms"])
 
 
 @router.get("/{object_id}", response_model_by_alias=False)

@@ -4,10 +4,10 @@ from app.common.exceptions.api.already_exists import AlreadyExistsApiError
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.services.already_exists import AlreadyExistsServiceError
 from app.common.exceptions.services.base import BaseServiceError
+from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.user import UserBaseReadSchema
-from fastapi import APIRouter
 
-sign_up_router = APIRouter()
+sign_up_router = VersionedAPIRouter()
 
 
 @sign_up_router.post("/sign_up")

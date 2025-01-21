@@ -1,9 +1,9 @@
 from app.common.dependencies.services.authorization import AuthorizationServiceDep
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.services.base import BaseServiceError
-from fastapi import APIRouter
+from app.common.helpers.api_version import VersionedAPIRouter
 
-sign_out_router = APIRouter()
+sign_out_router = VersionedAPIRouter()
 
 
 @sign_out_router.post("/sign_out")

@@ -1,5 +1,11 @@
-BASE_BOOKINGS_URL = "/api/v1/bookings/"
-BASE_ROOMS_URL = "/api/v1/rooms/"
-BASE_HOTELS_URL = "/api/v1/hotels/"
-BASE_USERS_URL = "/api/v1/users/"
-BASE_SRV_URL = "/"
+from app.common.constants.api import ROOT_PATH
+
+API_VERSION_V1 = "/v1"
+API_VERSION_V2 = "/v2"
+
+BASE_BOOKINGS_URL = f"{ROOT_PATH}{API_VERSION_V1}/bookings/"
+BASE_ROOMS_URL = f"{ROOT_PATH}{API_VERSION_V1}/rooms/"
+BASE_HOTELS_URL = f"{ROOT_PATH}{API_VERSION_V1}/hotels/"
+BASE_USERS_URL = f"{ROOT_PATH}{API_VERSION_V1}/users/"
+BASE_SRV_URL_V1 = f"{ROOT_PATH}{API_VERSION_V1}/"
+BASE_SRV_URL_V2 = f"{ROOT_PATH}{API_VERSION_V2}/"

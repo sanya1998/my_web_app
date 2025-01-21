@@ -16,11 +16,11 @@ from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.exceptions.services.base import BaseServiceError
 from app.common.exceptions.services.not_found import NotFoundServiceError
 from app.common.exceptions.services.unavailable import UnavailableServiceError
+from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
 from app.common.tasks.email import send_booking_notify_email
-from fastapi import APIRouter
 
-router = APIRouter(prefix="/bookings", tags=["Bookings"])
+router = VersionedAPIRouter(prefix="/bookings", tags=["Bookings"])
 
 
 @router.post("/for_current_user")

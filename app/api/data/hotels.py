@@ -11,14 +11,14 @@ from app.common.exceptions.api.not_found import NotFoundApiError
 from app.common.exceptions.repositories.base import BaseRepoError
 from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
+from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
 from app.config.main import settings
 from app.services.cache.cache import CacheService
 from app.services.cache.key_builders.listing import build_key_by_listing, build_key_pattern_by_listing
 from app.services.cache.key_builders.object_id import build_key_by_object_id
-from fastapi import APIRouter
 
-router = APIRouter(prefix="/hotels", tags=["Hotels"])
+router = VersionedAPIRouter(prefix="/hotels", tags=["Hotels"])
 cache = CacheService(
     prefix_key=HOTELS_CACHE_PREFIX,
     expire=settings.REDIS_CACHE_EXPIRE_HOTELS,

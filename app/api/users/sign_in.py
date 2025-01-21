@@ -6,9 +6,9 @@ from app.common.exceptions.api.unauthorized import UnauthorizedApiError
 from app.common.exceptions.services.base import BaseServiceError
 from app.common.exceptions.services.not_found import NotFoundServiceError
 from app.common.exceptions.services.unauthorized import UnauthorizedServiceError
-from fastapi import APIRouter
+from app.common.helpers.api_version import VersionedAPIRouter
 
-sign_in_router = APIRouter()
+sign_in_router = VersionedAPIRouter()
 
 
 @sign_in_router.post("/sign_in")

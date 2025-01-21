@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from app.admin.admin import add_admin
 from app.api import api_router
+from app.common.constants.api import ROOT_PATH
 from app.config.main import settings
 from app.middlewares.middlewares import add_middlewares
 from fastapi import FastAPI
@@ -18,6 +19,7 @@ app = FastAPI(
     debug=settings.DEBUG,
     title=settings.APPLICATION_NAME,
     description=settings.APPLICATION_DESCRIPTION,
+    root_path=ROOT_PATH,
     swagger_ui_parameters=settings.SWAGGER_UI_PARAMETERS,
 )
 app.include_router(api_router)

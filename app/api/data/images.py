@@ -1,9 +1,10 @@
 import shutil
 
+from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.tasks.img import process_pic, process_pic_background_task
-from fastapi import APIRouter, BackgroundTasks, UploadFile
+from fastapi import BackgroundTasks, UploadFile
 
-router = APIRouter(prefix="/images", tags=["Images"])
+router = VersionedAPIRouter(prefix="/images", tags=["Images"])
 
 
 @router.post("/hotels")
