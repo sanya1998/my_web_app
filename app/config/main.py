@@ -13,6 +13,7 @@ class Settings(ApiSettings, DbSettings, HashSettings, CelerySettings, EmailSetti
     RELEASE_VERSION: str = "0.1.0"
     LOG_LEVEL: LogLevel
     SENTRY_DSN: str
+    HAWK_TOKEN: str
 
     # Пока celery запускается из консоли, это нужно, так как не удалось подцепить env-файл
     model_config = SettingsConfigDict(env_file="envs/local.env", env_file_encoding="utf-8")
