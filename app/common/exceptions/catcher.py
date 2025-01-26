@@ -7,6 +7,7 @@ from app.common.logger import logger
 
 
 # TODO: сделать универсальным и для методов и для функций (убрать self), затем нацепить на with_redis_client
+# TODO: мб в python есть проверка: это функция или метод?
 def catch_exception(
     base_error: Type[Exception],
     description: str = "Exception description",

@@ -1,7 +1,9 @@
 import click
+from app.resources.hawk_ import init_hawk
 from app.resources.sentry_ import init_sentry
 
 init_sentry()
+init_hawk()
 
 
 @click.group()
