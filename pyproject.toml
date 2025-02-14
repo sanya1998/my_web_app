@@ -9,7 +9,7 @@ readme = "README.md"
 python = "^3.10"
 asyncpg = "^0.29.0"
 greenlet = "^3.1.0"
-uvicorn = "^0.30.6"
+uvicorn = {extras = ["standard"], version = "^0.34.0"}
 pydantic-settings = "^2.4.0"
 pyjwt = "^2.9.0"
 python-multipart = "^0.0.9"

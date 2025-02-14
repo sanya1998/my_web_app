@@ -12,4 +12,5 @@ def init_hawk():
 def add_hawk_fastapi(app: FastAPI):
     if settings.ENVIRONMENT == Environments.TEST:
         return
+    # Ловит ошибки внутри эндпоинта, но не ловит ошибки в Depends (например, игнорит отсутствие подключения к бд)
     HawkFastapi({"app_instance": app, "token": settings.HAWK_TOKEN})

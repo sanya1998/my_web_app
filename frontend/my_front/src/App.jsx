@@ -1,7 +1,7 @@
 import axios from "axios";
 import React from "react";
 
-const baseURL = "http://localhost:8010/api/v1/hotels";
+const baseURL = "http://0.0.0.0:8010/api/v1/hotels";
 
 function App() {
     const [hotels, setHotels] = React.useState(null);
