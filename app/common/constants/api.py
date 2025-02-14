@@ -1,1 +1,1 @@
-ROOT_PATH = "/api"
+ROOT_API_PATH = "/api"

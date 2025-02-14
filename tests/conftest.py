@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from tests.constants import BASE_USERS_URL
 
-ALLOWED_POSTGRES_HOSTS = ["localhost"]  # TODO: возможно, для ci/cd здесь понадобится postgres
+ALLOWED_POSTGRES_HOSTS = ["0.0.0.0"]  # TODO: возможно, для ci/cd здесь понадобится postgres
 
 
 @pytest_asyncio.fixture(loop_scope="session", scope="session", autouse=True)

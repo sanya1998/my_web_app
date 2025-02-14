@@ -10,13 +10,13 @@ class ApiSettings(BaseSettings):
 
     APPLICATION_NAME: str = "My web application"
     APPLICATION_DESCRIPTION: str = "My web application description"
-    HOST: str = "localhost"
+    HOST: str = "0.0.0.0"
     PORT: int = 8000
     SWAGGER_UI_PARAMETERS: dict = {"tryItOutEnabled": True}
     DEBUG: bool = True
 
     # CORS
-    ALLOW_ORIGINS_REGEX: str = r"http://localhost:3000/*"
+    ALLOW_ORIGINS_REGEX: str = r"http://0.0.0.0:3000/*"
     ALLOW_CREDENTIALS: bool = True
     ALLOW_METHODS: List[str] = ["GET", "POST", "PUT", "DELETE", "PATCH"]
     ALLOW_HEADERS: List[str] = [

@@ -8,4 +8,4 @@ def welcome() -> dict:
     """
     Приветственное сообщение
     """
-    return {"message": "Welcome to the site"}
+    return {"message": "Welcome to the API"}
