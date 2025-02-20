@@ -12,13 +12,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from tests.constants import BASE_USERS_URL
 
-ALLOWED_POSTGRES_HOSTS = ["0.0.0.0"]  # TODO: возможно, для ci/cd здесь понадобится postgres
+ALLOWED_POSTGRES_HOSTS = ["0.0.0.0"]  # TODO: возможно, для тестов в ci/cd здесь понадобится postgres, redis
 
 
 @pytest_asyncio.fixture(loop_scope="session", scope="session", autouse=True)
 async def prepare_db():
     assert settings.ENVIRONMENT == Environments.TEST
     assert settings.POSTGRES_HOST in ALLOWED_POSTGRES_HOSTS
+    assert settings.REDIS_HOST in ALLOWED_POSTGRES_HOSTS
 
     async with engine.begin() as conn:
         await conn.run_sync(metadata.drop_all)

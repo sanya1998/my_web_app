@@ -1,7 +1,7 @@
 import redis.asyncio as aioredis
 from app.config.main import settings
 
-pool = aioredis.ConnectionPool.from_url(url=settings.REDIS_URL, max_connections=settings.REDIS_MAX_CONNECTIONS)
+pool = aioredis.ConnectionPool.from_url(url=settings.CACHE_URL, max_connections=settings.CACHE_MAX_CONNECTIONS)
 
 
 def with_redis_client(func):
