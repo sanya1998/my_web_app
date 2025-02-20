@@ -1,20 +1,20 @@
+Добавить переменные окружения в `envs/local.env` (В качестве примера взять `envs/base.env`)
+
 Запуск Docker-сервисов: `make up-services`
 
 Выполнить миграции на локальную базу данных: `make forward_migrations_head_local`
 
-Добавить переменные окружения в `envs/local.env` (TODO: в качестве примера локальные можно в открытый доступ выложить)
-
 Запустить API-сервер вне Docker: `python manage.py runserver`
 
-Swagger: `http://localhost:8010/docs` либо `http://localhost:8020/docs` (из Docker)
+Swagger: `http://localhost:8010/docs`
 
-Панель администратора: `http://localhost:8010/admin/` либо `http://localhost:8020/admin/`
+Панель администратора: `http://localhost:8010/admin/`
 
-Запустить celery worker:
+Запустить celery worker вне Docker:
 
 `make up-celery-worker`
 
-Запустить celery flower:
+Запустить celery flower вне Docker:
 
 `make up-celery-flower`
 
@@ -104,3 +104,6 @@ TODO:
 75) add_hawk_fastapi уже решает проблему выше, но что если его не будет? пробовать с помощью средств fastapi  
 75) при этом проверить, что когда мы ловим все, чтоб ожидаемые исключения тоже работали (например 404)
 76) пофиксить в тестах warning, связанный с pythonjsonlogger
+77) можно ли внутри контейнера использовать другой порт, а не по умолчанию?
+78) если через докер запускать все сразу, то как будут добавляться изменения в коде? возм, надо всегда пересобирать образ для api
+79) при запуске в докере api - ошибка sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.DuplicateTableError'>: relation "hotels" already exists

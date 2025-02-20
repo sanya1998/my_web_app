@@ -32,7 +32,7 @@ linters: isort black flake8-check
 
 
 set_local_env:
-	export $(grep -v '^#' envs/local.env | xargs)
+	export $(grep -v '^#' envs/base.env | xargs)
 
 alembic_create_first_revision:
 	alembic revision --autogenerate -m "Initial migration"
@@ -60,34 +60,13 @@ clear-celery-tasks:
 	celery -A app.resources.celery_:celery purge
 
 
-docker-stop:
-	docker stop my_web_app_container
-
-docker-remove-container:
-	docker rm my_web_app_container
-
-docker-remove-image:
-	docker rmi my_web_app_image
-
-docker-build-image:
-	docker build -t my_web_app_image .
-
-help-for-using:
-	echo "Use on host: http://0.0.0.0:8020"
-
-docker-run:
-	docker run --name my_web_app_container -p 8020:8010 my_web_app_image
-
-docker-build-and-start: docker-build-image help-for-using docker-run
-
-docker-rebuild-and-start: docker-stop docker-remove-container docker-remove-image docker-build-and-start
-
-docker-start:
-	docker start -i my_web_app_container
-
-
 up-services:
-	docker-compose --env-file envs/local.env up -d postgres redis
+	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" up -d postgres redis
+
+# TODO: это не пересобирает образ при изменениях в коде
+up-app:
+	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-app" up -d celery-worker celery-flower api
+
 
 run-tests:
 	pytest -v -s --envfile=envs/test.env

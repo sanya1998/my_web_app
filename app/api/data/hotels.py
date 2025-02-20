@@ -21,7 +21,7 @@ from app.services.cache.key_builders.object_id import build_key_by_object_id
 router = VersionedAPIRouter(prefix="/hotels", tags=["Hotels"])
 cache = CacheService(
     prefix_key=HOTELS_CACHE_PREFIX,
-    expire=settings.REDIS_CACHE_EXPIRE_HOTELS,
+    expire=settings.CACHE_EXPIRE_HOTELS,
     build_key_for_clear=build_key_by_object_id,
     build_key_pattern_for_clear=build_key_pattern_by_listing,
 )

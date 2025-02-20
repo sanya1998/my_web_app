@@ -14,19 +14,33 @@ class DbSettings(BaseSettings):
     REDIS_PORT: int
     REDIS_USER: str
     REDIS_PASSWORD: str
-    REDIS_DB: str
-    REDIS_MAX_CONNECTIONS: int = 10
-    REDIS_CACHE_EXPIRE_DEFAULT: int = 120
-    REDIS_CACHE_EXPIRE_HOTELS: int = 60
+
+    CACHE_DB: int
+    CACHE_MAX_CONNECTIONS: int = 10
+    CACHE_EXPIRE_DEFAULT: int = 120
+    CACHE_EXPIRE_HOTELS: int = 60
 
     @computed_field
     @property
-    def REDIS_URL(self) -> str:
+    def CACHE_URL(self) -> str:
         value = (
             f"{self.REDIS_DRIVER}://"
             f"{self.REDIS_USER}:{self.REDIS_PASSWORD}@"
             f"{self.REDIS_HOST}:{self.REDIS_PORT}/"
-            f"{self.REDIS_DB}"
+            f"{self.CACHE_DB}"
+        )
+        return value
+
+    CELERY_BROKER_DB: int
+
+    @computed_field
+    @property
+    def CELERY_BROKER_URL(self) -> str:
+        value = (
+            f"{self.REDIS_DRIVER}://"
+            f"{self.REDIS_USER}:{self.REDIS_PASSWORD}@"
+            f"{self.REDIS_HOST}:{self.REDIS_PORT}/"
+            f"{self.CELERY_BROKER_DB}"
         )
         return value
 

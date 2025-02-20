@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:${POSTGRES_VERSION}
+    container_name: postgres
+    tty: true  # TODO: попробовать стереть и войти в контейнер
+    env_file:
+      - ../envs/base.env
+      - ../envs/local.env
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT} # TODO: как бы правильно это вынести в енвы...
+
+  redis:
+    image: redis:${REDIS_VERSION}
+    container_name: redis
+    env_file:
+      - ../envs/local.env
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT} # TODO: как бы правильно это вынести в енвы...
+    command: sh -c '
+        mkdir -p /usr/local/etc/redis &&
+        echo "user default off" > /usr/local/etc/redis/users.acl &&
+        echo "user $REDIS_USER on allkeys allchannels allcommands >$REDIS_PASSWORD ~* +@all" >> /usr/local/etc/redis/users.acl &&
+        redis-server --bind 0.0.0.0 --aclfile /usr/local/etc/redis/users.acl
+      '
+#    volumes:
+#      - ./redisdata:/data
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.50'
+#          memory: 512M
+#        reservations:
+#          cpus: '0.25'
+#          memory: 256M
+#    healthcheck:
+#      test: [ "CMD", "redis-cli", "-a", "$REDIS_DEFAULT_PASSWORD", "ping" ]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 5
+#    restart: unless-stopped
+#    tty: true
+#    stdin_open: true
+
+  celery-worker:
+    container_name: celery-worker
+    build:
+      context: ../
+      dockerfile: docker/custom_python/Dockerfile
+    env_file:
+      - ../envs/local.env
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_HOST=redis
+    command: ["/code/docker/custom_python/celery.sh", "worker"]
+    depends_on:
+      - postgres
+      - redis
+  celery-flower:
+    container_name: celery-flower
+    build:
+      context: ../
+      dockerfile: docker/custom_python/Dockerfile
+    env_file:
+      - ../envs/local.env
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_HOST=redis
+    ports:
+      - 5555:5555 # TODO: как бы правильно это вынести в енвы...
+    command: ["/code/docker/custom_python/celery.sh", "flower"]
+    depends_on:
+      - postgres
+      - redis
+
+  api:
+    container_name: api
+    build:
+      context: ../
+      dockerfile: docker/custom_python/Dockerfile
+    env_file:
+      - ../envs/local.env
+    environment:
+      - POSTGRES_HOST=postgres
+      - REDIS_HOST=redis
+    ports:
+      - ${PORT}:${PORT} # TODO: как бы правильно это вынести в енвы...
+    command: ["/code/docker/custom_python/api.sh"]
+    depends_on:
+      - celery-worker
+      - celery-flower
+      - postgres
+      - redis
