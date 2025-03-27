@@ -32,6 +32,7 @@ class DbSettings(BaseSettings):
         return value
 
     CELERY_BROKER_DB: int
+    FLOWER_PORT: int
 
     @computed_field
     @property

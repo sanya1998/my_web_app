@@ -1,7 +1,7 @@
 import time
 
 from app.common.logger import logger
-from app.config.main import settings
+from app.config.common import settings
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware

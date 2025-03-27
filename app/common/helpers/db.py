@@ -9,6 +9,10 @@ def get_columns_by_table(table) -> ColumnCollection:
     return inspect(table).c
 
 
+def get_columns_names(table):
+    return [column.name for column in table.__mapper__.columns]
+
+
 def get_ordering_enum_by_columns(enum_name="OrderingEnum", *args):
     key_value = dict()
     for column in args:

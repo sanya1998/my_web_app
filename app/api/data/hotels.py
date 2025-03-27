@@ -13,7 +13,7 @@ from app.common.exceptions.repositories.multiple_results import MultipleResultsR
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
-from app.config.main import settings
+from app.config.common import settings
 from app.services.cache.cache import CacheService
 from app.services.cache.key_builders.listing import build_key_by_listing, build_key_pattern_by_listing
 from app.services.cache.key_builders.object_id import build_key_by_object_id
@@ -22,7 +22,7 @@ router = VersionedAPIRouter(prefix="/hotels", tags=["Hotels"])
 cache = CacheService(
     prefix_key=HOTELS_CACHE_PREFIX,
     expire=settings.CACHE_EXPIRE_HOTELS,
-    build_key_for_clear=build_key_by_object_id,
+    build_key_for_clear=build_key_by_object_id,  # TODO: pycharm подчеркивает
     build_key_pattern_for_clear=build_key_pattern_by_listing,
 )
 
@@ -36,7 +36,7 @@ async def create_hotel_for_moderator(
     try:
         hotel_create = HotelBaseInput.model_validate(hotel_input)
         new_hotel = await hotel_repo.create(hotel_create)
-        # TODO: отправлять в консюмер команду на очистку кеша
+        # TODO: отправлять в консюмер команду на очистку кеша ?
         await cache.clear(clear_by_pattern=True)
         return new_hotel
     except BaseRepoError:
@@ -75,7 +75,7 @@ async def update_hotel_for_moderator(
     try:
         hotel_update = HotelBaseInput.model_validate(hotel_input)
         updated_hotel = await hotel_repo.update(hotel_update, id=object_id)
-        # TODO: отправлять в консюмер команду на очистку кеша
+        # TODO: отправлять в консюмер команду на очистку кеша ?
         await cache.clear(clear_by_key=True, clear_by_pattern=True, object_id=object_id)
         return updated_hotel
     except NotFoundRepoError:
@@ -90,7 +90,7 @@ async def delete_hotel_for_moderator(
 ) -> HotelBaseReadSchema:
     try:
         deleted_hotel = await hotel_repo.delete_object(id=object_id)
-        # TODO: отправлять в консюмер команду на очистку кеша
+        # TODO: отправлять в консюмер команду на очистку кеша ?
         await cache.clear(clear_by_key=True, clear_by_pattern=True, object_id=object_id)
         return deleted_hotel
     except NotFoundRepoError:

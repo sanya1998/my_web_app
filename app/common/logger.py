@@ -1,13 +1,14 @@
 import logging
 from datetime import datetime, timezone
 
-from app.config.main import settings
+from app.config.common import settings
 from pythonjsonlogger import jsonlogger
 
 logger = logging.getLogger()
 logHandler = logging.StreamHandler()
 
 
+# TODO: заменить устаревшее jsonlogger
 class CustomJsonFormatter(jsonlogger.JsonFormatter):
     def add_fields(self, log_record, record, message_dict):
         # TODO: подебажить для собственного развития

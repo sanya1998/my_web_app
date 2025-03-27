@@ -14,7 +14,6 @@ class Settings(ApiSettings, DbSettings, HashSettings, EmailSettings):
     SENTRY_DSN: str
     HAWK_TOKEN: str
 
-    # TODO: Пока celery запускается из консоли, это нужно, так как не удалось подцепить env-файл
     model_config = SettingsConfigDict(env_file="envs/base.env", env_file_encoding="utf-8")
 
 

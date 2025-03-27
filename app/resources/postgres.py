@@ -2,7 +2,7 @@ import json
 
 import pydantic.json
 from app.common.constants.environments import Environments
-from app.config.main import settings
+from app.config.common import settings
 from sqlalchemy import AsyncAdaptedQueuePool, NullPool
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 

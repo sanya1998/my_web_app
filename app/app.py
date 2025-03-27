@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from app.admin.admin import add_admin
 from app.api import api_router
-from app.config.main import settings
+from app.config.common import settings
 from app.middlewares.middlewares import add_middlewares
 from app.resources.hawk_ import add_hawk_fastapi
 from fastapi import FastAPI

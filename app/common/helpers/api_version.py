@@ -1,5 +1,6 @@
 import typing
 
+from app.common.logger import logger
 from fastapi.routing import APIRouter
 from fastapi.types import DecoratedCallable
 
@@ -10,7 +11,10 @@ VERSION_PROPERTY = "version"
 class VersionedAPIRouter(APIRouter):
     def __init__(self, *args, is_root_router: bool = False, **kwargs):
         self.is_root_router = is_root_router
-        super().__init__(*args, **kwargs)
+        try:
+            super().__init__(*args, **kwargs)
+        except (TypeError, AssertionError) as e:
+            logger.error(f"Error while creating VersionedAPIRouter. {e}.")
 
     def api_route(
         self,
@@ -27,7 +31,8 @@ class VersionedAPIRouter(APIRouter):
         return decorator
 
     def add_api_route(self, path, endpoint, **kwargs):
-        # Если используется не VersionedAPIRouter, а например fastapi.APIRouter, то у endpoint не будет указана версия
+        # Если используется fastapi.APIRouter, то в путь endpoint-а не добавится версия
+        # Если это корневой VersionedAPIRouter, то добавляется версия в путь endpoint-а
         if self.is_root_router and (version := getattr(endpoint, VERSION_PROPERTY, None)):
             path = f"/{version}{path}"
         return super().add_api_route(path, endpoint, **kwargs)

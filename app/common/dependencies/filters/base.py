@@ -3,7 +3,7 @@ from types import UnionType
 from typing import Dict, List, Set, Type, Union, get_args, get_origin
 
 from app.common.constants.order_by import PREFIX_DESC
-from app.config.main import settings
+from app.config.common import settings
 from fastapi import Depends
 from fastapi.params import Query
 from pydantic import BaseModel, ConfigDict, Field, create_model
@@ -89,8 +89,8 @@ class BaseFilters(BaseModel):
 
 
 class LimitOffsetFilters(BaseFilters):
-    limit: int | None = Field(settings.LIMIT_DEFAULT, ge=1, le=settings.LIMIT_MAX)
-    offset: int | None = Field(settings.OFFSET_DEFAULT, ge=0)
+    limit: int = Field(settings.LIMIT_DEFAULT, ge=1, le=settings.LIMIT_MAX)
+    offset: int = Field(settings.OFFSET_DEFAULT, ge=0)
 
     def add__limit_offset(self, query: Select, _exclude_fields: Set = None) -> Select:
         if _exclude_fields is None:

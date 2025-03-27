@@ -16,7 +16,7 @@ from app.common.exceptions.services.unauthorized import (
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.user import UserBaseReadSchema, UserCreateSchema
 from app.common.tables import Users
-from app.config.main import settings
+from app.config.common import settings
 from app.repositories.user import UserRepo
 from app.services.base import BaseService
 from jwt.exceptions import ExpiredSignatureError, InvalidAlgorithmError, InvalidTokenError, MissingRequiredClaimError
@@ -27,7 +27,6 @@ from starlette.requests import Request
 class AuthorizationService(BaseService):
     @BaseService.catcher
     def __init__(self, user_repo: UserRepo, request: Request):
-        super().__init__()
         self.user_repo = user_repo
         self.request = request
 

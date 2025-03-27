@@ -1,7 +1,7 @@
 import smtplib
 from email.message import EmailMessage
 
-from app.config.main import settings
+from app.config.common import settings
 from app.resources.celery_ import celery
 
 

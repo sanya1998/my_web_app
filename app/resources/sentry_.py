@@ -1,5 +1,5 @@
 import sentry_sdk
-from app.config.main import settings
+from app.config.common import settings
 
 
 def init_sentry():

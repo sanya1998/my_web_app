@@ -4,7 +4,7 @@ from logging.config import fileConfig
 
 from alembic import context
 from app.common.tables.base import metadata
-from app.config.main import settings
+from app.config.common import settings
 from sqlalchemy import engine_from_config, pool
 
 # this is the Alembic Config object, which provides

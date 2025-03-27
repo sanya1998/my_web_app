@@ -31,7 +31,7 @@ linters-check: black-check isort-check flake8-check
 linters: isort black flake8-check
 
 
-set_local_env:
+set_base_env:
 	export $(grep -v '^#' envs/base.env | xargs)
 
 alembic_create_first_revision:
@@ -43,11 +43,11 @@ alembic_upgrade_head:
 alembic_downgrade_1:
 	alembic downgrade -1
 
-create_first_migration_local: set_local_env alembic_create_first_revision
+create_first_migration_base: set_base_env alembic_create_first_revision
 
-forward_migrations_head_local: set_local_env alembic_upgrade_head
+forward_migrations_head_base: set_base_env alembic_upgrade_head
 
-rollback_one_migration_local: set_local_env alembic_downgrade_1
+rollback_one_migration_base: set_base_env alembic_downgrade_1
 
 
 up-celery-worker:
@@ -60,12 +60,12 @@ clear-celery-tasks:
 	celery -A app.resources.celery_:celery purge
 
 
-up-services:
-	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" up -d postgres redis
+up-related-services:
+	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" up -d postgres redis celery-worker celery-flower
 
-# TODO: это не пересобирает образ при изменениях в коде
-up-app:
-	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-app" up -d celery-worker celery-flower api
+
+up-base-app:
+	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-app" up -d api
 
 
 run-tests:
