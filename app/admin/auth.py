@@ -3,7 +3,7 @@ from app.common.dependencies.input.users import UserInput
 from app.common.dependencies.services.authorization import get_authorization_service_by_request_and_session
 from app.common.exceptions.api.base import BaseApiError
 from app.common.exceptions.services.base import BaseServiceError
-from app.config.main import settings
+from app.config.common import settings
 from app.resources.postgres import with_session
 from pydantic import SecretStr
 from sqladmin.authentication import AuthenticationBackend

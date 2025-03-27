@@ -16,7 +16,6 @@ class BookingService(BaseService):
         booking_repo: BookingRepo,
         room_repo: RoomRepo,
     ):
-        super().__init__()
         self.booking_repo = booking_repo
         self.room_repo = room_repo
         self.check_data: CheckData

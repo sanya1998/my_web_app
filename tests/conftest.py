@@ -4,7 +4,7 @@ import pytest_asyncio
 from app.app import app
 from app.common.constants.environments import Environments
 from app.common.tables.base import metadata
-from app.config.main import settings
+from app.config.common import settings
 from app.resources.postgres import async_session, engine
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text

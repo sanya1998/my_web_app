@@ -1,6 +1,7 @@
 from typing import Any, List, TypeVar, Union
 
 from app.common.dependencies.filters.base import BaseFilters
+from app.common.dependencies.filters.export import ExportFilters
 from app.common.exceptions.catcher import catch_exception
 from app.common.exceptions.repositories.attribute import AttributeRepoError
 from app.common.exceptions.repositories.base import BaseRepoError
@@ -67,6 +68,14 @@ class BaseRepository:
         result = await self.execute(query)
         filtered_objects = result.all()
         return [self.many_read_schema.model_validate(obj) for obj in filtered_objects]
+
+    @catcher
+    async def get_raw_objects(self, filters: ExportFilters, **additional_filters) -> Any:
+        filters.set_db_model(self.db_model)
+        query = filters.modify_query(select(self.db_model), **additional_filters)
+        db_answer = await self.execute(query)
+        data = db_answer.scalars().all()
+        return data
 
     @catcher
     def _modify_query_for_getting_object(self, query: Select, **filters):

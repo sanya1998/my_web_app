@@ -1,4 +1,4 @@
-from app.config.main import settings
+from app.config.common import settings
 from fastapi import Form
 from pydantic import Field
 

@@ -17,7 +17,7 @@ from app.common.exceptions.services.unauthorized import (
     MissingRequiredClaimServiceError,
 )
 from app.common.schemas.user import UserBaseReadSchema
-from app.config.main import settings
+from app.config.common import settings
 from fastapi import Depends, Request
 
 

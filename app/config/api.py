@@ -31,6 +31,10 @@ class ApiSettings(BaseSettings):
     LIMIT_MAX: int = 100
     OFFSET_DEFAULT: int = 0
 
+    LIMIT_RAW_DATA_DEFAULT: int = 100
+    LIMIT_RAW_DATA_MAX: int = 1000
+    OFFSET_RAW_DATA_DEFAULT: int = 0
+
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     JWT_COOKIE_NAME: str = "access_token"
     JWT_SECRET_KEY: str

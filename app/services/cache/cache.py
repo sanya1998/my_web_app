@@ -2,7 +2,7 @@ import pickle
 from functools import wraps
 from typing import Callable, Dict, Tuple
 
-from app.config.main import settings
+from app.config.common import settings
 from app.resources.cache_ import with_redis_client
 from app.services.base import BaseService
 from app.services.cache.key_builders.default import build_key_default
