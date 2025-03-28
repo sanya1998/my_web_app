@@ -8,9 +8,24 @@ from app.common.helpers.api_version import VersionedAPIRouter
 router = VersionedAPIRouter(prefix="/export")
 
 
-@router.get("/{info_type}/for_admin")
-async def export(filters: ExportFiltersDep, export_service: ExportServiceDep, admin: AdminUserDep):
+@router.get("/{info_type}/for_admin/filtered")
+async def filtered_export(filters: ExportFiltersDep, export_service: ExportServiceDep, admin: AdminUserDep):
+    """
+    ! Созданный файл не принимается аналогичной ручкой import (есть проблемы с синтаксисом).
+    """
     try:
-        return await export_service.export_csv(filters)
+        return await export_service.filtered_export_csv(filters)
+    except BaseServiceError:
+        raise BaseApiError
+
+
+# TODO: Use filters and copy_from_query
+@router.get("/{info_type}/for_admin")
+async def export(export_service: ExportServiceDep, admin: AdminUserDep):
+    """
+    Полученный файл можно использовать в аналогичной ручке import.
+    """
+    try:
+        return await export_service.export_csv()
     except BaseServiceError:
         raise BaseApiError
