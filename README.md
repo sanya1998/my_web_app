@@ -109,6 +109,6 @@ TODO:
 79) при запуске в докере api - ошибка sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.DuplicateTableError'>: relation "hotels" already exists
 80) переименовать PORT в API_PORT
 81) если в эндпоинте нужна проверка роли, но затем не используется юзер, то можно этот Depends писать не в параметры функции, а в dependencies=
-82) написать тесты для новых ручек (export и import)
 83) кеш на комнаты
 84) при экспорте данных из бд русские символы превращаются в аброкадабру
+85) id в таблицах изменить на big int (можно посмотреть проект логобот)

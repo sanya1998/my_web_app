@@ -70,3 +70,7 @@ class DbSettings(BaseSettings):
             f"{self.POSTGRES_DB}"
         )
         return value
+
+    FILE_FORMAT: str = "csv"
+    FILE_ENCODING: str = "utf-8"
+    FILE_MEDIA_TYPE: str = "text/csv"

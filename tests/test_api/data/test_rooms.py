@@ -2,7 +2,7 @@ from datetime import date
 
 import pytest
 from app.common.schemas.room import ManyRoomsReadSchema, RoomReadSchema
-from httpx import QueryParams
+from httpx import AsyncClient, QueryParams
 from starlette import status
 from tests.constants import BASE_ROOMS_URL
 
@@ -14,7 +14,7 @@ from tests.constants import BASE_ROOMS_URL
         ({}, status.HTTP_200_OK),
     ],
 )
-async def test_get_by_check_dates(client, params, status_code):
+async def test_get_by_check_dates(client: AsyncClient, params: dict, status_code: int):
     response = await client.get(BASE_ROOMS_URL, params=QueryParams(**params))
     assert response.status_code == status_code
 
@@ -32,7 +32,7 @@ async def test_get_by_check_dates(client, params, status_code):
         ({"order_by": ["price", "-id"], "price__gt": 26000, "price__lt": 27000, "limit": 1}, 11),
     ],
 )
-async def test_get_by_params(client, params, id_):
+async def test_get_by_params(client: AsyncClient, params: dict, id_: int):
     response = await client.get(BASE_ROOMS_URL, params=QueryParams(**params))
     assert response.status_code == status.HTTP_200_OK
     assert id_ in set(ManyRoomsReadSchema.model_validate(r).id for r in response.json())
@@ -45,7 +45,7 @@ async def test_get_by_params(client, params, id_):
         (2, "Делюкс Плюс", 24450),
     ],
 )
-async def test_get_room(client, id_, name, price):
+async def test_get_room(client: AsyncClient, id_: int, name: str, price: int):
     response = await client.get(f"{BASE_ROOMS_URL}{id_}")
     assert response.status_code == status.HTTP_200_OK
     room = RoomReadSchema.model_validate(response.json())

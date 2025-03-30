@@ -13,6 +13,7 @@ HotelsOrderingEnum = get_ordering_enum_by_columns("HotelsOrderingEnum", columns.
 
 
 class HotelsFilters(MainFilters, SearchFilters, HotelBaseFilters):
+    id__not_in: List[int] | None = Field(Query(None))
     location__ilike: str | None = None
     stars__ge: int | None = None
     services__contains: List[str] | None = Field(Query(None))
