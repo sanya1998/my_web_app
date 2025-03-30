@@ -1,8 +1,10 @@
+import io
 from typing import Any, List, TypeVar, Union
 
 from app.common.dependencies.filters.base import BaseFilters
 from app.common.dependencies.filters.export import ExportFilters
 from app.common.exceptions.catcher import catch_exception
+from app.common.exceptions.repositories.already_exists import AlreadyExistsRepoError
 from app.common.exceptions.repositories.attribute import AttributeRepoError
 from app.common.exceptions.repositories.base import BaseRepoError
 from app.common.exceptions.repositories.connection_refused import ConnectionRefusedRepoError
@@ -12,7 +14,10 @@ from app.common.exceptions.repositories.wrong_query import WrongQueryError
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
-from sqlalchemy import Result, Select, delete, exists, insert, select, update
+from app.config.common import settings
+from asyncpg import UniqueViolationError
+from fastapi import UploadFile
+from sqlalchemy import Result, Select, TextClause, delete, exists, insert, select, text, update
 from sqlalchemy.exc import MultipleResultsFound, NoResultFound, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.dml import Delete, ReturningInsert, Update
@@ -44,7 +49,7 @@ class BaseRepository:
         self.session = session
 
     @catcher
-    async def execute(self, query: Union[ReturningInsert, Select, Update, Delete]) -> Result:
+    async def execute(self, query: Union[ReturningInsert, Select, Update, Delete, TextClause]) -> Result:
         try:
             # print(query.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
             return await self.session.execute(query)
@@ -70,12 +75,75 @@ class BaseRepository:
         return [self.many_read_schema.model_validate(obj) for obj in filtered_objects]
 
     @catcher
-    async def get_raw_objects(self, filters: ExportFilters, **additional_filters) -> Any:
+    async def configure_autoincrement(self):
+        # TODO: можно ли это сделать силами sqlalchemy ?
+        table_name = self.db_model.__table__
+        id_ = self.db_model.id.key
+        pg_get_serial_sequence = f"pg_get_serial_sequence('{table_name}', '{id_}')"
+        select_max = f"(SELECT MAX({id_}) FROM {table_name})"
+        final_query = f"SELECT setval({pg_get_serial_sequence}, {select_max});"
+        await self.execute(text(final_query))
+
+    @catcher
+    async def _get_driver_connection(self):
+        # TODO: не нужно ли тут что-либо закрывать?
+        connection = await self.session.connection()
+        raw_connection = await connection.get_raw_connection()
+        driver_connection = raw_connection.driver_connection
+        return driver_connection
+
+    @catcher
+    async def export_all(self):
+        driver_connection = await self._get_driver_connection()
+        stream = io.BytesIO()
+        await driver_connection.copy_from_table(
+            self.db_model.__tablename__,
+            output=stream,
+            format=settings.FILE_FORMAT,
+            encoding=settings.FILE_ENCODING,
+            header=True,
+        )
+        stream.seek(0)
+        return stream
+
+    @catcher
+    def _prepare_query_by_export(self, filters: ExportFilters, **additional_filters):
+        """
+        Можно было бы экранировать параметры (Все `:params_i` заменить на `$i`).
+        copy_from_query позволяет передавать аргументы.
+        Но сложности возникают из-за того, что при использовании в фильтрах списка появляется `(__[POSTCOMPILE_var_1])'
+        """
         filters.set_db_model(self.db_model)
         query = filters.modify_query(select(self.db_model), **additional_filters)
-        db_answer = await self.execute(query)
-        data = db_answer.scalars().all()
-        return data
+        query_sql = str(query.compile(compile_kwargs={"literal_binds": True}))
+        return query_sql
+
+    @catcher
+    async def export_filtered(self, filters: ExportFilters, **additional_filters):
+        query_sql = self._prepare_query_by_export(filters, **additional_filters)
+        driver_connection = await self._get_driver_connection()
+        stream = io.BytesIO()
+        await driver_connection.copy_from_query(
+            query_sql, output=stream, format=settings.FILE_FORMAT, encoding=settings.FILE_ENCODING, header=True
+        )
+        stream.seek(0)
+        return stream
+
+    @catcher
+    async def import_(self, file: UploadFile):
+        driver_connection = await self._get_driver_connection()
+        try:
+            await driver_connection.copy_to_table(
+                self.db_model.__tablename__,
+                source=file.file,
+                header=True,
+                format=settings.FILE_FORMAT,
+                encoding=settings.FILE_ENCODING,
+            )
+        except UniqueViolationError:
+            raise AlreadyExistsRepoError
+        await self.configure_autoincrement()
+        await self.session.commit()
 
     @catcher
     def _modify_query_for_getting_object(self, query: Select, **filters):
@@ -168,4 +236,8 @@ class BaseRepository:
 
     @catcher
     async def delete_bulk(self, **filters) -> List[many_deleted_read_schema]:
+        raise NotImplementedError
+
+    @catcher
+    async def truncate(self) -> List[many_deleted_read_schema]:
         raise NotImplementedError

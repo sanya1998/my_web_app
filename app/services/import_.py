@@ -1,3 +1,5 @@
+from app.common.exceptions.repositories.already_exists import AlreadyExistsRepoError
+from app.common.exceptions.services.already_exists import AlreadyExistsServiceError
 from app.repositories.base import BaseRepository
 from app.services.base import BaseService
 from fastapi import UploadFile
@@ -9,16 +11,8 @@ class ImportService(BaseService):
         self.repo = repo
 
     @BaseService.catcher
-    async def import_csv(self, file: UploadFile):
-        # TODO: все, что касается бд засунуть в репозиторий
-
-        # Запасной план:
-        # csv_reader = csv.DictReader(codecs.iterdecode(file.file, 'utf-8'))
-        # list(csv_reader) - список словарей
-        # csv_reader.fieldnames - список заголовков
-
-        raw_connection = (await (await self.repo.session.connection()).get_raw_connection()).driver_connection
-        await raw_connection.copy_to_table(
-            self.repo.db_model.__tablename__, source=file.file, format="csv", encoding="utf-8"
-        )
-        await self.repo.session.commit()
+    async def import_(self, file: UploadFile):
+        try:
+            await self.repo.import_(file)
+        except AlreadyExistsRepoError:
+            raise AlreadyExistsServiceError
