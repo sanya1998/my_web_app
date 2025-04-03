@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings
 
 class ApiSettings(BaseSettings):
     """
-    Базовые настройки api приложения
+    Настройки api приложения
     """
 
     APPLICATION_NAME: str = "My web application"
