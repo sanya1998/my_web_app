@@ -7,6 +7,8 @@ class DbSettings(BaseSettings):
     Конфигурация баз данных
     """
 
+    # TODO: разбить по дочерним классам разные бд
+
     # REDIS
     REDIS_VERSION: str
     REDIS_DRIVER: str = "redis"
@@ -74,3 +76,6 @@ class DbSettings(BaseSettings):
     FILE_FORMAT: str = "csv"
     FILE_ENCODING: str = "utf-8"
     FILE_MEDIA_TYPE: str = "text/csv"
+
+    PROMETHEUS_VERSION: str
+    PROMETHEUS_PORT: int

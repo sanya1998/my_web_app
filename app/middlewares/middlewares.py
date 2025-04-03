@@ -19,6 +19,7 @@ def add_middlewares(app: FastAPI):
     app.add_middleware(SessionMiddleware, secret_key=settings.JWT_SECRET_KEY)
 
     # TODO: сделать единообразно
+    # TODO: когда появится что-то со смыслом, этот можно будет убрать
     @app.middleware("http")
     async def add_process_time_header(request: Request, call_next):
         start_time = time.time()
