@@ -31,6 +31,7 @@ class DbSettings(BaseSettings):
             f"{self.REDIS_HOST}:{self.REDIS_PORT}/"
             f"{self.CACHE_DB}"
         )
+        # TODO: можно ли что-то вроде `return self.CACHE_URL or value` ? или будет рекурсия?
         return value
 
     CELERY_BROKER_DB: int
