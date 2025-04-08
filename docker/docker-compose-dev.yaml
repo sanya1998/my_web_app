@@ -1,0 +1,24 @@
+services:
+  postgres:
+    env_file:
+      - ../envs/dev.env
+
+  redis:
+    env_file:
+      - ../envs/dev.env
+
+  grafana:
+    env_file:
+      - ../envs/dev.env
+
+  celery-worker:
+    env_file:
+      - ../envs/dev.env
+
+  celery-flower:
+    env_file:
+      - ../envs/dev.env
+
+  api:
+    env_file:
+      - ../envs/dev.env

@@ -60,10 +60,10 @@ clear-celery-tasks:
 	celery -A app.resources.celery_:celery purge
 
 
-build-related-services:
+build-related-base-services:
 	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" up -d --build postgres prometheus grafana redis celery-worker celery-flower
 
-up-related-services:
+up-related-base-services:
 	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" up -d postgres prometheus grafana redis celery-worker celery-flower
 
 
@@ -72,6 +72,20 @@ build-base-app:
 
 up-base-app:
 	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-app" up -d prometheus grafana api
+
+build-dev-app:
+	docker-compose \
+		--env-file envs/base.env --env-file envs/dev.env \
+		-f docker/docker-compose.yaml -f docker/docker-compose-dev.yaml \
+		-p "my-web-app-dev" \
+		up -d --build prometheus grafana api
+
+up-dev-app:
+	docker-compose
+		--env-file envs/base.env --env-file envs/dev.env \
+		-f docker/docker-compose.yaml -f docker/docker-compose-dev.yaml \
+		-p "my-web-app-dev" \
+		up -d prometheus grafana api
 
 
 run-tests:
