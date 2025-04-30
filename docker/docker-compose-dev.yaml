@@ -1,24 +1,22 @@
+x-env: &dev-env
+  env_file:
+    - ../envs/dev.env
+
 services:
   postgres:
-    env_file:
-      - ../envs/dev.env
+    <<: *dev-env
 
   redis:
-    env_file:
-      - ../envs/dev.env
+    <<: *dev-env
 
   grafana:
-    env_file:
-      - ../envs/dev.env
+    <<: *dev-env
 
   celery-worker:
-    env_file:
-      - ../envs/dev.env
+    <<: *dev-env
 
   celery-flower:
-    env_file:
-      - ../envs/dev.env
+    <<: *dev-env
 
   api:
-    env_file:
-      - ../envs/dev.env
+    <<: *dev-env

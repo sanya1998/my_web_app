@@ -1,3 +1,26 @@
+x-env: &base-env
+  env_file:
+    - ../envs/base.env
+
+x-base-python: &base-python
+  build:
+    context: ../
+    dockerfile: docker/custom_python/Dockerfile
+  <<: *base-env
+  environment:
+    - POSTGRES_HOST=postgres
+    - REDIS_HOST=redis
+    - PYTHONDONTWRITEBYTECODE=1
+  volumes:  # TODO: со временем, возможно, придется что-то добавлять/изменять
+    - ../alembic:/code/alembic
+    - ../alembic.ini:/code/alembic.ini
+    - ../app:/code/app
+    - ../manage.py:/code/manage.py
+    - ../envs:/code/envs
+    - ../static:/code/static
+# TODO Можно и так:
+#    - .:/code
+
 services:
   postgres:
     image: postgres:${POSTGRES_VERSION}
@@ -5,8 +28,7 @@ services:
     tty: true  # TODO: попробовать стереть и войти в контейнер
     volumes:
       - postgresql_data:/var/lib/postgresql/data
-    env_file:
-      - ../envs/base.env
+    <<: *base-env
     ports:
       - 5432:${POSTGRES_PORT}
 
@@ -14,8 +36,7 @@ services:
     image: redis:${REDIS_VERSION}
     container_name: redis
     restart: unless-stopped
-    env_file:
-      - ../envs/base.env
+    <<: *base-env
     ports:
       - 6379:${REDIS_PORT}
     command: sh -c '
@@ -58,8 +79,7 @@ services:
     image: grafana/grafana:${GRAFANA_VERSION}
     container_name: grafana
     restart: unless-stopped
-    env_file:
-      - ../envs/base.env
+    <<: *base-env
     ports:
       - 3000:${GRAFANA_PORT}
     volumes:
@@ -70,14 +90,7 @@ services:
 
   celery-worker:
     container_name: celery-worker
-    build:
-      context: ../
-      dockerfile: docker/custom_python/Dockerfile
-    env_file:
-      - ../envs/base.env
-    environment:
-      - POSTGRES_HOST=postgres
-      - REDIS_HOST=redis
+    <<: *base-python
     command: ["/code/docker/custom_python/celery.sh", "worker"]
     depends_on:
       - postgres
@@ -85,14 +98,7 @@ services:
 
   celery-flower:
     container_name: celery-flower
-    build:
-      context: ../
-      dockerfile: docker/custom_python/Dockerfile
-    env_file:
-      - ../envs/base.env
-    environment:
-      - POSTGRES_HOST=postgres
-      - REDIS_HOST=redis
+    <<: *base-python
     ports:
       - 5555:${FLOWER_PORT}
     command: ["/code/docker/custom_python/celery.sh", "flower", "${FLOWER_PORT}"]
@@ -102,14 +108,7 @@ services:
 
   api:
     container_name: api
-    build:
-      context: ../
-      dockerfile: docker/custom_python/Dockerfile
-    env_file:
-      - ../envs/base.env
-    environment:
-      - POSTGRES_HOST=postgres
-      - REDIS_HOST=redis
+    <<: *base-python
     ports:
       - 8010:${PORT}
     command: ["/code/docker/custom_python/api.sh"]

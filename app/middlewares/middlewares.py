@@ -22,6 +22,8 @@ def add_middlewares(app: FastAPI):
     # TODO: когда появится что-то со смыслом, этот можно будет убрать
     @app.middleware("http")
     async def add_process_time_header(request: Request, call_next):
+        # TODO: вместо логирования отправлять сообщение в кролик с информацией, сколько длился запрос,
+        #  а он пусть пишет в бд
         start_time = time.time()
         response = await call_next(request)
         process_time = time.time() - start_time
