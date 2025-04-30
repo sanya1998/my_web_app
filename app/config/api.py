@@ -10,8 +10,8 @@ class ApiSettings(BaseSettings):
 
     APPLICATION_NAME: str = "My web application"
     APPLICATION_DESCRIPTION: str = "My web application description"
-    HOST: str = "0.0.0.0"  # TODO: здесь разве не всегда 0.0.0.0? мб убрать из env-файлов?
-    PORT: int = 8000
+    API_HOST: str = "0.0.0.0"  # TODO: здесь разве не всегда 0.0.0.0? мб убрать из env-файлов?
+    API_PORT: int = 8000
     SWAGGER_UI_PARAMETERS: dict = {"tryItOutEnabled": True}
     DEBUG: bool = True
 

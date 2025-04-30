@@ -50,12 +50,6 @@ forward_migrations_head_base: set_base_env alembic_upgrade_head
 rollback_one_migration_base: set_base_env alembic_downgrade_1
 
 
-up-celery-worker:
-	celery --app app.resources.celery_:celery worker --loglevel=INFO --pool=solo
-
-up-celery-flower:
-	celery --app app.resources.celery_:celery flower
-
 clear-celery-tasks:
 	celery -A app.resources.celery_:celery purge
 
