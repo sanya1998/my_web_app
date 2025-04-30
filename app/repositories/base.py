@@ -12,6 +12,7 @@ from app.common.exceptions.repositories.multiple_results import MultipleResultsR
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.exceptions.repositories.wrong_query import WrongQueryError
 from app.common.helpers.db import get_columns_by_table
+from app.common.logger import logger
 from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
 from app.config.common import settings
@@ -51,14 +52,14 @@ class BaseRepository:
     @catcher
     async def execute(self, query: Union[ReturningInsert, Select, Update, Delete, TextClause]) -> Result:
         try:
-            # print(query.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
+            # logger.info(query.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
             return await self.session.execute(query)
         except ConnectionRefusedError:
             raise ConnectionRefusedRepoError
         except SQLAlchemyError:
             # TODO: 1) to logs
             # TODO: 2) SQLAlchemyError не такой содержательный, как если без него
-            print(query.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
+            logger.info(query.compile(compile_kwargs={"literal_binds": True}))  # TODO: remove
             raise WrongQueryError
 
     @catcher

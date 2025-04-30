@@ -15,7 +15,7 @@ class BaseEnum(str, Enum):
             CREATE = 'CREATE'
             DELETE = 'DELETE'
 
-        print(OperationType.list())
+        logger.info(OperationType.list())
         > ['CREATE', 'DELETE']
         """
         return list(map(lambda c: c.value, cls))

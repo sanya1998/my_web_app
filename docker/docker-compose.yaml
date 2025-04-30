@@ -11,15 +11,13 @@ x-base-python: &base-python
     - POSTGRES_HOST=postgres
     - REDIS_HOST=redis
     - PYTHONDONTWRITEBYTECODE=1
-  volumes:  # TODO: со временем, возможно, придется что-то добавлять/изменять
+  volumes:  # TODO: со временем, возможно, придется что-то добавлять/изменять, либо использовать `- .:/code`
     - ../alembic:/code/alembic
     - ../alembic.ini:/code/alembic.ini
     - ../app:/code/app
     - ../manage.py:/code/manage.py
     - ../envs:/code/envs
     - ../static:/code/static
-# TODO Можно и так:
-#    - .:/code
 
 services:
   postgres:
@@ -110,7 +108,7 @@ services:
     container_name: api
     <<: *base-python
     ports:
-      - 8010:${PORT}
+      - 8000:${API_PORT}
     command: ["/code/docker/custom_python/api.sh"]
     depends_on:
       - celery-worker

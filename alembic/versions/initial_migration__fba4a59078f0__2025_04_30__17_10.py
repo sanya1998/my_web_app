@@ -1,13 +1,13 @@
 """Initial migration
 
 Revision ID:
-2cdc75da7730
+fba4a59078f0
 
 Revises:
 
 
 Create Date:
-2025-01-03 18:16:02.523877
+2025-04-30 17:10:34.797839
 """
 
 from typing import Sequence, Union
@@ -17,7 +17,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = "2cdc75da7730"
+revision: str = "fba4a59078f0"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -32,7 +32,7 @@ def upgrade() -> None:
         sa.Column("services", postgresql.ARRAY(sa.String()), nullable=False),
         sa.Column("stars", sa.Integer(), nullable=True),
         sa.Column("image_id", sa.Integer(), nullable=True),
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -42,20 +42,20 @@ def upgrade() -> None:
         sa.Column("last_name", sa.String(), nullable=True),
         sa.Column("roles", sa.ARRAY(sa.String()), nullable=False),
         sa.Column("hashed_password", sa.String(), nullable=False),
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("email"),
     )
     op.create_table(
         "rooms",
-        sa.Column("hotel_id", sa.Integer(), nullable=False),
+        sa.Column("hotel_id", sa.BigInteger(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("description", sa.String(), nullable=True),
         sa.Column("price", sa.Integer(), nullable=False),
         sa.Column("services", sa.ARRAY(sa.String()), nullable=False),
         sa.Column("quantity", sa.Integer(), nullable=False),
         sa.Column("image_id", sa.Integer(), nullable=True),
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.ForeignKeyConstraint(
             ["hotel_id"],
             ["hotels.id"],
@@ -64,8 +64,8 @@ def upgrade() -> None:
     )
     op.create_table(
         "bookings",
-        sa.Column("room_id", sa.Integer(), nullable=False),
-        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column("room_id", sa.BigInteger(), nullable=False),
+        sa.Column("user_id", sa.BigInteger(), nullable=False),
         sa.Column("date_from", sa.Date(), nullable=False),
         sa.Column("date_to", sa.Date(), nullable=False),
         sa.Column("price", sa.Integer(), nullable=False),
@@ -85,7 +85,7 @@ def upgrade() -> None:
             ),
             nullable=True,
         ),
-        sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
         sa.ForeignKeyConstraint(
             ["room_id"],
             ["rooms.id"],

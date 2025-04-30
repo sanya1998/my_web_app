@@ -3,6 +3,7 @@ from typing import Any, AsyncGenerator, AsyncIterator
 import pytest_asyncio
 from app.app import app
 from app.common.constants.environments import Environments
+from app.common.logger import logger
 from app.common.tables.base import metadata
 from app.config.common import settings
 from app.resources.postgres import async_session, engine
@@ -13,13 +14,14 @@ from starlette import status
 from tests.constants import BASE_USERS_URL
 
 ALLOWED_POSTGRES_HOSTS = ["0.0.0.0"]  # TODO: возможно, для тестов в ci/cd здесь понадобится postgres, redis
+ALLOWED_REDIS_HOSTS = ["0.0.0.0"]
 
 
 @pytest_asyncio.fixture(loop_scope="session", scope="session", autouse=True)
 async def prepare_db():
     assert settings.ENVIRONMENT == Environments.TEST
     assert settings.POSTGRES_HOST in ALLOWED_POSTGRES_HOSTS
-    assert settings.REDIS_HOST in ALLOWED_POSTGRES_HOSTS
+    assert settings.REDIS_HOST in ALLOWED_REDIS_HOSTS
 
     async with engine.begin() as conn:
         await conn.run_sync(metadata.drop_all)
@@ -92,7 +94,7 @@ async def user_client(client_for_user: AsyncClient) -> AsyncClient:
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
 def mock_send_email(mocker):
     def fake_send_email(booking: dict, email_to: str):
-        print(f"Имитация отправки сообщения на почту {email_to}. {booking}.")
+        logger.info(f"Имитация отправки сообщения на почту {email_to}. {booking}.")
 
     # TODO: рассмотреть with mock.patch("app.common.tasks.email.send_booking_notify_email.delay") as fake_send_email
     mocker.patch("app.common.tasks.email.send_booking_notify_email.delay", fake_send_email)
