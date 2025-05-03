@@ -3,6 +3,7 @@ import hashlib
 from datetime import datetime, timedelta
 
 import jwt
+from app.common.constants.roles import AllRolesEnum
 from app.common.dependencies.input.users import UserInput
 from app.common.exceptions.services.already_exists import AlreadyExistsServiceError
 from app.common.exceptions.services.not_found import NotFoundServiceError
@@ -74,7 +75,10 @@ class AuthorizationService(BaseService):
         if await self.user_repo.is_exists(email=user_input.email):
             raise AlreadyExistsServiceError
         hashed_password_input = self.get_password_hash(user_input.password)
-        new_user_create_schema = UserCreateSchema(email=user_input.email, hashed_password=hashed_password_input)
+        roles = [AllRolesEnum.USER]  # При регистрации всегда предоставляется роль user
+        new_user_create_schema = UserCreateSchema(
+            email=user_input.email, hashed_password=hashed_password_input, roles=roles
+        )
         new_user = await self.user_repo.create(new_user_create_schema)
         self.create_and_remember_access_token(email=user_input.email)
         return new_user

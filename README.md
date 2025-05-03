@@ -150,3 +150,4 @@ TODO:
 100) Дебагом проверить @computed_field @property в pydantic_settings кешируется? try `from functools import cached_property`
 101) почитать про SettingsConfigDict(env_prefix=
 102) добавить тесты для фоновых задач (celery and fastapi background)
+104) Разобраться в свагере (total_cost__between array<[integer, integer], any> | (array<[integer, integer], any> | null))

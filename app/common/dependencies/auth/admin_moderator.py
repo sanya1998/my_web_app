@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from app.common.constants.roles import RolesEnum
+from app.common.constants.roles import AllRolesEnum
 from app.common.dependencies.auth.base import get_current_user, get_token
 from app.common.dependencies.services.authorization import get_authorization_service_by_request_and_session
 from app.common.exceptions.api.forbidden import ForbiddenApiError
@@ -12,7 +12,7 @@ from starlette.requests import Request
 
 
 def get_admin_or_moderator_user(user: Annotated[UserBaseReadSchema, Depends(get_current_user)]):
-    if {RolesEnum.ADMIN, RolesEnum.MODERATOR}.isdisjoint(user.roles):
+    if {AllRolesEnum.ADMIN, AllRolesEnum.MODERATOR}.isdisjoint(user.roles):
         raise ForbiddenApiError
     return user
 

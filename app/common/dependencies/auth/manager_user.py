@@ -7,10 +7,10 @@ from app.common.schemas.user import UserBaseReadSchema
 from fastapi import Depends
 
 
-async def get_manager_user(user: Annotated[UserBaseReadSchema, Depends(get_current_user)]):
-    if AllRolesEnum.MANAGER not in user.roles:
+def get_manager_or_user(user: Annotated[UserBaseReadSchema, Depends(get_current_user)]):
+    if {AllRolesEnum.MANAGER, AllRolesEnum.USER}.isdisjoint(user.roles):
         raise ForbiddenApiError
     return user
 
 
-ManagerUserDep = Annotated[UserBaseReadSchema, Depends(get_manager_user)]
+ManagerOrUserDep = Annotated[UserBaseReadSchema, Depends(get_manager_or_user)]

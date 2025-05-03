@@ -27,7 +27,7 @@ cache = CacheService(
 )
 
 
-@router.post("/for_moderator")
+@router.post("/")
 async def create_hotel_for_moderator(
     hotel_input: HotelInputCreateDep,
     hotel_repo: HotelRepoDep,
@@ -44,7 +44,7 @@ async def create_hotel_for_moderator(
 
 
 @router.get("/")
-@cache.caching(build_key=build_key_by_listing)
+@cache.caching(build_key=build_key_by_listing)  # TODO: pycharm подчеркивает
 async def get_hotels(filters: HotelsFiltersDep, hotel_repo: HotelRepoDep) -> List[ManyHotelsReadSchema]:
     try:
         return await hotel_repo.get_objects(filters=filters)
@@ -65,7 +65,7 @@ async def get_hotel(object_id: int, hotel_repo: HotelRepoDep) -> HotelReadSchema
         raise BaseApiError
 
 
-@router.put("/{object_id}/for_moderator")
+@router.put("/{object_id}")
 async def update_hotel_for_moderator(
     object_id: int,
     hotel_input: HotelInputUpdateDep,
@@ -84,7 +84,7 @@ async def update_hotel_for_moderator(
         raise BaseApiError
 
 
-@router.delete("/{object_id}/for_moderator")
+@router.delete("/{object_id}")
 async def delete_hotel_for_moderator(
     object_id: int, hotel_repo: HotelRepoDep, moderator: ModeratorUserDep
 ) -> HotelBaseReadSchema:

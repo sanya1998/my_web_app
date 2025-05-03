@@ -1,9 +1,22 @@
+from typing import List, Union
+
+from app.common.constants.roles import BookingsRecipientRoleEnum
+from app.common.dependencies.filters.bookings import BookingsFilters
 from app.common.dependencies.input.bookings import BookingCreateInputSchema, BookingUpdateInputSchema
+from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
+from app.common.exceptions.services.forbidden import ForbiddenServiceError
+from app.common.exceptions.services.multiple_results import MultipleResultsServiceError
 from app.common.exceptions.services.not_found import NotFoundServiceError
 from app.common.exceptions.services.unavailable import UnavailableServiceError
 from app.common.helpers.check_data import CheckData
-from app.common.schemas.booking import BookingCreateSchema, BookingUpdateSchema
+from app.common.schemas.booking import (
+    BookingCreateSchema,
+    BookingReadSchema,
+    BookingUpdateSchema,
+    CurrentUserBookingReadSchema,
+)
+from app.common.schemas.user import UserBaseReadSchema
 from app.repositories.booking import BookingRepo
 from app.repositories.room import RoomRepo
 from app.services.base import BaseService
@@ -56,3 +69,32 @@ class BookingService(BaseService):
         await self.select_room_and_check_dates()
         booking_update = BookingUpdateSchema.model_validate(booking_input)
         return await self.booking_repo.update(booking_update, id=booking_id)
+
+    @BaseService.catcher
+    async def get_list(
+        self, client: UserBaseReadSchema, recipient_role: BookingsRecipientRoleEnum, filters: BookingsFilters
+    ) -> List[Union[BookingReadSchema, CurrentUserBookingReadSchema]]:
+        if recipient_role == BookingsRecipientRoleEnum.USER:
+            return await self.booking_repo.get_objects_self(filters=filters, user_id=client.id)
+
+        return await self.booking_repo.get_objects(filters=filters)
+
+    @BaseService.catcher
+    async def get_object(
+        self, client: UserBaseReadSchema, recipient_role: BookingsRecipientRoleEnum, object_id: int
+    ) -> Union[BookingReadSchema, CurrentUserBookingReadSchema]:
+        method_map = {
+            BookingsRecipientRoleEnum.USER: self.booking_repo.get_object_self,
+            BookingsRecipientRoleEnum.MANAGER: self.booking_repo.get_object,
+        }
+        try:
+            booking = await method_map[recipient_role](id=object_id)
+        except NotFoundRepoError:
+            raise NotFoundServiceError
+        except MultipleResultsRepoError:
+            raise MultipleResultsServiceError
+
+        if recipient_role == BookingsRecipientRoleEnum.USER and booking.user_id != client.id:
+            raise ForbiddenServiceError
+
+        return booking

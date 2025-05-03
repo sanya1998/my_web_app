@@ -20,7 +20,7 @@ def create_response(info_type: InfoTypes, stream: io.BytesIO):
     return response
 
 
-@router.get("/all/{info_type}/for_admin")
+@router.get("/all/{info_type}")
 async def export_all(info_type: InfoTypes, export_service: ExportServiceDep, admin: AdminUserDep):
     try:
         stream = await export_service.export_all_in_csv()
@@ -29,7 +29,7 @@ async def export_all(info_type: InfoTypes, export_service: ExportServiceDep, adm
         raise BaseApiError
 
 
-@router.get("/filtered/{info_type}/for_admin")
+@router.get("/filtered/{info_type}")
 async def export_filtered(
     info_type: InfoTypes, filters: ExportFiltersDep, export_service: ExportServiceDep, admin: AdminUserDep
 ):
