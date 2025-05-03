@@ -48,5 +48,5 @@ async def test_current_user(user_client: AsyncClient):
 
 
 async def test_get_users(admin_client: AsyncClient):
-    response = await admin_client.get(f"{BASE_USERS_URL}for_admin")
+    response = await admin_client.get(BASE_USERS_URL)
     assert response.status_code == status.HTTP_200_OK

@@ -14,19 +14,12 @@ BookingsOrderingEnum = get_ordering_enum_by_columns(
 )
 
 
-class CurrentUserBookingsFilters(MainFilters):
+class BookingsFilters(MainFilters):
     _db_model = Bookings
     room_id: int | None = None
     room: RoomBaseFilters
     total_cost__between: Tuple[int, int] | None = Field(Query(None))
     order_by: List[BookingsOrderingEnum] | None = Field(Query(None))
-
-
-CurrentUserBookingsFiltersDep = Annotated[CurrentUserBookingsFilters, filter_depends(CurrentUserBookingsFilters)]
-
-
-class BookingsFilters(CurrentUserBookingsFilters):
-    _db_model = Bookings
     user: UserBaseFilter
 
 

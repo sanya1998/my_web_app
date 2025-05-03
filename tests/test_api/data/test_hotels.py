@@ -18,7 +18,7 @@ from tests.constants import BASE_HOTELS_URL, BASE_ROOMS_URL
     ],
 )
 async def test_crud_hotel(moderator_client, data, status_code):
-    response = await moderator_client.post(f"{BASE_HOTELS_URL}for_moderator", data=data)
+    response = await moderator_client.post(f"{BASE_HOTELS_URL}", data=data)
     assert response.status_code == status_code
     if response.status_code != status.HTTP_200_OK:
         return
@@ -33,14 +33,14 @@ async def test_crud_hotel(moderator_client, data, status_code):
 
     # update
     updated_response = await moderator_client.put(
-        f"{BASE_HOTELS_URL}{hotel.id}/for_moderator",
+        f"{BASE_HOTELS_URL}{hotel.id}",
         data=dict(name=f"updated_{hotel.name}", location=f"updated_{hotel.location}"),
     )
     _ = HotelBaseReadSchema.model_validate(updated_response.json())
     assert updated_response.status_code == status.HTTP_200_OK
 
     # delete
-    deleted_response = await moderator_client.delete(f"{BASE_HOTELS_URL}{hotel.id}/for_moderator")
+    deleted_response = await moderator_client.delete(f"{BASE_HOTELS_URL}{hotel.id}")
     _ = HotelBaseReadSchema.model_validate(deleted_response.json())
     assert deleted_response.status_code == status.HTTP_200_OK
 

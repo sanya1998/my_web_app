@@ -10,7 +10,7 @@ from fastapi import BackgroundTasks, UploadFile
 router = VersionedAPIRouter(prefix="/import")
 
 
-@router.post("/all/{info_type}/for_admin")
+@router.post("/all/{info_type}")
 async def import_(
     background_tasks: BackgroundTasks, file: UploadFile, import_service: ImportServiceDep, admin: AdminUserDep
 ):

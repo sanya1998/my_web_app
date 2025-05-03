@@ -1,6 +1,6 @@
 from typing import List
 
-from app.common.constants.roles import RolesEnum
+from app.common.constants.roles import AllRolesEnum
 from app.common.schemas.base import BaseSchema
 from pydantic import EmailStr
 
@@ -9,7 +9,15 @@ class UserBaseSchema(BaseSchema):
     email: EmailStr
 
 
-class UserCreateSchema(UserBaseSchema):
+class UserRolesSchema(UserBaseSchema):
+    roles: List[AllRolesEnum] = list()
+
+
+class UserHashedPasswordSchema(UserBaseSchema):
+    hashed_password: str
+
+
+class UserCreateSchema(UserHashedPasswordSchema, UserRolesSchema):
     hashed_password: str
 
 
@@ -18,6 +26,5 @@ class UserDataUpdateSchema(UserBaseSchema):
     last_name: str | None = None
 
 
-class UserBaseReadSchema(UserDataUpdateSchema):
+class UserBaseReadSchema(UserDataUpdateSchema, UserRolesSchema):
     id: int
-    roles: List[RolesEnum] = list()

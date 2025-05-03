@@ -30,12 +30,12 @@ SELECT setval(pg_get_serial_sequence('rooms', 'id'), (SELECT MAX(id) FROM rooms)
 INSERT INTO
     users (id, email, roles, hashed_password)
 VALUES
-    (1, 'user@example.com', array ['admin', 'manager', 'moderator'], '07ab59f4731b0790d0acfded6a52d2c53e7e3c6a1e241f6dfe3a41f3072e07fb'), -- Для свагера, чтоб оставлять пароль по умолчанию
-    (2, 'user123@example.com', array ['admin'], 'ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'), -- Для админки, чтобы запомнить легкий пароль в браузере
-    (3, 'fedor@moloko.ru', array ['admin']::varchar[], '962e0437e05964f5983ac12fa343324207a3bbde54779c83b5b9cc3ee2b3143f'),
-    (4, 'sharik@moloko.ru', array []::varchar[], 'b757f284ca76df96dd2d70521a6af2005c335e5a8e3ea074b7cdbaefbb359387'),
-    (5, 'kot@pes.ru', array ['manager']::varchar[], 'b757f284ca76df96dd2d70521a6af2005c335e5a8e3ea074b7cdbaefbb359387'),
-    (6, 'mod@mod.ru', array ['moderator']::varchar[], 'b757f284ca76df96dd2d70521a6af2005c335e5a8e3ea074b7cdbaefbb359387');
+    (1, 'user@example.com', array ['admin', 'manager', 'moderator', 'user'], '07ab59f4731b0790d0acfded6a52d2c53e7e3c6a1e241f6dfe3a41f3072e07fb'), -- Для свагера, чтоб оставлять пароль по умолчанию
+    (2, 'user123@example.com', array ['admin', 'user'], 'ef797c8118f02dfb649607dd5d3f8c7623048c9c063d532cc95c5ed7a898a64f'), -- Для админки, чтобы запомнить легкий пароль в браузере
+    (3, 'fedor@moloko.ru', array ['admin', 'user']::varchar[], '962e0437e05964f5983ac12fa343324207a3bbde54779c83b5b9cc3ee2b3143f'),
+    (4, 'sharik@moloko.ru', array ['user']::varchar[], 'b757f284ca76df96dd2d70521a6af2005c335e5a8e3ea074b7cdbaefbb359387'),
+    (5, 'kot@pes.ru', array ['manager', 'user']::varchar[], 'b757f284ca76df96dd2d70521a6af2005c335e5a8e3ea074b7cdbaefbb359387'),
+    (6, 'mod@mod.ru', array ['moderator', 'user']::varchar[], 'b757f284ca76df96dd2d70521a6af2005c335e5a8e3ea074b7cdbaefbb359387');
 SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX(id) FROM users));
 
 

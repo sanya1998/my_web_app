@@ -12,7 +12,7 @@ from app.common.schemas.user import UserBaseReadSchema
 get_router = VersionedAPIRouter()
 
 
-@get_router.get("/for_admin")
+@get_router.get("/")
 async def get_users_for_admin(
     filters: UsersFiltersDep, user_repo: UserRepoDep, admin: AdminUserDep
 ) -> List[UserBaseReadSchema]:

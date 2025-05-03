@@ -14,18 +14,6 @@ from app.common.schemas.room import ManyRoomsReadSchema, RoomReadSchema
 router = VersionedAPIRouter(prefix="/rooms", tags=["Rooms"])
 
 
-@router.get("/{object_id}", response_model_by_alias=False)
-async def get_room(object_id: int, room_repo: RoomRepoDep) -> RoomReadSchema:
-    try:
-        return await room_repo.get_object(id=object_id)
-    except NotFoundRepoError:
-        raise NotFoundApiError
-    except MultipleResultsRepoError:
-        raise MultipleResultsApiError
-    except BaseRepoError:
-        raise BaseApiError
-
-
 @router.get("/")
 async def get_rooms(filters: RoomsFiltersDep, room_repo: RoomRepoDep) -> List[ManyRoomsReadSchema]:
     """
@@ -34,5 +22,17 @@ async def get_rooms(filters: RoomsFiltersDep, room_repo: RoomRepoDep) -> List[Ma
     """
     try:
         return await room_repo.get_objects(filters=filters)
+    except BaseRepoError:
+        raise BaseApiError
+
+
+@router.get("/{object_id}", response_model_by_alias=False)
+async def get_room(object_id: int, room_repo: RoomRepoDep) -> RoomReadSchema:
+    try:
+        return await room_repo.get_object(id=object_id)
+    except NotFoundRepoError:
+        raise NotFoundApiError
+    except MultipleResultsRepoError:
+        raise MultipleResultsApiError
     except BaseRepoError:
         raise BaseApiError
