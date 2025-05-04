@@ -1,5 +1,5 @@
 from copy import deepcopy
-from types import UnionType
+from types import NoneType, UnionType
 from typing import Dict, List, Set, Type, Union, get_args, get_origin
 
 from app.common.constants.order_by import PREFIX_DESC
@@ -156,24 +156,25 @@ def filter_depends(filter_model: type[BaseFilters], *args, **kwargs):
     """
 
     def prepare_annotation(annotation):
+        """Удалить в аннотации NoneType"""
         if get_origin(annotation) in [Union, UnionType]:
             annotation_args = list(get_args(annotation))
-            if type(None) in annotation_args:
-                annotation_args.remove(type(None))
-            annotation = annotation_args[0]
-        annotation_class = annotation if isinstance(annotation, type) else type(annotation)
-        return annotation, annotation_class
+            if NoneType in annotation_args:
+                annotation_args.remove(NoneType)
+            return Union[tuple(annotation_args)]
+        return annotation
 
     def prepare_fields(prefix: str, filter_model_: Type[BaseFilters], swagger_fields_, field_map_):
-        for name, f in filter_model_.model_fields.items():
+        for name, f in filter_model_.model_fields.items():  # TODO: pycharm подчеркивает
             swagger_field_name = f"{prefix}{name}"
-            annotation, annotation_class = prepare_annotation(f.annotation)
+            annotation_class = f.annotation if isinstance(f.annotation, type) else type(f.annotation)
             if issubclass(annotation_class, BaseFilters):
                 field_map_[name] = dict()
-                prepare_fields(f"{swagger_field_name}_", annotation, swagger_fields_, field_map_[name])
+                prepare_fields(f"{swagger_field_name}_", annotation_class, swagger_fields_, field_map_[name])
             else:
                 field_map_[name] = swagger_field_name
-                swagger_fields_[swagger_field_name] = (f.annotation, deepcopy(f))
+                annotation = prepare_annotation(f.annotation)
+                swagger_fields_[swagger_field_name] = (annotation, deepcopy(f))
         return swagger_fields_, field_map_
 
     swagger_fields, field_map = prepare_fields("", filter_model, dict(), dict())

@@ -28,7 +28,7 @@ class BookingBaseReadSchema(BookingCreateSchema):
 
 class CurrentUserBookingReadSchema(BookingBaseReadSchema):
     user_id: int | None = Field(None, exclude=True)
-    room_id: int | None = Field(None, exclude=True)
+    room_id: int | None = Field(None, exclude=True)  # TODO: try room_id: int = Field(..., exclude=True)
     room: RoomReadSchema = Field(validation_alias=AliasChoices("room", "Rooms"))
 
 

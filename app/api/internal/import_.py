@@ -11,7 +11,7 @@ router = VersionedAPIRouter(prefix="/import")
 
 
 @router.post("/all/{info_type}")
-async def import_(
+async def import_for_admin(
     background_tasks: BackgroundTasks, file: UploadFile, import_service: ImportServiceDep, admin: AdminUserDep
 ):
     try:
