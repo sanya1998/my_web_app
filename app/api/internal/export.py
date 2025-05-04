@@ -21,7 +21,7 @@ def create_response(info_type: InfoTypes, stream: io.BytesIO):
 
 
 @router.get("/all/{info_type}")
-async def export_all(info_type: InfoTypes, export_service: ExportServiceDep, admin: AdminUserDep):
+async def export_all_for_admin(info_type: InfoTypes, export_service: ExportServiceDep, admin: AdminUserDep):
     try:
         stream = await export_service.export_all_in_csv()
         return create_response(info_type, stream)
@@ -30,7 +30,7 @@ async def export_all(info_type: InfoTypes, export_service: ExportServiceDep, adm
 
 
 @router.get("/filtered/{info_type}")
-async def export_filtered(
+async def export_filtered_for_admin(
     info_type: InfoTypes, filters: ExportFiltersDep, export_service: ExportServiceDep, admin: AdminUserDep
 ):
     try:
