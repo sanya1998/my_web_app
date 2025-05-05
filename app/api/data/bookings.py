@@ -4,7 +4,7 @@ from app.common.constants.roles import BookingsRecipientRoleEnum
 from app.common.dependencies.auth.base import CurrentUserDep
 from app.common.dependencies.auth.manager import ManagerUserDep
 from app.common.dependencies.auth.manager_user import ManagerOrUserDep
-from app.common.dependencies.filters.bookings import BookingsFiltersDep
+from app.common.dependencies.filters.bookings import BookingsQueryParamsDep
 from app.common.dependencies.input.bookings import BookingInputCreateDep, BookingInputUpdateDep
 from app.common.dependencies.repositories.booking import BookingRepoDep
 from app.common.dependencies.services.booking import BookingServiceDep
@@ -46,8 +46,7 @@ async def create_booking_for_current_user(
 
 @router.get("/", response_model_by_alias=False)
 async def get_bookings_for_manager_or_current_user(
-    filters: BookingsFiltersDep,
-    recipient_role: BookingsRecipientRoleEnum,
+    query_params: BookingsQueryParamsDep,
     booking_service: BookingServiceDep,
     manager_or_user: ManagerOrUserDep,
 ) -> List[Union[BookingReadSchema, CurrentUserBookingReadSchema]]:
@@ -57,7 +56,7 @@ async def get_bookings_for_manager_or_current_user(
     - для обычного пользователя: только его бронирования
     """
     try:
-        return await booking_service.get_list(client=manager_or_user, recipient_role=recipient_role, filters=filters)
+        return await booking_service.get_list(client=manager_or_user, params=query_params)
     except BaseServiceError:
         raise BaseApiError
 

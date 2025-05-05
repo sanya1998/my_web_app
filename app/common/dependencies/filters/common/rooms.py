@@ -6,7 +6,6 @@ from app.common.dependencies.filters.base import BaseFilters
 from app.common.dependencies.filters.common.hotels import HotelBaseFilters
 from app.common.exceptions.api.unprocessable_entity import UnprocessableEntityApiError
 from app.common.tables import Rooms
-from fastapi import Query
 from pydantic import Field, model_validator
 from typing_extensions import Self
 
@@ -24,8 +23,8 @@ class RoomBaseFilters(BaseBaseFilters):
 class RoomsBaseFilters(BaseBaseFilters):
     price__gt: int | None = None
     price__lt: int | None = None
-    check_into: Annotated[date | None, Field(Query(None, description=f"Example: {TODAY}"))]  # TODO: = None
-    check_out: Annotated[date | None, Field(Query(None, description=f"Example: {TOMORROW}"))]  # TODO: = None
+    check_into: Annotated[date | None, Field(description=f"Example: {TODAY}")] = None
+    check_out: Annotated[date | None, Field(description=f"Example: {TOMORROW}")] = None
 
     @model_validator(mode="after")
     def validate_dates(self) -> Self:

@@ -1,7 +1,7 @@
 from typing import List, Union
 
 from app.common.constants.roles import BookingsRecipientRoleEnum
-from app.common.dependencies.filters.bookings import BookingsFilters
+from app.common.dependencies.filters.bookings import BookingsQueryParams
 from app.common.dependencies.input.bookings import BookingCreateInputSchema, BookingUpdateInputSchema
 from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
@@ -72,12 +72,12 @@ class BookingService(BaseService):
 
     @BaseService.catcher
     async def get_list(
-        self, client: UserBaseReadSchema, recipient_role: BookingsRecipientRoleEnum, filters: BookingsFilters
+        self, client: UserBaseReadSchema, params: BookingsQueryParams
     ) -> List[Union[BookingReadSchema, CurrentUserBookingReadSchema]]:
-        if recipient_role == BookingsRecipientRoleEnum.USER:
-            return await self.booking_repo.get_objects_self(filters=filters, user_id=client.id)
+        if params.recipient_role == BookingsRecipientRoleEnum.USER:
+            return await self.booking_repo.get_objects_self(filters=params, user_id=client.id)
 
-        return await self.booking_repo.get_objects(filters=filters)
+        return await self.booking_repo.get_objects(filters=params)
 
     @BaseService.catcher
     async def get_object(

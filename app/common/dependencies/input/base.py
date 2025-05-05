@@ -1,6 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class BaseInput(BaseModel):
-    pass
-    # TODO in fastapi 0.114.0: model_config = {"extra": "forbid"}
+    model_config = ConfigDict(extra="forbid")
