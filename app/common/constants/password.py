@@ -1,4 +1,4 @@
 from app.config.common import settings
-from fastapi import Body
+from pydantic import Field
 
-PASSWORD_BODY = Body(min_length=settings.PASSWORD_MIN_LENGTH)
+PASSWORD_FIELD = Field(min_length=settings.PASSWORD_MIN_LENGTH)

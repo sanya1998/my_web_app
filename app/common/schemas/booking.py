@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Annotated
 
 from app.common.schemas.base import BaseSchema
 from app.common.schemas.room import RoomReadSchema
@@ -27,10 +28,10 @@ class BookingBaseReadSchema(BookingCreateSchema):
 
 
 class CurrentUserBookingReadSchema(BookingBaseReadSchema):
-    user_id: int | None = Field(None, exclude=True)
-    room_id: int | None = Field(None, exclude=True)  # TODO: try room_id: int = Field(..., exclude=True)
-    room: RoomReadSchema = Field(validation_alias=AliasChoices("room", "Rooms"))
+    user_id: Annotated[int | None, Field(exclude=True)] = None
+    room_id: Annotated[int | None, Field(exclude=True)] = None
+    room: Annotated[RoomReadSchema, Field(validation_alias=AliasChoices("room", "Rooms"))]
 
 
 class BookingReadSchema(CurrentUserBookingReadSchema):
-    user: UserBaseReadSchema = Field(validation_alias=AliasChoices("user", "Users"))
+    user: Annotated[UserBaseReadSchema, Field(validation_alias=AliasChoices("user", "Users"))]

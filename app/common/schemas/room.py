@@ -1,4 +1,4 @@
-from typing import List
+from typing import Annotated, List
 
 from app.common.schemas.base import BaseSchema
 from app.common.schemas.hotel import HotelBaseReadSchema
@@ -10,7 +10,7 @@ class RoomBaseSchema(BaseSchema):
     name: str
     description: str | None = None
     price: int
-    services: List[str] = Field(default=list())
+    services: List[str] = list()
     quantity: int
     image_id: int | None = None
 
@@ -20,8 +20,8 @@ class RoomBaseReadSchema(RoomBaseSchema):
 
 
 class RoomReadSchema(RoomBaseReadSchema):
-    hotel_id: int | None = Field(None, exclude=True)
-    hotel: HotelBaseReadSchema = Field(validation_alias=AliasChoices("hotel", "Hotels"))
+    hotel_id: Annotated[int | None, Field(exclude=True)] = None
+    hotel: Annotated[HotelBaseReadSchema, Field(validation_alias=AliasChoices("hotel", "Hotels"))]
 
 
 class ManyRoomsReadSchema(RoomReadSchema):
