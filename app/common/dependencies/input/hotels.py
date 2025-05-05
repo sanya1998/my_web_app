@@ -1,17 +1,16 @@
 from typing import Annotated, List
 
 from app.common.dependencies.input.base import BaseInput
-from fastapi import Depends, Form
-from pydantic import Field
+from fastapi import Body, Form
 
 
 class HotelBaseInput(BaseInput):
-    name: str = Field(Form())
-    location: str = Field(Form())
-    services: List[str] = Field(Form(default=list()))
-    stars: int | None = Field(Form(None))
-    image_id: int | None = Field(Form(None))
+    name: str
+    location: str
+    services: Annotated[List[str], Body(default=list())]  # TODO pycharm подчеркивает list()
+    stars: Annotated[int | None, Body(ge=1, le=5)] = None  # TODO: все еще `integer | (integer | null)` в свагере
+    image_id: int | None = None
 
 
-HotelInputCreateDep = Annotated[HotelBaseInput, Depends(HotelBaseInput)]
-HotelInputUpdateDep = Annotated[HotelBaseInput, Depends(HotelBaseInput)]
+HotelInputCreateDep = Annotated[HotelBaseInput, Form()]
+HotelInputUpdateDep = Annotated[HotelBaseInput, Form()]

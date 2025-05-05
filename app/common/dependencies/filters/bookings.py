@@ -18,8 +18,8 @@ class BookingsFilters(MainFilters):
     _db_model = Bookings
     room_id: int | None = None
     room: RoomBaseFilters
-    total_cost__between: Tuple[int, int] | None = Field(Query(None))
-    order_by: List[BookingsOrderingEnum] | None = Field(Query(None))
+    total_cost__between: Annotated[Tuple[int, int] | None, Field(Query(None))]
+    order_by: Annotated[List[BookingsOrderingEnum] | None, Field(Query(None))]
     user: UserBaseFilter
 
 

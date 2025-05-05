@@ -12,7 +12,7 @@ UsersOrderingEnum = get_ordering_enum_by_columns("UsersOrderingEnum", columns.id
 
 
 class UsersFilters(MainFilters, UserBaseFilter):
-    order_by: List[UsersOrderingEnum] | None = Field(Query(None))
+    order_by: Annotated[List[UsersOrderingEnum] | None, Field(Query(None))]
 
 
 UsersFiltersDep = Annotated[UsersFilters, filter_depends(UsersFilters)]

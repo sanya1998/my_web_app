@@ -12,7 +12,7 @@ RoomsOrderingEnum = get_ordering_enum_by_columns("RoomsOrderingEnum", columns.pr
 
 
 class RoomsFilters(MainFilters, RoomBaseFilters, RoomsBaseFilters):
-    order_by: List[RoomsOrderingEnum] | None = Field(Query(None))
+    order_by: Annotated[List[RoomsOrderingEnum] | None, Field(Query(None))]
 
 
 RoomsFiltersDep = Annotated[RoomsFilters, filter_depends(RoomsFilters)]
