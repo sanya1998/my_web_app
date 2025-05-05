@@ -1,6 +1,6 @@
 from copy import deepcopy
 from types import NoneType, UnionType
-from typing import Dict, List, Set, Type, Union, get_args, get_origin
+from typing import Annotated, Dict, List, Set, Type, Union, get_args, get_origin
 
 from app.common.constants.order_by import PREFIX_DESC
 from app.config.common import settings
@@ -47,6 +47,7 @@ class BaseFilters(BaseModel):
             "contains": lambda field, values: field.contains(values),
         }
 
+    # TODO: подумать над тем, чтобы вынести тяжелые методы из класса BaseFilters
     def get_where_clauses(self, _exclude_fields=None, **additional_filters) -> List:
         if _exclude_fields is None:
             _exclude_fields = set()
@@ -100,7 +101,7 @@ class LimitOffsetFilters(BaseFilters):
 
 
 class OrderByFilters(BaseFilters):
-    order_by: List | None = Field(Query(None))
+    order_by: Annotated[List | None, Field(Query(None))]  # TODO: literal
 
     def add__order_by(self, query: Select, _exclude_fields: Set = None) -> Select:
         if _exclude_fields is None:

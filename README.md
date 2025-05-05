@@ -150,3 +150,7 @@ TODO:
 100) Дебагом проверить @computed_field @property в pydantic_settings кешируется? try `from functools import cached_property`
 101) почитать про SettingsConfigDict(env_prefix=
 102) добавить тесты для фоновых задач (celery and fastapi background)
+103) про 115 fastapi https://stackoverflow.com/questions/75998227/how-to-define-query-parameters-using-pydantic-model-in-fastapi. 
+104) order_by: Literal["created_at", "updated_at"] = "created_at"
+105) 500 при создании отеля авторизованным пользователем без роли модератора
+106) продумать систему хранения, добавления изображения (медиа), связь с отелями через image_id

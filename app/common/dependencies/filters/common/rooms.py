@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Annotated
 
 from app.common.constants.datetimes import TODAY, TOMORROW
 from app.common.dependencies.filters.base import BaseFilters
@@ -23,8 +24,8 @@ class RoomBaseFilters(BaseBaseFilters):
 class RoomsBaseFilters(BaseBaseFilters):
     price__gt: int | None = None
     price__lt: int | None = None
-    check_into: date | None = Field(Query(None, description=f"Example: {TODAY}"))
-    check_out: date | None = Field(Query(None, description=f"Example: {TOMORROW}"))
+    check_into: Annotated[date | None, Field(Query(None, description=f"Example: {TODAY}"))]  # TODO: = None
+    check_out: Annotated[date | None, Field(Query(None, description=f"Example: {TOMORROW}"))]  # TODO: = None
 
     @model_validator(mode="after")
     def validate_dates(self) -> Self:

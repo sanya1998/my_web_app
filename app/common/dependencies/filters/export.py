@@ -11,9 +11,9 @@ columns = get_columns_by_table(Rooms)
 
 
 class ExportFilters(MainFilters):
-    id__not_in: List[int] | None = Field(Query(None))
-    limit: int = Field(settings.LIMIT_RAW_DATA_DEFAULT, ge=1, le=settings.LIMIT_RAW_DATA_MAX)
-    order_by: List[str] | None = Field(Query(["id"]))
+    id__not_in: Annotated[List[int] | None, Field(Query(None))]
+    limit: Annotated[int, Query(settings.LIMIT_RAW_DATA_DEFAULT, ge=1, le=settings.LIMIT_RAW_DATA_MAX)]
+    order_by: Annotated[List[str] | None, Field(Query(["id"]))]
 
 
 ExportFiltersDep = Annotated[ExportFilters, filter_depends(ExportFilters)]
