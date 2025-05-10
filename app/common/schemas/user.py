@@ -10,7 +10,7 @@ class UserBaseSchema(BaseSchema):
 
 
 class UserRolesSchema(UserBaseSchema):
-    roles: List[AllRolesEnum] = list()
+    roles: List[AllRolesEnum]
 
 
 class UserHashedPasswordSchema(UserBaseSchema):

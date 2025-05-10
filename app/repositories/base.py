@@ -205,6 +205,7 @@ class BaseRepository:
     async def upsert(self, data) -> upserted_read_schema:
         raise NotImplementedError
 
+    # TODO: проверить, изменяются ли поля, если они не пришли в data, реализовать update_object_field (patch) и сравнить
     @catcher
     async def update(self, data: update_schema, **filters) -> one_updated_read_schema:
         query = update(self.db_model).filter_by(**filters).values(**data.model_dump()).returning(self.db_model)

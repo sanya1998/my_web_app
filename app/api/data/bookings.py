@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Annotated, List, Union
 
 from app.common.constants.roles import BookingsRecipientRoleEnum
 from app.common.dependencies.auth.base import CurrentUserDep
@@ -23,6 +23,7 @@ from app.common.exceptions.services.unavailable import UnavailableServiceError
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
 from app.common.tasks.email import send_booking_notify_email
+from fastapi import Path
 
 router = VersionedAPIRouter(prefix="/bookings", tags=["Bookings"])
 
@@ -63,7 +64,7 @@ async def get_bookings_for_manager_or_current_user(
 
 @router.get("/{object_id}", response_model_by_alias=False)
 async def get_booking_for_manager_or_current_user(
-    object_id: int,
+    object_id: Annotated[int, Path(gt=0)],
     recipient_role: BookingsRecipientRoleEnum,
     booking_service: BookingServiceDep,
     manager_or_user: ManagerOrUserDep,
