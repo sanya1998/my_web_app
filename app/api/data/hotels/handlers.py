@@ -2,19 +2,15 @@ from typing import Annotated, List
 
 from app.common.constants.cache_prefixes import HOTELS_CACHE_PREFIX
 from app.common.dependencies.auth.moderator import ModeratorUserDep
-from app.common.dependencies.filters.hotels import HotelsFiltersDep
-from app.common.dependencies.input.hotels import HotelBaseInput, HotelInputCreateDep, HotelInputUpdateDep
-from app.common.dependencies.repositories.hotel import HotelRepoDep
-from app.common.exceptions.api.base import BaseApiError
-from app.common.exceptions.api.multiple_results import MultipleResultsApiError
-from app.common.exceptions.api.not_found import NotFoundApiError
-from app.common.exceptions.repositories.base import BaseRepoError
-from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
-from app.common.exceptions.repositories.not_found import NotFoundRepoError
+from app.common.dependencies.filters import HotelsFiltersDep
+from app.common.dependencies.input import HotelBaseInput, HotelInputCreateDep, HotelInputUpdateDep
+from app.common.dependencies.repositories import HotelRepoDep
+from app.common.exceptions.api import BaseApiError, MultipleResultsApiError, NotFoundApiError
+from app.common.exceptions.repositories import BaseRepoError, MultipleResultsRepoError, NotFoundRepoError
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
 from app.config.common import settings
-from app.services.cache.cache import CacheService
+from app.services import CacheService
 from app.services.cache.key_builders.listing import build_key_by_listing, build_key_pattern_by_listing
 from app.services.cache.key_builders.object_id import build_key_by_object_id
 from fastapi import Path

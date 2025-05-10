@@ -1,5 +1,5 @@
 from app.common.constants.db_fields import REMAIN_BY_ROOM, TOTAL_COST
-from app.common.dependencies.filters.rooms import RoomsFilters
+from app.common.dependencies.filters import RoomsFilters
 from app.common.helpers.check_data import CheckData
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.room import ManyRoomsReadSchema, RoomBaseReadSchema, RoomReadSchema

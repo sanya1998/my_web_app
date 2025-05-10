@@ -1,9 +1,9 @@
 from typing import Annotated
 
 from app.common.dependencies.repositories.common import ChosenRepo
-from app.common.exceptions.api.base import BaseApiError
-from app.common.exceptions.services.base import BaseServiceError
-from app.services.export import ExportService
+from app.common.exceptions.api import BaseApiError
+from app.common.exceptions.services import BaseServiceError
+from app.services import ExportService
 from fastapi import Depends
 
 

@@ -1,9 +1,9 @@
 from typing import Annotated
 
-from app.common.dependencies.repositories.user import UserRepoDep, get_user_repo
-from app.common.exceptions.api.base import BaseApiError
-from app.common.exceptions.services.base import BaseServiceError
-from app.services.authorization import AuthorizationService
+from app.common.dependencies.repositories import UserRepoDep, get_user_repo
+from app.common.exceptions.api import BaseApiError
+from app.common.exceptions.services import BaseServiceError
+from app.services import AuthorizationService
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request

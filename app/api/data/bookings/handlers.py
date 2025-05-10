@@ -1,25 +1,26 @@
 from typing import Annotated, List, Union
 
 from app.common.constants.roles import BookingsRecipientRoleEnum
-from app.common.dependencies.auth.base import CurrentUserDep
-from app.common.dependencies.auth.manager import ManagerUserDep
-from app.common.dependencies.auth.manager_user import ManagerOrUserDep
-from app.common.dependencies.filters.bookings import BookingsQueryParamsDep
-from app.common.dependencies.input.bookings import BookingInputCreateDep, BookingInputUpdateDep
-from app.common.dependencies.repositories.booking import BookingRepoDep
-from app.common.dependencies.services.booking import BookingServiceDep
-from app.common.exceptions.api.base import BaseApiError
-from app.common.exceptions.api.forbidden import ForbiddenApiError
-from app.common.exceptions.api.multiple_results import MultipleResultsApiError
-from app.common.exceptions.api.not_found import NotFoundApiError
-from app.common.exceptions.api.unavailable import UnavailableApiError
-from app.common.exceptions.repositories.base import BaseRepoError
-from app.common.exceptions.repositories.not_found import NotFoundRepoError
-from app.common.exceptions.services.base import BaseServiceError
-from app.common.exceptions.services.forbidden import ForbiddenServiceError
-from app.common.exceptions.services.multiple_results import MultipleResultsServiceError
-from app.common.exceptions.services.not_found import NotFoundServiceError
-from app.common.exceptions.services.unavailable import UnavailableServiceError
+from app.common.dependencies.auth import CurrentUserDep, ManagerOrUserDep, ManagerUserDep
+from app.common.dependencies.filters import BookingsQueryParamsDep
+from app.common.dependencies.input import BookingInputCreateDep, BookingInputUpdateDep
+from app.common.dependencies.repositories import BookingRepoDep
+from app.common.dependencies.services import BookingServiceDep
+from app.common.exceptions.api import (
+    BaseApiError,
+    ForbiddenApiError,
+    MultipleResultsApiError,
+    NotFoundApiError,
+    UnavailableApiError,
+)
+from app.common.exceptions.repositories import BaseRepoError, NotFoundRepoError
+from app.common.exceptions.services import (
+    BaseServiceError,
+    ForbiddenServiceError,
+    MultipleResultsServiceError,
+    NotFoundServiceError,
+    UnavailableServiceError,
+)
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
 from app.common.tasks.email import send_booking_notify_email

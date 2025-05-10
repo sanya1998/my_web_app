@@ -1,10 +1,9 @@
 from typing import Annotated
 
-from app.common.dependencies.repositories.booking import BookingRepoDep
-from app.common.dependencies.repositories.room import RoomRepoDep
-from app.common.exceptions.api.base import BaseApiError
-from app.common.exceptions.services.base import BaseServiceError
-from app.services.booking import BookingService
+from app.common.dependencies.repositories import BookingRepoDep, RoomRepoDep
+from app.common.exceptions.api import BaseApiError
+from app.common.exceptions.services import BaseServiceError
+from app.services import BookingService
 from fastapi import Depends
 
 

@@ -1,5 +1,5 @@
 from app.common.constants.cache_prefixes import HOTELS_CACHE_PREFIX
-from app.services.cache.cache import CacheService
+from app.services import CacheService
 from app.services.cache.key_builders.listing import build_key_pattern_by_listing
 from tests.constants import BASE_HOTELS_URL
 

@@ -1,20 +1,20 @@
 from typing import Annotated
 
-from app.common.dependencies.services.authorization import AuthorizationServiceDep
-from app.common.exceptions.api.base import BaseApiError
-from app.common.exceptions.api.not_found import NotFoundApiError
-from app.common.exceptions.api.unauthorized import (
+from app.common.dependencies.services import AuthorizationServiceDep
+from app.common.exceptions.api import (
+    BaseApiError,
     ExpiredSignatureApiError,
     InvalidTokenApiError,
     MissingRequiredClaimApiError,
     MissingTokenApiError,
+    NotFoundApiError,
 )
-from app.common.exceptions.services.base import BaseServiceError
-from app.common.exceptions.services.not_found import NotFoundServiceError
-from app.common.exceptions.services.unauthorized import (
+from app.common.exceptions.services import (
+    BaseServiceError,
     ExpiredSignatureServiceError,
     InvalidTokenServiceError,
     MissingRequiredClaimServiceError,
+    NotFoundServiceError,
 )
 from app.common.schemas.user import UserBaseReadSchema
 from app.config.common import settings

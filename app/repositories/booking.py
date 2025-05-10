@@ -1,9 +1,7 @@
 from typing import List
 
-from app.common.dependencies.filters.base import BaseFilters
-from app.common.dependencies.filters.bookings import BookingsFilters
-from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
-from app.common.exceptions.repositories.not_found import NotFoundRepoError
+from app.common.dependencies.filters import BaseFilters, BookingsFilters
+from app.common.exceptions.repositories import MultipleResultsRepoError, NotFoundRepoError
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.booking import (
     BookingBaseReadSchema,

@@ -1,5 +1,5 @@
-from app.common.dependencies.filters.export import ExportFilters
-from app.repositories.base import BaseRepository
+from app.common.dependencies.filters import ExportFilters
+from app.repositories import BaseRepository
 from app.services.base import BaseService
 
 

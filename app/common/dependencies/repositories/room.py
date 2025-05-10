@@ -1,9 +1,9 @@
 from typing import Annotated
 
-from app.common.dependencies.db.postgres import PostgresSessionDep
-from app.common.exceptions.api.base import BaseApiError
-from app.common.exceptions.repositories.base import BaseRepoError
-from app.repositories.room import RoomRepo
+from app.common.dependencies.db import PostgresSessionDep
+from app.common.exceptions.api import BaseApiError
+from app.common.exceptions.repositories import BaseRepoError
+from app.repositories import RoomRepo
 from fastapi import Depends
 
 

@@ -1,8 +1,7 @@
 from typing import List
 
-from app.common.dependencies.filters.base import MainFilters, SearchFilters, filter_depends
-from app.common.dependencies.filters.common.hotels import HotelBaseFilters
-from app.common.dependencies.filters.common.rooms import RoomsBaseFilters
+from app.common.dependencies.filters.base import MainFilters, SearchFilters, get_depends_by_filters_model
+from app.common.dependencies.filters.common import HotelBaseFilters, RoomsBaseFilters
 from app.common.helpers.db import get_columns_by_table, get_ordering_enum_by_columns
 from app.common.tables import Hotels
 
@@ -22,4 +21,4 @@ class HotelsFilters(MainFilters, SearchFilters, HotelBaseFilters):
         search_fields = [columns.name, columns.location]
 
 
-HotelsFiltersDep = filter_depends(HotelsFilters)
+HotelsFiltersDep = get_depends_by_filters_model(HotelsFilters)

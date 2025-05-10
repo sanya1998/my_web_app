@@ -1,9 +1,9 @@
 from datetime import date
 
 import pytest
-from app.common.exceptions.repositories.not_found import NotFoundRepoError
+from app.common.exceptions.repositories import NotFoundRepoError
 from app.common.schemas.booking import BookingCreateSchema, BookingUpdateSchema
-from app.repositories.booking import BookingRepo
+from app.repositories import BookingRepo
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

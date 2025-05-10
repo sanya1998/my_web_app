@@ -1,15 +1,15 @@
 from app.common.exceptions.catcher import catch_exception
-from app.common.exceptions.services.already_exists import AlreadyExistsServiceError
-from app.common.exceptions.services.base import BaseServiceError
-from app.common.exceptions.services.not_found import NotFoundServiceError
-from app.common.exceptions.services.unauthorized import (
+from app.common.exceptions.services import (
+    AlreadyExistsServiceError,
+    BaseServiceError,
     ExpiredSignatureServiceError,
     InvalidAlgorithmServiceError,
     InvalidTokenServiceError,
     MissingRequiredClaimServiceError,
+    NotFoundServiceError,
     UnauthorizedServiceError,
+    UnavailableServiceError,
 )
-from app.common.exceptions.services.unavailable import UnavailableServiceError
 
 
 class BaseService:
