@@ -6,6 +6,7 @@ from app.common.dependencies.filters.common.rooms import RoomBaseFilters
 from app.common.dependencies.filters.common.users import UserBaseFilter
 from app.common.helpers.db import get_columns_by_table, get_ordering_enum_by_columns
 from app.common.tables import Bookings
+from pydantic import field_validator
 
 columns = get_columns_by_table(Bookings)
 BookingsOrderingEnum = get_ordering_enum_by_columns(
@@ -21,6 +22,13 @@ class BookingsFilters(MainFilters):
     total_cost__between: Tuple[int, int] | None = None
     order_by: List[BookingsOrderingEnum] | None = None
     user: UserBaseFilter
+
+    # Проверка возможности валидации поля в BaseFilters (TODO: удалить)
+    @field_validator("room_id", mode="before")
+    def check(cls, value: str | None) -> str | int:
+        if value and (value := int(value)) < 0:
+            return abs(value)
+        return value
 
 
 class BookingsQueryParams(BookingsFilters):

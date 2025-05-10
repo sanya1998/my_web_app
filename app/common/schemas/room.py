@@ -10,7 +10,7 @@ class RoomBaseSchema(BaseSchema):
     name: str
     description: str | None = None
     price: int
-    services: List[str] = list()
+    services: List[str]
     quantity: int
     image_id: int | None = None
 

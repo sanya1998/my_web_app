@@ -1,4 +1,4 @@
-from typing import List
+from typing import Annotated, List
 
 from app.common.dependencies.auth.admin import AdminUserDep
 from app.common.dependencies.auth.base import CurrentUserDep
@@ -12,6 +12,7 @@ from app.common.exceptions.repositories.multiple_results import MultipleResultsR
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.user import UserBaseReadSchema
+from fastapi import Path
 
 get_router = VersionedAPIRouter()
 
@@ -32,7 +33,9 @@ async def get_current_user(user: CurrentUserDep) -> UserBaseReadSchema:
 
 
 @get_router.get("/{object_id}")
-async def get_user_for_admin(object_id: int, user_repo: UserRepoDep, admin: AdminUserDep) -> UserBaseReadSchema:
+async def get_user_for_admin(
+    object_id: Annotated[int, Path(gt=0)], user_repo: UserRepoDep, admin: AdminUserDep
+) -> UserBaseReadSchema:
     try:
         return await user_repo.get_object(id=object_id)
     except NotFoundRepoError:

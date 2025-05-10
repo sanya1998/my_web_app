@@ -1,4 +1,4 @@
-from typing import List
+from typing import Annotated, List
 
 from app.common.dependencies.filters.rooms import RoomsFiltersDep
 from app.common.dependencies.repositories.room import RoomRepoDep
@@ -10,6 +10,7 @@ from app.common.exceptions.repositories.multiple_results import MultipleResultsR
 from app.common.exceptions.repositories.not_found import NotFoundRepoError
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.room import ManyRoomsReadSchema, RoomReadSchema
+from fastapi import Path
 
 router = VersionedAPIRouter(prefix="/rooms", tags=["Rooms"])
 
@@ -27,7 +28,7 @@ async def get_rooms(filters: RoomsFiltersDep, room_repo: RoomRepoDep) -> List[Ma
 
 
 @router.get("/{object_id}", response_model_by_alias=False)
-async def get_room(object_id: int, room_repo: RoomRepoDep) -> RoomReadSchema:
+async def get_room(object_id: Annotated[int, Path(gt=0)], room_repo: RoomRepoDep) -> RoomReadSchema:
     try:
         return await room_repo.get_object(id=object_id)
     except NotFoundRepoError:

@@ -23,6 +23,6 @@ class HotelReadSchema(HotelBaseReadSchema):
 class ManyHotelsReadSchema(HotelBaseReadSchema):
     remain_by_hotel: int
 
-    @field_validator("remain_by_hotel", mode="before")
+    @field_validator("remain_by_hotel", mode="before")  # TODO: @classmethod ?
     def validate_remain_by_hotel(cls, value: int | None) -> int:
         return value if value is not None else 0

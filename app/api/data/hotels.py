@@ -1,4 +1,4 @@
-from typing import List
+from typing import Annotated, List
 
 from app.common.constants.cache_prefixes import HOTELS_CACHE_PREFIX
 from app.common.dependencies.auth.moderator import ModeratorUserDep
@@ -17,6 +17,7 @@ from app.config.common import settings
 from app.services.cache.cache import CacheService
 from app.services.cache.key_builders.listing import build_key_by_listing, build_key_pattern_by_listing
 from app.services.cache.key_builders.object_id import build_key_by_object_id
+from fastapi import Path
 
 router = VersionedAPIRouter(prefix="/hotels", tags=["Hotels"])
 cache = CacheService(
@@ -54,7 +55,7 @@ async def get_hotels(filters: HotelsFiltersDep, hotel_repo: HotelRepoDep) -> Lis
 
 @router.get("/{object_id}")
 @cache.caching(build_key=build_key_by_object_id)  # TODO: pycharm подчеркивает
-async def get_hotel(object_id: int, hotel_repo: HotelRepoDep) -> HotelReadSchema:
+async def get_hotel(object_id: Annotated[int, Path(gt=0)], hotel_repo: HotelRepoDep) -> HotelReadSchema:
     try:
         return await hotel_repo.get_object(id=object_id)
     except NotFoundRepoError:

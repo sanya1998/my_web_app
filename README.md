@@ -155,3 +155,6 @@ TODO:
 107) "Send empty value" для числа отправляет null, а для списка одно пустое значение внутри списка. Баг?
 108) `integer | (integer | null)` в свагере хотя используется form из библиотеки. Баг?
 109) также стоит обратить внимание на `array<[integer, integer], any>`. Баг?
+112) где-нибудь использовать Body(embed=True), а не Form. + Несколько примеров с заголовком https://fastapi.tiangolo.com/tutorial/schema-extra-example/#using-the-openapi_examples-parameter
+113) в русской версии не все https://fastapi.tiangolo.com/ru/tutorial/schema-extra-example/#body-examples
+114) удалить node_modules из github

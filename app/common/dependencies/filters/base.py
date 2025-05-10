@@ -212,4 +212,4 @@ def filter_depends(filter_model: type[BaseFilters], *args, **kwargs):
         def __init__(self, **kwargs_):
             super().__init__(**kwargs_)
 
-    return Annotated[ForSwagger, Query()]
+    return Annotated[ForSwagger, Query(*args, **kwargs)]
