@@ -3,8 +3,8 @@ from typing import Annotated
 
 from app.common.constants.datetimes import TODAY, TOMORROW
 from app.common.dependencies.filters.base import BaseFilters
-from app.common.dependencies.filters.common.hotels import HotelBaseFilters
-from app.common.exceptions.api.unprocessable_entity import UnprocessableEntityApiError
+from app.common.dependencies.filters.common import HotelBaseFilters
+from app.common.exceptions.api import UnprocessableEntityApiError
 from app.common.tables import Rooms
 from pydantic import Field, model_validator
 from typing_extensions import Self

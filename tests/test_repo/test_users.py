@@ -1,6 +1,6 @@
 import pytest
-from app.common.exceptions.repositories.not_found import NotFoundRepoError
-from app.repositories.user import UserRepo
+from app.common.exceptions.repositories import NotFoundRepoError
+from app.repositories import UserRepo
 
 
 @pytest.mark.parametrize(

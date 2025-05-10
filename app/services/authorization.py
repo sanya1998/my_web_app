@@ -4,21 +4,21 @@ from datetime import datetime, timedelta
 
 import jwt
 from app.common.constants.roles import AllRolesEnum
-from app.common.dependencies.input.users import UserInput
-from app.common.exceptions.services.already_exists import AlreadyExistsServiceError
-from app.common.exceptions.services.not_found import NotFoundServiceError
-from app.common.exceptions.services.unauthorized import (
+from app.common.dependencies.input import UserInput
+from app.common.exceptions.services import (
+    AlreadyExistsServiceError,
     ExpiredSignatureServiceError,
     InvalidAlgorithmServiceError,
     InvalidTokenServiceError,
     MissingRequiredClaimServiceError,
+    NotFoundServiceError,
     UnauthorizedServiceError,
 )
 from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.user import UserBaseReadSchema, UserCreateSchema
 from app.common.tables import Users
 from app.config.common import settings
-from app.repositories.user import UserRepo
+from app.repositories import UserRepo
 from app.services.base import BaseService
 from jwt.exceptions import ExpiredSignatureError, InvalidAlgorithmError, InvalidTokenError, MissingRequiredClaimError
 from pydantic import SecretStr

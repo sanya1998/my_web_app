@@ -5,12 +5,9 @@ from app.common.dependencies.repositories.booking import BookingRepoDep
 from app.common.dependencies.repositories.hotel import HotelRepoDep
 from app.common.dependencies.repositories.room import RoomRepoDep
 from app.common.dependencies.repositories.user import UserRepoDep
-from app.common.exceptions.api.base import BaseApiError
-from app.common.exceptions.services.base import BaseServiceError
-from app.repositories.booking import BookingRepo
-from app.repositories.hotel import HotelRepo
-from app.repositories.room import RoomRepo
-from app.repositories.user import UserRepo
+from app.common.exceptions.api import BaseApiError
+from app.common.exceptions.services import BaseServiceError
+from app.repositories import BookingRepo, HotelRepo, RoomRepo, UserRepo
 from fastapi import Depends
 
 

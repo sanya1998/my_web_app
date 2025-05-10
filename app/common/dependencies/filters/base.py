@@ -171,7 +171,7 @@ class SearchFilters(BaseFilters):
         return query
 
 
-def filter_depends(filter_model: type[BaseFilters], *args, **kwargs):
+def get_depends_by_filters_model(filter_model: type[BaseFilters], *args, **kwargs) -> Annotated[Type[BaseModel], Query]:
     """
     Для свагера все входные параметры переходят на верхний уровень. К параметрам вложенных моделей добавляются префиксы.
     После получения входных данных параметры возвращаются на свои уровни без префиксов.

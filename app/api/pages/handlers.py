@@ -1,4 +1,4 @@
-from app.api.data.hotels import get_hotels
+from app.api.data.hotels.handlers import get_hotels
 from app.common.helpers.api_version import VersionedAPIRouter
 from fastapi import Depends, Request
 from fastapi.templating import Jinja2Templates

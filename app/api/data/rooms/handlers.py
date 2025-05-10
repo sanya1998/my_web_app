@@ -1,13 +1,9 @@
 from typing import Annotated, List
 
-from app.common.dependencies.filters.rooms import RoomsFiltersDep
-from app.common.dependencies.repositories.room import RoomRepoDep
-from app.common.exceptions.api.base import BaseApiError
-from app.common.exceptions.api.multiple_results import MultipleResultsApiError
-from app.common.exceptions.api.not_found import NotFoundApiError
-from app.common.exceptions.repositories.base import BaseRepoError
-from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
-from app.common.exceptions.repositories.not_found import NotFoundRepoError
+from app.common.dependencies.filters import RoomsFiltersDep
+from app.common.dependencies.repositories import RoomRepoDep
+from app.common.exceptions.api import BaseApiError, MultipleResultsApiError, NotFoundApiError
+from app.common.exceptions.repositories import BaseRepoError, MultipleResultsRepoError, NotFoundRepoError
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.room import ManyRoomsReadSchema, RoomReadSchema
 from fastapi import Path

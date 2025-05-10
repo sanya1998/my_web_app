@@ -1,14 +1,15 @@
 from typing import List, Union
 
 from app.common.constants.roles import BookingsRecipientRoleEnum
-from app.common.dependencies.filters.bookings import BookingsQueryParams
-from app.common.dependencies.input.bookings import BookingCreateInputSchema, BookingUpdateInputSchema
-from app.common.exceptions.repositories.multiple_results import MultipleResultsRepoError
-from app.common.exceptions.repositories.not_found import NotFoundRepoError
-from app.common.exceptions.services.forbidden import ForbiddenServiceError
-from app.common.exceptions.services.multiple_results import MultipleResultsServiceError
-from app.common.exceptions.services.not_found import NotFoundServiceError
-from app.common.exceptions.services.unavailable import UnavailableServiceError
+from app.common.dependencies.filters import BookingsQueryParams
+from app.common.dependencies.input import BookingCreateInputSchema, BookingUpdateInputSchema
+from app.common.exceptions.repositories import MultipleResultsRepoError, NotFoundRepoError
+from app.common.exceptions.services import (
+    ForbiddenServiceError,
+    MultipleResultsServiceError,
+    NotFoundServiceError,
+    UnavailableServiceError,
+)
 from app.common.helpers.check_data import CheckData
 from app.common.schemas.booking import (
     BookingCreateSchema,
@@ -17,8 +18,7 @@ from app.common.schemas.booking import (
     CurrentUserBookingReadSchema,
 )
 from app.common.schemas.user import UserBaseReadSchema
-from app.repositories.booking import BookingRepo
-from app.repositories.room import RoomRepo
+from app.repositories import BookingRepo, RoomRepo
 from app.services.base import BaseService
 
 
@@ -74,6 +74,7 @@ class BookingService(BaseService):
     async def get_list(
         self, client: UserBaseReadSchema, params: BookingsQueryParams
     ) -> List[Union[BookingReadSchema, CurrentUserBookingReadSchema]]:
+        # TODO: remove recipient_role from params
         if params.recipient_role == BookingsRecipientRoleEnum.USER:
             return await self.booking_repo.get_objects_self(filters=params, user_id=client.id)
 
