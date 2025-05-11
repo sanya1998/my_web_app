@@ -1,5 +1,6 @@
 from typing import Annotated, List, Union
 
+from app.common.constants.api import BOOKINGS_PATH, PATTERN_OBJECT_ID
 from app.common.constants.roles import BookingsRecipientRoleEnum
 from app.common.dependencies.auth import CurrentUserDep, ManagerOrUserDep, ManagerUserDep
 from app.common.dependencies.filters import BookingsQueryParamsDep
@@ -26,7 +27,7 @@ from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema,
 from app.common.tasks.email import send_booking_notify_email
 from fastapi import Path
 
-router = VersionedAPIRouter(prefix="/bookings", tags=["Bookings"])
+router = VersionedAPIRouter(prefix=BOOKINGS_PATH, tags=["Bookings"])
 
 
 @router.post("/")
@@ -63,7 +64,7 @@ async def get_bookings_for_manager_or_current_user(
         raise BaseApiError
 
 
-@router.get("/{object_id}", response_model_by_alias=False)
+@router.get(PATTERN_OBJECT_ID, response_model_by_alias=False)
 async def get_booking_for_manager_or_current_user(
     object_id: Annotated[int, Path(gt=0)],
     recipient_role: BookingsRecipientRoleEnum,
@@ -89,7 +90,7 @@ async def get_booking_for_manager_or_current_user(
         raise BaseApiError
 
 
-@router.put("/{object_id}")
+@router.put(PATTERN_OBJECT_ID)
 async def update_booking_for_manager(
     object_id: int,
     booking_input: BookingInputUpdateDep,
@@ -104,7 +105,7 @@ async def update_booking_for_manager(
         raise BaseApiError
 
 
-@router.delete("/{object_id}")
+@router.delete(PATTERN_OBJECT_ID)
 async def delete_booking_for_manager(
     object_id: int, booking_repo: BookingRepoDep, manager: ManagerUserDep
 ) -> BookingBaseReadSchema:

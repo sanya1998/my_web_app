@@ -1,5 +1,13 @@
 from typing import Annotated, List
 
+from app.common.constants.api import (
+    PATTERN_OBJECT_ID,
+    SIGN_IN_PATH,
+    SIGN_OUT_PATH,
+    SIGN_UP_PATH,
+    USERS_CURRENT_PATH,
+    USERS_PATH,
+)
 from app.common.dependencies.auth import AdminUserDep, CurrentUserDep
 from app.common.dependencies.filters import UsersFiltersDep
 from app.common.dependencies.input import UserInputDep
@@ -23,7 +31,7 @@ from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.schemas.user import UserBaseReadSchema
 from fastapi import Path
 
-router = VersionedAPIRouter()
+router = VersionedAPIRouter(prefix=USERS_PATH, tags=["Users"])
 
 
 @router.get("/")
@@ -36,12 +44,12 @@ async def get_users_for_admin(
         raise BaseApiError
 
 
-@router.get("/current")
+@router.get(USERS_CURRENT_PATH)
 async def get_current_user(user: CurrentUserDep) -> UserBaseReadSchema:
     return user
 
 
-@router.post("/sign_in")
+@router.post(SIGN_IN_PATH)
 async def sign_in(user_input: UserInputDep, auth_service: AuthorizationServiceDep) -> None:
     try:
         await auth_service.sign_in(user_input)
@@ -53,7 +61,7 @@ async def sign_in(user_input: UserInputDep, auth_service: AuthorizationServiceDe
         raise BaseApiError
 
 
-@router.post("/sign_out")
+@router.post(SIGN_OUT_PATH)
 async def sign_out(auth_service: AuthorizationServiceDep) -> None:
     try:
         await auth_service.sign_out()
@@ -61,7 +69,7 @@ async def sign_out(auth_service: AuthorizationServiceDep) -> None:
         raise BaseApiError
 
 
-@router.post("/sign_up")
+@router.post(SIGN_UP_PATH)
 async def sign_up(user_input: UserInputDep, auth_service: AuthorizationServiceDep) -> UserBaseReadSchema:
     try:
         return await auth_service.sign_up(user_input)
@@ -71,7 +79,7 @@ async def sign_up(user_input: UserInputDep, auth_service: AuthorizationServiceDe
         raise BaseApiError
 
 
-@router.get("/{object_id}")
+@router.get(PATTERN_OBJECT_ID)
 async def get_user_for_admin(
     object_id: Annotated[int, Path(gt=0)], user_repo: UserRepoDep, admin: AdminUserDep
 ) -> UserBaseReadSchema:

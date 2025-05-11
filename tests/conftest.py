@@ -11,7 +11,17 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
-from tests.constants import BASE_USERS_URL
+from tests.constants.urls import USERS_SIGN_IN_URL
+from tests.constants.users_info import (
+    ADMIN_EMAIL,
+    ADMIN_PASSWORD,
+    MANAGER_EMAIL,
+    MANAGER_PASSWORD,
+    MODERATOR_EMAIL,
+    MODERATOR_PASSWORD,
+    USER_EMAIL,
+    USER_PASSWORD,
+)
 
 ALLOWED_POSTGRES_HOSTS = ["0.0.0.0"]  # TODO: возможно, для тестов в ci/cd здесь понадобится postgres, redis
 ALLOWED_REDIS_HOSTS = ["0.0.0.0"]
@@ -51,7 +61,7 @@ async def sign_in(client: AsyncClient, email: str, password: str, expected_statu
     """
     Аутентифицирует пользователя
     """
-    response_sign_in = await client.post(f"{BASE_USERS_URL}sign_in", data=dict(email=email, password=password))
+    response_sign_in = await client.post(USERS_SIGN_IN_URL, data=dict(email=email, password=password))
     assert response_sign_in.status_code == expected_status
 
 
@@ -60,7 +70,7 @@ async def admin_client(client_for_admin: AsyncClient) -> AsyncClient:
     """
     Аутентификация пользователя с правами админа
     """
-    await sign_in(client=client_for_admin, email="fedor@moloko.ru", password="hard_password")
+    await sign_in(client=client_for_admin, email=ADMIN_EMAIL, password=ADMIN_PASSWORD)
     return client_for_admin
 
 
@@ -69,7 +79,7 @@ async def manager_client(client_for_manager: AsyncClient) -> AsyncClient:
     """
     Аутентификация пользователя с правами менеджера
     """
-    await sign_in(client=client_for_manager, email="kot@pes.ru", password="easy_password")
+    await sign_in(client=client_for_manager, email=MANAGER_EMAIL, password=MANAGER_PASSWORD)
     return client_for_manager
 
 
@@ -78,7 +88,7 @@ async def moderator_client(client_for_moderator: AsyncClient) -> AsyncClient:
     """
     Аутентификация пользователя с правами менеджера
     """
-    await sign_in(client=client_for_moderator, email="mod@mod.ru", password="easy_password")
+    await sign_in(client=client_for_moderator, email=MODERATOR_EMAIL, password=MODERATOR_PASSWORD)
     return client_for_moderator
 
 
@@ -87,7 +97,7 @@ async def user_client(client_for_user: AsyncClient) -> AsyncClient:
     """
     Аутентификация обычного пользователя
     """
-    await sign_in(client=client_for_user, email="sharik@moloko.ru", password="easy_password")
+    await sign_in(client=client_for_user, email=USER_EMAIL, password=USER_PASSWORD)
     return client_for_user
 
 

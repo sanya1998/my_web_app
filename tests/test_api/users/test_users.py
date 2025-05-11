@@ -3,7 +3,8 @@ from app.common.schemas.user import UserBaseReadSchema
 from httpx import AsyncClient
 from starlette import status
 from tests.conftest import sign_in
-from tests.constants import BASE_USERS_URL
+from tests.constants.urls import USERS_CURRENT_URL, USERS_SIGN_OUT_URL, USERS_SIGN_UP_URL, USERS_URL
+from tests.constants.users_info import USER_EMAIL
 
 
 @pytest.mark.parametrize(
@@ -11,12 +12,12 @@ from tests.constants import BASE_USERS_URL
     [
         ("cat@dog.com", "easy_password", status.HTTP_200_OK),
         ("cat@dog.com", "easy_password", status.HTTP_409_CONFLICT),
-        ("email", "easy_password", status.HTTP_422_UNPROCESSABLE_ENTITY),
+        ("bad_email", "easy_password", status.HTTP_422_UNPROCESSABLE_ENTITY),
     ],
 )
 async def test_sign_up(client: AsyncClient, email, password, status_code):
     response = await client.post(
-        url=f"{BASE_USERS_URL}sign_up",
+        url=USERS_SIGN_UP_URL,
         data={"email": email, "password": password},
     )
     assert response.status_code == status_code
@@ -35,18 +36,18 @@ async def test_sign_in(client: AsyncClient, email, password, status_code):
 
 
 async def test_current_user(user_client: AsyncClient):
-    response_user = await user_client.get(f"{BASE_USERS_URL}current")
+    response_user = await user_client.get(USERS_CURRENT_URL)
     user = UserBaseReadSchema.model_validate(response_user.json())
     assert response_user.status_code == status.HTTP_200_OK
-    assert user.email == "sharik@moloko.ru"
+    assert user.email == USER_EMAIL
 
-    response_sign_out = await user_client.post(f"{BASE_USERS_URL}sign_out")
+    response_sign_out = await user_client.post(USERS_SIGN_OUT_URL)
     assert response_sign_out.status_code == 200
 
-    response_user = await user_client.get(f"{BASE_USERS_URL}current")
+    response_user = await user_client.get(USERS_CURRENT_URL)
     assert response_user.status_code == status.HTTP_401_UNAUTHORIZED
 
 
 async def test_get_users(admin_client: AsyncClient):
-    response = await admin_client.get(BASE_USERS_URL)
+    response = await admin_client.get(USERS_URL)
     assert response.status_code == status.HTTP_200_OK

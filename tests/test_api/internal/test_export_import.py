@@ -3,6 +3,7 @@ import csv
 import io
 
 import pytest
+from app.common.constants.api import ALL_PATH, FILTERED_PATH
 from app.common.constants.info_types import InfoTypes
 from app.common.tables import Bookings, Hotels, Rooms, Users
 from app.common.tables.base import metadata
@@ -10,7 +11,7 @@ from app.config.common import settings
 from app.resources.postgres import engine
 from httpx import AsyncClient, QueryParams
 from starlette import status
-from tests.constants import BASE_EXPORT_URL, BASE_IMPORT_URL
+from tests.constants.urls import ROOT_V1_EXPORT, ROOT_V1_IMPORT
 
 INFO_TYPE_MAP_TABLE = {
     InfoTypes.HOTELS: Hotels,
@@ -21,8 +22,9 @@ INFO_TYPE_MAP_TABLE = {
 
 
 async def export_file(admin_client: AsyncClient, info_type: str, params: QueryParams = None):
-    path = "filtered/" if params else "all/"  # TODO: in constants
-    response_export = await admin_client.get(f"{BASE_EXPORT_URL}{path}{info_type}", params=params)
+    path = FILTERED_PATH if params else ALL_PATH
+    info_type_path = f"/{info_type}"
+    response_export = await admin_client.get(f"{ROOT_V1_EXPORT}{path}{info_type_path}", params=params)
     assert response_export.status_code == status.HTTP_200_OK
     file = io.BytesIO()
     file.write(response_export.content)
@@ -44,6 +46,7 @@ async def export_file(admin_client: AsyncClient, info_type: str, params: QueryPa
 )
 async def test_all_export_all_import(admin_client: AsyncClient, with_deleting, status_code):
     info_type = InfoTypes.BOOKINGS.value
+    info_type_path = f"/{info_type}"
     file = await export_file(admin_client, info_type)
 
     if with_deleting:
@@ -52,7 +55,7 @@ async def test_all_export_all_import(admin_client: AsyncClient, with_deleting, s
             await conn.run_sync(metadata.drop_all, tables=tables)
             await conn.run_sync(metadata.create_all, tables=tables)
 
-    response_import = await admin_client.post(f"{BASE_IMPORT_URL}all/{info_type}", files={"file": file})
+    response_import = await admin_client.post(f"{ROOT_V1_IMPORT}{ALL_PATH}{info_type_path}", files={"file": file})
     assert response_import.status_code == status_code
 
 

@@ -1,10 +1,10 @@
 import typing
 
+from app.common.constants.api import DEFAULT_VERSION
 from app.common.logger import logger
 from fastapi.routing import APIRouter
 from fastapi.types import DecoratedCallable
 
-DEFAULT_VERSION = "v1"
 VERSION_PROPERTY = "version"
 
 
