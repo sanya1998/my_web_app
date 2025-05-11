@@ -1,5 +1,6 @@
 import io
 
+from app.common.constants.api import ALL_PATH, EXPORT_PATH, FILTERED_PATH, PATTERN_INFO_TYPE
 from app.common.constants.info_types import InfoTypes
 from app.common.dependencies.auth import AdminUserDep
 from app.common.dependencies.filters import ExportFiltersDep
@@ -10,7 +11,7 @@ from app.common.helpers.api_version import VersionedAPIRouter
 from app.config.common import settings
 from starlette.responses import StreamingResponse
 
-router = VersionedAPIRouter(prefix="/export")
+router = VersionedAPIRouter(prefix=EXPORT_PATH)
 
 
 def create_response(info_type: InfoTypes, stream: io.BytesIO):
@@ -20,7 +21,7 @@ def create_response(info_type: InfoTypes, stream: io.BytesIO):
     return response
 
 
-@router.get("/all/{info_type}")
+@router.get(f"{ALL_PATH}{PATTERN_INFO_TYPE}")
 async def export_all_for_admin(info_type: InfoTypes, export_service: ExportServiceDep, admin: AdminUserDep):
     try:
         stream = await export_service.export_all_in_csv()
@@ -29,7 +30,7 @@ async def export_all_for_admin(info_type: InfoTypes, export_service: ExportServi
         raise BaseApiError
 
 
-@router.get("/filtered/{info_type}")
+@router.get(f"{FILTERED_PATH}{PATTERN_INFO_TYPE}")
 async def export_filtered_for_admin(
     info_type: InfoTypes, filters: ExportFiltersDep, export_service: ExportServiceDep, admin: AdminUserDep
 ):

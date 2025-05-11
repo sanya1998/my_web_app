@@ -7,13 +7,13 @@ from app.common.schemas.room import ManyRoomsReadSchema
 from app.common.schemas.user import UserBaseReadSchema
 from httpx import AsyncClient, QueryParams
 from starlette import status
-from tests.constants import BASE_BOOKINGS_URL, BASE_ROOMS_URL, BASE_USERS_URL
+from tests.constants.urls import BOOKINGS_URL, ROOMS_URL, USERS_CURRENT_URL
 
 
 async def test_unauthorized_create_bookings(client: AsyncClient, mock_send_email):
     """Неавторизованный пользователь не может бронировать"""
     response = await client.post(
-        BASE_BOOKINGS_URL,
+        BOOKINGS_URL,
         data=dict(
             date_from=date(2024, 11, 7),
             date_to=date(2024, 11, 8),
@@ -35,7 +35,7 @@ async def test_unauthorized_create_bookings(client: AsyncClient, mock_send_email
 async def test_api_crud_booking(
     user_client: AsyncClient, manager_client: AsyncClient, mock_send_email, data, status_code
 ):
-    response = await user_client.post(BASE_BOOKINGS_URL, data=data)
+    response = await user_client.post(BOOKINGS_URL, data=data)
     assert response.status_code == status_code
     if response.status_code != status.HTTP_200_OK:
         return
@@ -45,7 +45,7 @@ async def test_api_crud_booking(
 
     # get
     got_response = await user_client.get(
-        f"{BASE_BOOKINGS_URL}{created_booking.id}",
+        f"{BOOKINGS_URL}{created_booking.id}",
         params=QueryParams(recipient_role=BookingsRecipientRoleEnum.USER.value),
     )
     gotten_booking_self = CurrentUserBookingReadSchema.model_validate(got_response.json())
@@ -53,7 +53,7 @@ async def test_api_crud_booking(
     assert not hasattr(gotten_booking_self, "user")
 
     got_response = await manager_client.get(
-        f"{BASE_BOOKINGS_URL}{created_booking.id}",
+        f"{BOOKINGS_URL}{created_booking.id}",
         params=QueryParams(recipient_role=BookingsRecipientRoleEnum.MANAGER.value),
     )
     gotten_booking = BookingReadSchema.model_validate(got_response.json())
@@ -63,14 +63,14 @@ async def test_api_crud_booking(
 
     # update
     updated_response = await manager_client.put(
-        f"{BASE_BOOKINGS_URL}{gotten_booking.id}",
+        f"{BOOKINGS_URL}{gotten_booking.id}",
         data=dict(date_from=date(2024, 11, 6), date_to=date(2024, 11, 10), price=10000),
     )
     updated_booking = BookingBaseReadSchema.model_validate(updated_response.json())
     assert updated_response.status_code == status.HTTP_200_OK
 
     # delete
-    deleted_response = await manager_client.delete(f"{BASE_BOOKINGS_URL}{updated_booking.id}")
+    deleted_response = await manager_client.delete(f"{BOOKINGS_URL}{updated_booking.id}")
     _ = BookingBaseReadSchema.model_validate(deleted_response.json())
     assert deleted_response.status_code == status.HTTP_200_OK
 
@@ -84,7 +84,7 @@ async def test_busy_bookings(user_client: AsyncClient, mock_send_email):
 
     # Поучение доступных комнат
     response = await user_client.get(
-        url=BASE_ROOMS_URL,
+        url=ROOMS_URL,
         params=QueryParams(
             check_into=check_into,
             check_out=check_out,
@@ -96,7 +96,7 @@ async def test_busy_bookings(user_client: AsyncClient, mock_send_email):
 
     async def creating_booking():
         return await user_client.post(
-            BASE_BOOKINGS_URL,
+            BOOKINGS_URL,
             data=dict(
                 date_from=check_into,
                 date_to=check_out,
@@ -114,11 +114,12 @@ async def test_busy_bookings(user_client: AsyncClient, mock_send_email):
 
 
 async def test_getting_and_deleting_bookings(user_client: AsyncClient, manager_client: AsyncClient):
-    response_user = await user_client.get(f"{BASE_USERS_URL}current")  # TODO: in constants
+    response_user = await user_client.get(USERS_CURRENT_URL)
+    assert response_user.status_code == status.HTTP_200_OK
     user = UserBaseReadSchema.model_validate(response_user.json())
 
     bookings_by_user_response = await manager_client.get(
-        BASE_BOOKINGS_URL, params=QueryParams(user_id=user.id, recipient_role=BookingsRecipientRoleEnum.MANAGER.value)
+        BOOKINGS_URL, params=QueryParams(user_id=user.id, recipient_role=BookingsRecipientRoleEnum.MANAGER.value)
     )
     assert bookings_by_user_response.status_code == status.HTTP_200_OK
     bookings_by_user = [BookingReadSchema.model_validate(b) for b in bookings_by_user_response.json()]
@@ -126,7 +127,7 @@ async def test_getting_and_deleting_bookings(user_client: AsyncClient, manager_c
     assert bookings_by_user[0].user is not None
 
     bookings_self_response = await user_client.get(
-        BASE_BOOKINGS_URL, params=QueryParams(user_id=user.id, recipient_role=BookingsRecipientRoleEnum.USER.value)
+        BOOKINGS_URL, params=QueryParams(user_id=user.id, recipient_role=BookingsRecipientRoleEnum.USER.value)
     )
     assert bookings_self_response.status_code == status.HTTP_200_OK
     bookings_self = [CurrentUserBookingReadSchema.model_validate(b) for b in bookings_self_response.json()]
@@ -136,11 +137,11 @@ async def test_getting_and_deleting_bookings(user_client: AsyncClient, manager_c
 
     for booking_json in bookings_by_user:
         booking = BookingReadSchema.model_validate(booking_json)
-        response_delete = await manager_client.delete(f"{BASE_BOOKINGS_URL}{booking.id}")
+        response_delete = await manager_client.delete(f"{BOOKINGS_URL}{booking.id}")
         assert response_delete.status_code == status.HTTP_200_OK
 
     bookings_self_response = await user_client.get(
-        BASE_BOOKINGS_URL, params=QueryParams(recipient_role=BookingsRecipientRoleEnum.USER.value)
+        BOOKINGS_URL, params=QueryParams(recipient_role=BookingsRecipientRoleEnum.USER.value)
     )
     bookings_self = [CurrentUserBookingReadSchema.model_validate(b) for b in bookings_self_response.json()]
     assert len(bookings_self) == 0

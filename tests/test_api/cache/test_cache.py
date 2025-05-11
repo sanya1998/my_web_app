@@ -1,11 +1,11 @@
 from app.common.constants.cache_prefixes import HOTELS_CACHE_PREFIX
 from app.services import CacheService
 from app.services.cache.key_builders.listing import build_key_pattern_by_listing
-from tests.constants import BASE_HOTELS_URL
+from tests.constants.urls import HOTELS_URL
 
 
 async def take_endpoint(client):
-    response = await client.get(BASE_HOTELS_URL)
+    response = await client.get(HOTELS_URL)
     return response.json()
 
 

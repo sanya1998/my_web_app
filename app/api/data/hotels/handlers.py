@@ -1,5 +1,6 @@
 from typing import Annotated, List
 
+from app.common.constants.api import HOTELS_PATH, PATTERN_OBJECT_ID
 from app.common.constants.cache_prefixes import HOTELS_CACHE_PREFIX
 from app.common.dependencies.auth.moderator import ModeratorUserDep
 from app.common.dependencies.filters import HotelsFiltersDep
@@ -15,7 +16,7 @@ from app.services.cache.key_builders.listing import build_key_by_listing, build_
 from app.services.cache.key_builders.object_id import build_key_by_object_id
 from fastapi import Path
 
-router = VersionedAPIRouter(prefix="/hotels", tags=["Hotels"])
+router = VersionedAPIRouter(prefix=HOTELS_PATH, tags=["Hotels"])
 cache = CacheService(
     prefix_key=HOTELS_CACHE_PREFIX,
     expire=settings.CACHE_EXPIRE_HOTELS,
@@ -49,7 +50,7 @@ async def get_hotels(filters: HotelsFiltersDep, hotel_repo: HotelRepoDep) -> Lis
         raise BaseApiError
 
 
-@router.get("/{object_id}")
+@router.get(PATTERN_OBJECT_ID)
 @cache.caching(build_key=build_key_by_object_id)  # TODO: pycharm подчеркивает
 async def get_hotel(object_id: Annotated[int, Path(gt=0)], hotel_repo: HotelRepoDep) -> HotelReadSchema:
     try:
@@ -62,7 +63,7 @@ async def get_hotel(object_id: Annotated[int, Path(gt=0)], hotel_repo: HotelRepo
         raise BaseApiError
 
 
-@router.put("/{object_id}")
+@router.put(PATTERN_OBJECT_ID)
 async def update_hotel_for_moderator(
     object_id: int,
     hotel_input: HotelInputUpdateDep,
@@ -81,7 +82,7 @@ async def update_hotel_for_moderator(
         raise BaseApiError
 
 
-@router.delete("/{object_id}")
+@router.delete(PATTERN_OBJECT_ID)
 async def delete_hotel_for_moderator(
     object_id: int, hotel_repo: HotelRepoDep, moderator: ModeratorUserDep
 ) -> HotelBaseReadSchema:

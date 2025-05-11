@@ -158,3 +158,4 @@ TODO:
 112) где-нибудь использовать Body(embed=True), а не Form. + Несколько примеров с заголовком https://fastapi.tiangolo.com/tutorial/schema-extra-example/#using-the-openapi_examples-parameter
 113) в русской версии не все https://fastapi.tiangolo.com/ru/tutorial/schema-extra-example/#body-examples
 114) удалить node_modules из github
+115) реализовать добавление фото, видео для комнат (отели частично реализованы), не забыть про то, что изображения уже используются

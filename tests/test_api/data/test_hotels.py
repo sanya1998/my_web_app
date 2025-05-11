@@ -5,7 +5,7 @@ from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyH
 from app.common.schemas.room import ManyRoomsReadSchema
 from httpx import QueryParams
 from starlette import status
-from tests.constants import BASE_HOTELS_URL, BASE_ROOMS_URL
+from tests.constants.urls import HOTELS_URL, ROOMS_URL
 
 
 @pytest.mark.parametrize(
@@ -18,7 +18,7 @@ from tests.constants import BASE_HOTELS_URL, BASE_ROOMS_URL
     ],
 )
 async def test_crud_hotel(moderator_client, data, status_code):
-    response = await moderator_client.post(f"{BASE_HOTELS_URL}", data=data)
+    response = await moderator_client.post(HOTELS_URL, data=data)
     assert response.status_code == status_code
     if response.status_code != status.HTTP_200_OK:
         return
@@ -27,20 +27,20 @@ async def test_crud_hotel(moderator_client, data, status_code):
     assert hotel.id is not None
 
     # get
-    got_response = await moderator_client.get(f"{BASE_HOTELS_URL}{hotel.id}")
+    got_response = await moderator_client.get(f"{HOTELS_URL}{hotel.id}")
     _ = HotelReadSchema.model_validate(got_response.json())
     assert got_response.status_code == status.HTTP_200_OK
 
     # update
     updated_response = await moderator_client.put(
-        f"{BASE_HOTELS_URL}{hotel.id}",
+        f"{HOTELS_URL}{hotel.id}",
         data=dict(name=f"updated_{hotel.name}", location=f"updated_{hotel.location}"),
     )
     _ = HotelBaseReadSchema.model_validate(updated_response.json())
     assert updated_response.status_code == status.HTTP_200_OK
 
     # delete
-    deleted_response = await moderator_client.delete(f"{BASE_HOTELS_URL}{hotel.id}")
+    deleted_response = await moderator_client.delete(f"{HOTELS_URL}{hotel.id}")
     _ = HotelBaseReadSchema.model_validate(deleted_response.json())
     assert deleted_response.status_code == status.HTTP_200_OK
 
@@ -60,16 +60,16 @@ async def test_crud_hotel(moderator_client, data, status_code):
     ],
 )
 async def test_get_hotels(client, params, status_code):
-    response = await client.get(BASE_HOTELS_URL, params=QueryParams(**params))
+    response = await client.get(HOTELS_URL, params=QueryParams(**params))
     assert response.status_code == status_code
 
 
 async def test_get_hotels_without_dates(client):
-    response_hotels = await client.get(BASE_HOTELS_URL)
+    response_hotels = await client.get(HOTELS_URL)
     assert response_hotels.status_code == status.HTTP_200_OK
     hotels = [ManyHotelsReadSchema.model_validate(h) for h in response_hotels.json()]
 
-    response_rooms = await client.get(BASE_ROOMS_URL, params=QueryParams(hotel_id=hotels[0].id, limit=100))
+    response_rooms = await client.get(ROOMS_URL, params=QueryParams(hotel_id=hotels[0].id, limit=100))
     rooms = [ManyRoomsReadSchema.model_validate(r) for r in response_rooms.json()]
 
     # Без дат нельзя посчитать, сколько свободных комнат осталось, поэтому remain_by_hotel = суммарное количество
@@ -89,6 +89,6 @@ async def test_get_hotels_without_dates(client):
     ],
 )
 async def test_hotels_params(client, params, id_):
-    response = await client.get(BASE_HOTELS_URL, params=QueryParams(**params))
+    response = await client.get(HOTELS_URL, params=QueryParams(**params))
     assert response.status_code == status.HTTP_200_OK
     assert id_ in set(ManyHotelsReadSchema.model_validate(r).id for r in response.json())
