@@ -7,6 +7,7 @@ from app.middlewares.middlewares import add_middlewares
 from app.resources.hawk_ import add_hawk_fastapi
 from app.resources.prometheus_ import add_prometheus
 from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 
 
@@ -21,6 +22,7 @@ app = FastAPI(
     title=settings.APPLICATION_NAME,
     description=settings.APPLICATION_DESCRIPTION,
     swagger_ui_parameters=settings.SWAGGER_UI_PARAMETERS,
+    default_response_class=ORJSONResponse,
 )
 app.include_router(api_router)
 app.mount(path="/static", app=StaticFiles(directory="static/"), name="static")  # TODO: envs

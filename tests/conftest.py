@@ -7,10 +7,11 @@ from app.common.logger import logger
 from app.common.tables.base import metadata
 from app.config.common import settings
 from app.resources.postgres import async_session, engine
-from httpx import ASGITransport, AsyncClient
+from httpx import ASGITransport
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
+from tests.common import TestClient
 from tests.constants.urls import USERS_SIGN_IN_URL
 from tests.constants.users_info import (
     ADMIN_EMAIL,
@@ -48,8 +49,8 @@ async def session() -> AsyncIterator[AsyncSession]:
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def client() -> AsyncGenerator[AsyncClient, Any]:
-    async with AsyncClient(transport=ASGITransport(app), base_url="http://test") as ac:
+async def client() -> AsyncGenerator[TestClient, Any]:
+    async with TestClient(transport=ASGITransport(app), base_url="http://test") as ac:
         yield ac
 
 
@@ -57,16 +58,15 @@ async def client() -> AsyncGenerator[AsyncClient, Any]:
 client_for_admin = client_for_manager = client_for_moderator = client_for_user = client
 
 
-async def sign_in(client: AsyncClient, email: str, password: str, expected_status=status.HTTP_200_OK):
+async def sign_in(client: TestClient, email: str, password: str, code=status.HTTP_200_OK):
     """
     Аутентифицирует пользователя
     """
-    response_sign_in = await client.post(USERS_SIGN_IN_URL, data=dict(email=email, password=password))
-    assert response_sign_in.status_code == expected_status
+    await client.post(USERS_SIGN_IN_URL, data=dict(email=email, password=password), code=code)
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def admin_client(client_for_admin: AsyncClient) -> AsyncClient:
+async def admin_client(client_for_admin: TestClient) -> TestClient:
     """
     Аутентификация пользователя с правами админа
     """
@@ -75,7 +75,7 @@ async def admin_client(client_for_admin: AsyncClient) -> AsyncClient:
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def manager_client(client_for_manager: AsyncClient) -> AsyncClient:
+async def manager_client(client_for_manager: TestClient) -> TestClient:
     """
     Аутентификация пользователя с правами менеджера
     """
@@ -84,7 +84,7 @@ async def manager_client(client_for_manager: AsyncClient) -> AsyncClient:
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def moderator_client(client_for_moderator: AsyncClient) -> AsyncClient:
+async def moderator_client(client_for_moderator: TestClient) -> TestClient:
     """
     Аутентификация пользователя с правами менеджера
     """
@@ -93,7 +93,7 @@ async def moderator_client(client_for_moderator: AsyncClient) -> AsyncClient:
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def user_client(client_for_user: AsyncClient) -> AsyncClient:
+async def user_client(client_for_user: TestClient) -> TestClient:
     """
     Аутентификация обычного пользователя
     """

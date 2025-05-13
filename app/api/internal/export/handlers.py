@@ -1,7 +1,7 @@
 import io
 
-from app.common.constants.api import ALL_PATH, EXPORT_PATH, FILTERED_PATH, PATTERN_INFO_TYPE
 from app.common.constants.info_types import InfoTypes
+from app.common.constants.paths import ALL_PATH, EXPORT_PATH, FILTERED_PATH, PATTERN_INFO_TYPE
 from app.common.dependencies.auth import AdminUserDep
 from app.common.dependencies.filters import ExportFiltersDep
 from app.common.dependencies.services import ExportServiceDep
