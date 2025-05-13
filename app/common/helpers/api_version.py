@@ -1,6 +1,6 @@
 import typing
 
-from app.common.constants.api import DEFAULT_VERSION
+from app.common.constants.paths import DEFAULT_VERSION
 from app.common.logger import logger
 from fastapi.routing import APIRouter
 from fastapi.types import DecoratedCallable

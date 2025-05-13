@@ -1,6 +1,7 @@
 from typing import Annotated, List
 
-from app.common.constants.api import (
+from app.common.constants.auth import SIGN_IN_RESULT, SIGN_OUT_RESULT, SignInResult, SignOutResult
+from app.common.constants.paths import (
     PATTERN_OBJECT_ID,
     SIGN_IN_PATH,
     SIGN_OUT_PATH,
@@ -28,6 +29,7 @@ from app.common.exceptions.services import (
     UnauthorizedServiceError,
 )
 from app.common.helpers.api_version import VersionedAPIRouter
+from app.common.helpers.response import BaseResponse
 from app.common.schemas.user import UserBaseReadSchema
 from fastapi import Path
 
@@ -37,22 +39,24 @@ router = VersionedAPIRouter(prefix=USERS_PATH, tags=["Users"])
 @router.get("/")
 async def get_users_for_admin(
     filters: UsersFiltersDep, user_repo: UserRepoDep, admin: AdminUserDep
-) -> List[UserBaseReadSchema]:
+) -> BaseResponse[List[UserBaseReadSchema]]:
     try:
-        return await user_repo.get_objects(filters=filters)
+        users = await user_repo.get_objects(filters=filters)
+        return BaseResponse(content=users)
     except BaseRepoError:
         raise BaseApiError
 
 
 @router.get(USERS_CURRENT_PATH)
-async def get_current_user(user: CurrentUserDep) -> UserBaseReadSchema:
-    return user
+async def get_current_user(user: CurrentUserDep) -> BaseResponse[UserBaseReadSchema]:
+    return BaseResponse(content=user)
 
 
-@router.post(SIGN_IN_PATH)
-async def sign_in(user_input: UserInputDep, auth_service: AuthorizationServiceDep) -> None:
+@router.post(SIGN_IN_PATH, response_model=BaseResponse[SignInResult])
+async def sign_in(user_input: UserInputDep, auth_service: AuthorizationServiceDep):
     try:
         await auth_service.sign_in(user_input)
+        return BaseResponse(content=SIGN_IN_RESULT)
     except NotFoundServiceError:
         raise NotFoundApiError
     except UnauthorizedServiceError:
@@ -61,30 +65,31 @@ async def sign_in(user_input: UserInputDep, auth_service: AuthorizationServiceDe
         raise BaseApiError
 
 
-@router.post(SIGN_OUT_PATH)
-async def sign_out(auth_service: AuthorizationServiceDep) -> None:
+@router.post(SIGN_OUT_PATH, response_model=BaseResponse[SignOutResult])
+async def sign_out(auth_service: AuthorizationServiceDep):
     try:
         await auth_service.sign_out()
+        return BaseResponse(content=SIGN_OUT_RESULT)
     except BaseServiceError:
         raise BaseApiError
 
 
-@router.post(SIGN_UP_PATH)
-async def sign_up(user_input: UserInputDep, auth_service: AuthorizationServiceDep) -> UserBaseReadSchema:
+@router.post(SIGN_UP_PATH, response_model=BaseResponse[UserBaseReadSchema])
+async def sign_up(user_input: UserInputDep, auth_service: AuthorizationServiceDep):
     try:
-        return await auth_service.sign_up(user_input)
+        user = await auth_service.sign_up(user_input)
+        return BaseResponse(content=user)
     except AlreadyExistsServiceError:
         raise AlreadyExistsApiError
     except BaseServiceError:
         raise BaseApiError
 
 
-@router.get(PATTERN_OBJECT_ID)
-async def get_user_for_admin(
-    object_id: Annotated[int, Path(gt=0)], user_repo: UserRepoDep, admin: AdminUserDep
-) -> UserBaseReadSchema:
+@router.get(PATTERN_OBJECT_ID, response_model=BaseResponse[UserBaseReadSchema])
+async def get_user_for_admin(object_id: Annotated[int, Path(gt=0)], user_repo: UserRepoDep, admin: AdminUserDep):
     try:
-        return await user_repo.get_object(id=object_id)
+        user = await user_repo.get_object(id=object_id)
+        return BaseResponse(content=user)
     except NotFoundRepoError:
         raise NotFoundApiError
     except MultipleResultsRepoError:

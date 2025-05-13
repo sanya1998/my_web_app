@@ -3,14 +3,15 @@ import csv
 import io
 
 import pytest
-from app.common.constants.api import ALL_PATH, FILTERED_PATH
 from app.common.constants.info_types import InfoTypes
+from app.common.constants.paths import ALL_PATH, FILTERED_PATH
 from app.common.tables import Bookings, Hotels, Rooms, Users
 from app.common.tables.base import metadata
 from app.config.common import settings
 from app.resources.postgres import engine
-from httpx import AsyncClient, QueryParams
+from httpx import QueryParams
 from starlette import status
+from tests.common import TestClient
 from tests.constants.urls import ROOT_V1_EXPORT, ROOT_V1_IMPORT
 
 INFO_TYPE_MAP_TABLE = {
@@ -21,11 +22,10 @@ INFO_TYPE_MAP_TABLE = {
 }
 
 
-async def export_file(admin_client: AsyncClient, info_type: str, params: QueryParams = None):
+async def export_file(admin_client: TestClient, info_type: str, params: QueryParams = None):
     path = FILTERED_PATH if params else ALL_PATH
-    info_type_path = f"/{info_type}"
-    response_export = await admin_client.get(f"{ROOT_V1_EXPORT}{path}{info_type_path}", params=params)
-    assert response_export.status_code == status.HTTP_200_OK
+    type_path = f"/{info_type}"
+    response_export = await admin_client.get(f"{ROOT_V1_EXPORT}{path}{type_path}", params=params)
     file = io.BytesIO()
     file.write(response_export.content)
 
@@ -44,9 +44,9 @@ async def export_file(admin_client: AsyncClient, info_type: str, params: QueryPa
         (True, status.HTTP_200_OK),
     ],
 )
-async def test_all_export_all_import(admin_client: AsyncClient, with_deleting, status_code):
+async def test_all_export_all_import(admin_client: TestClient, with_deleting, status_code):
     info_type = InfoTypes.BOOKINGS.value
-    info_type_path = f"/{info_type}"
+    type_path = f"/{info_type}"
     file = await export_file(admin_client, info_type)
 
     if with_deleting:
@@ -55,16 +55,16 @@ async def test_all_export_all_import(admin_client: AsyncClient, with_deleting, s
             await conn.run_sync(metadata.drop_all, tables=tables)
             await conn.run_sync(metadata.create_all, tables=tables)
 
-    response_import = await admin_client.post(f"{ROOT_V1_IMPORT}{ALL_PATH}{info_type_path}", files={"file": file})
-    assert response_import.status_code == status_code
+    # TODO: почему именно `{"file"` ??
+    await admin_client.post(f"{ROOT_V1_IMPORT}{ALL_PATH}{type_path}", code=status_code, files={"file": file})
 
 
-async def test_filtered_export(admin_client: AsyncClient):
+async def test_filtered_export(admin_client: TestClient):
     exclude_id = 1
     info_type = InfoTypes.ROOMS.value
     file = await export_file(admin_client, info_type, QueryParams(id__not_in=[exclude_id]))
     csv_reader = csv.DictReader(codecs.iterdecode(file, settings.FILE_ENCODING))
-    not_found_exclude = all(int(room["id"]) != exclude_id for room in csv_reader)
+    not_found_exclude = all(int(room["id"]) != exclude_id for room in csv_reader)  # TODO: pycharm подчеркивает
     assert not_found_exclude
 
     file = await export_file(admin_client, info_type)

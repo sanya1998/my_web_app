@@ -1,7 +1,7 @@
 import pytest
 from app.common.schemas.user import UserBaseReadSchema
-from httpx import AsyncClient
 from starlette import status
+from tests.common import TestClient
 from tests.conftest import sign_in
 from tests.constants.urls import USERS_CURRENT_URL, USERS_SIGN_OUT_URL, USERS_SIGN_UP_URL, USERS_URL
 from tests.constants.users_info import USER_EMAIL
@@ -15,12 +15,12 @@ from tests.constants.users_info import USER_EMAIL
         ("bad_email", "easy_password", status.HTTP_422_UNPROCESSABLE_ENTITY),
     ],
 )
-async def test_sign_up(client: AsyncClient, email, password, status_code):
-    response = await client.post(
+async def test_sign_up(client: TestClient, email, password, status_code):
+    await client.post(
         url=USERS_SIGN_UP_URL,
+        code=status_code,
         data={"email": email, "password": password},
     )
-    assert response.status_code == status_code
 
 
 @pytest.mark.parametrize(
@@ -31,23 +31,21 @@ async def test_sign_up(client: AsyncClient, email, password, status_code):
         ("no-person@moloko.ru", "hard_password", status.HTTP_404_NOT_FOUND),
     ],
 )
-async def test_sign_in(client: AsyncClient, email, password, status_code):
-    await sign_in(client=client, email=email, password=password, expected_status=status_code)
+async def test_sign_in(client: TestClient, email, password, status_code):
+    await sign_in(client=client, email=email, password=password, code=status_code)
 
 
-async def test_current_user(user_client: AsyncClient):
-    response_user = await user_client.get(USERS_CURRENT_URL)
-    user = UserBaseReadSchema.model_validate(response_user.json())
-    assert response_user.status_code == status.HTTP_200_OK
+async def test_current_user(user_client: TestClient):
+    # Получить данные о текущем пользователе
+    user = await user_client.get(USERS_CURRENT_URL, model=UserBaseReadSchema)
     assert user.email == USER_EMAIL
 
-    response_sign_out = await user_client.post(USERS_SIGN_OUT_URL)
-    assert response_sign_out.status_code == 200
+    # Выйти
+    await user_client.post(USERS_SIGN_OUT_URL)
 
-    response_user = await user_client.get(USERS_CURRENT_URL)
-    assert response_user.status_code == status.HTTP_401_UNAUTHORIZED
+    # Нет доступа для неавторизованного пользователя
+    await user_client.get(USERS_CURRENT_URL, code=status.HTTP_401_UNAUTHORIZED)
 
 
-async def test_get_users(admin_client: AsyncClient):
-    response = await admin_client.get(USERS_URL)
-    assert response.status_code == status.HTTP_200_OK
+async def test_get_users(admin_client: TestClient):
+    await admin_client.get(USERS_URL)

@@ -1,12 +1,15 @@
+from typing import List
+
 from app.common.constants.cache_prefixes import HOTELS_CACHE_PREFIX
+from app.common.schemas.hotel import ManyHotelsReadSchema
 from app.services import CacheService
 from app.services.cache.key_builders.listing import build_key_pattern_by_listing
 from tests.constants.urls import HOTELS_URL
 
 
 async def take_endpoint(client):
-    response = await client.get(HOTELS_URL)
-    return response.json()
+    hotels = await client.get(HOTELS_URL, model=List[ManyHotelsReadSchema])
+    return hotels
 
 
 async def clear_cache():
@@ -23,18 +26,20 @@ async def fake_response(self, filters):
 
 async def test_cache(client, mocker):
     await clear_cache()
-    first_response = await take_endpoint(client)
+    # Получение результата и его запись в кеш
+    hotels = await take_endpoint(client)
 
+    # Патч репозитория, чтобы теперь он возвращал фейковый ответ (не тот, что в бд)
     mocker.patch("app.repositories.hotel.HotelRepo.get_objects", fake_response)
 
-    response_from_cache = await take_endpoint(client)
-    # Несмотря на mock, ответы равны, благодаря кешу
-    assert first_response == response_from_cache
+    hotels_from_cache = await take_endpoint(client)
+    # Несмотря на mock, endpoint вернул то, что в кеше, а не то что сейчас приходит из репозитория
+    assert hotels == hotels_from_cache
 
     await clear_cache()
-    mocked_response = await take_endpoint(client)
-    # Кеша больше нет, поэтому теперь будет фейковый ответ, который отличается от реального
-    assert first_response != mocked_response
+    hotels_mocked = await take_endpoint(client)
+    # Кеша больше нет, поэтому теперь endpoint вернул то, то сейчас приходит из репозитория (mock)
+    assert hotels_mocked != hotels_from_cache
 
     await clear_cache()
 

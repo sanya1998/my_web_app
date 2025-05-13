@@ -3,7 +3,7 @@ from app.api.internal import internal_router
 from app.api.pages import pages_router
 from app.api.srv import srv_router
 from app.api.users import users_router
-from app.common.constants.api import ROOT_API_PATH
+from app.common.constants.paths import ROOT_API_PATH
 from app.common.helpers.api_version import VersionedAPIRouter
 
 api_router = VersionedAPIRouter(prefix=ROOT_API_PATH, is_root_router=True)

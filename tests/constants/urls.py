@@ -1,6 +1,6 @@
-from app.common.constants.api import (
-    API_VERSION_V1,
-    API_VERSION_V2,
+from app.common.constants.paths import (
+    API_V1_PATH,
+    API_V2_PATH,
     BOOKINGS_PATH,
     EXPORT_PATH,
     HOTELS_PATH,
@@ -15,8 +15,8 @@ from app.common.constants.api import (
     USERS_PATH,
 )
 
-ROOT_V1 = f"{ROOT_API_PATH}{API_VERSION_V1}"
-ROOT_V2 = f"{ROOT_API_PATH}{API_VERSION_V2}"
+ROOT_V1 = f"{ROOT_API_PATH}{API_V1_PATH}"
+ROOT_V2 = f"{ROOT_API_PATH}{API_V2_PATH}"
 
 BOOKINGS_URL = f"{ROOT_V1}{BOOKINGS_PATH}/"
 ROOMS_URL = f"{ROOT_V1}{ROOMS_PATH}/"

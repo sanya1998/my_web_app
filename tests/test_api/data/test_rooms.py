@@ -1,9 +1,11 @@
 from datetime import date
+from typing import List
 
 import pytest
 from app.common.schemas.room import ManyRoomsReadSchema, RoomReadSchema
-from httpx import AsyncClient, QueryParams
+from httpx import QueryParams
 from starlette import status
+from tests.common import TestClient
 from tests.constants.urls import ROOMS_URL
 
 
@@ -14,9 +16,8 @@ from tests.constants.urls import ROOMS_URL
         ({}, status.HTTP_200_OK),
     ],
 )
-async def test_get_by_check_dates(client: AsyncClient, params: dict, status_code: int):
-    response = await client.get(ROOMS_URL, params=QueryParams(**params))
-    assert response.status_code == status_code
+async def test_get_by_check_dates(client: TestClient, params: dict, status_code: int):
+    await client.get(ROOMS_URL, params=QueryParams(**params))
 
 
 @pytest.mark.parametrize(
@@ -32,10 +33,10 @@ async def test_get_by_check_dates(client: AsyncClient, params: dict, status_code
         ({"order_by": ["price", "-id"], "price__gt": 26000, "price__lt": 27000, "limit": 1}, 11),
     ],
 )
-async def test_get_by_params(client: AsyncClient, params: dict, id_: int):
-    response = await client.get(ROOMS_URL, params=QueryParams(**params))
-    assert response.status_code == status.HTTP_200_OK
-    assert id_ in set(ManyRoomsReadSchema.model_validate(r).id for r in response.json())
+async def test_get_by_params(client: TestClient, params: dict, id_: int):
+    """Проверка, что определенный тип комнаты находится в результате при определенных фильтрах"""
+    rooms = await client.get(ROOMS_URL, model=List[ManyRoomsReadSchema], params=QueryParams(**params))
+    assert id_ in set(r.id for r in rooms)
 
 
 @pytest.mark.parametrize(
@@ -45,9 +46,7 @@ async def test_get_by_params(client: AsyncClient, params: dict, id_: int):
         (2, "Делюкс Плюс", 24450),
     ],
 )
-async def test_get_room(client: AsyncClient, id_: int, name: str, price: int):
-    response = await client.get(f"{ROOMS_URL}{id_}")
-    assert response.status_code == status.HTTP_200_OK
-    room = RoomReadSchema.model_validate(response.json())
+async def test_get_room(client: TestClient, id_: int, name: str, price: int):
+    room = await client.get(f"{ROOMS_URL}{id_}", model=RoomReadSchema)
     assert room.name == name
     assert room.price == price

@@ -1,7 +1,7 @@
 import shutil
 
-from app.common.constants.api import PATTERN_INFO_TYPE
 from app.common.constants.info_types import InfoTypes
+from app.common.constants.paths import PATTERN_INFO_TYPE
 from app.common.dependencies.auth.moderator import ModeratorUserDep
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.tasks.img import process_pic, process_pic_background_task

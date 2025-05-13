@@ -1,26 +1,29 @@
 from datetime import date
+from typing import List
 
 import pytest
 from app.common.constants.roles import BookingsRecipientRoleEnum
 from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
 from app.common.schemas.room import ManyRoomsReadSchema
 from app.common.schemas.user import UserBaseReadSchema
-from httpx import AsyncClient, QueryParams
+from httpx import QueryParams
 from starlette import status
+from tests.common import TestClient
 from tests.constants.urls import BOOKINGS_URL, ROOMS_URL, USERS_CURRENT_URL
 
 
-async def test_unauthorized_create_bookings(client: AsyncClient, mock_send_email):
-    """Неавторизованный пользователь не может бронировать"""
-    response = await client.post(
-        BOOKINGS_URL,
-        data=dict(
-            date_from=date(2024, 11, 7),
-            date_to=date(2024, 11, 8),
-            room_id=7,
+@pytest.mark.parametrize(
+    "data, status_code",
+    [
+        (
+            dict(date_from=date(2024, 11, 7), date_to=date(2024, 11, 8), room_id=7),
+            status.HTTP_401_UNAUTHORIZED,
         ),
-    )
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    ],
+)
+async def test_unauthorized_create_bookings(client: TestClient, mock_send_email, data, status_code):
+    """Неавторизованный пользователь не может бронировать"""
+    await client.post(BOOKINGS_URL, code=status_code, data=data)
 
 
 @pytest.mark.parametrize(
@@ -29,53 +32,56 @@ async def test_unauthorized_create_bookings(client: AsyncClient, mock_send_email
         (dict(date_from=date(2024, 11, 7), room_id=7), status.HTTP_422_UNPROCESSABLE_ENTITY),
         (dict(date_to=date(2024, 11, 8), room_id=7), status.HTTP_422_UNPROCESSABLE_ENTITY),
         (dict(date_from=date(2024, 11, 7), date_to=date(2024, 11, 8)), status.HTTP_422_UNPROCESSABLE_ENTITY),
+    ],
+)
+async def test_api_not_created_booking(
+    user_client: TestClient, manager_client: TestClient, mock_send_email, data, status_code
+):
+    """Некорректные данные при создании"""
+    await user_client.post(BOOKINGS_URL, code=status_code, data=data)
+
+
+@pytest.mark.parametrize(
+    "data, status_code",
+    [
         (dict(date_from=date(2024, 11, 7), date_to=date(2024, 11, 8), room_id=7), status.HTTP_200_OK),
     ],
 )
 async def test_api_crud_booking(
-    user_client: AsyncClient, manager_client: AsyncClient, mock_send_email, data, status_code
+    user_client: TestClient, manager_client: TestClient, mock_send_email, data, status_code
 ):
-    response = await user_client.post(BOOKINGS_URL, data=data)
-    assert response.status_code == status_code
-    if response.status_code != status.HTTP_200_OK:
-        return
-
-    created_booking = BookingBaseReadSchema.model_validate(response.json())
+    # create
+    created_booking = await user_client.post(BOOKINGS_URL, code=status_code, model=BookingBaseReadSchema, data=data)
     assert created_booking.id is not None
 
     # get
-    got_response = await user_client.get(
+    gotten_booking_self = await user_client.get(
         f"{BOOKINGS_URL}{created_booking.id}",
+        model=CurrentUserBookingReadSchema,
         params=QueryParams(recipient_role=BookingsRecipientRoleEnum.USER.value),
     )
-    gotten_booking_self = CurrentUserBookingReadSchema.model_validate(got_response.json())
-    assert got_response.status_code == status.HTTP_200_OK
     assert not hasattr(gotten_booking_self, "user")
 
-    got_response = await manager_client.get(
+    gotten_booking = await manager_client.get(
         f"{BOOKINGS_URL}{created_booking.id}",
+        model=BookingReadSchema,
         params=QueryParams(recipient_role=BookingsRecipientRoleEnum.MANAGER.value),
     )
-    gotten_booking = BookingReadSchema.model_validate(got_response.json())
-    assert got_response.status_code == status.HTTP_200_OK
     assert gotten_booking.room.hotel.name is not None
     assert gotten_booking.user is not None
 
     # update
-    updated_response = await manager_client.put(
+    updated_booking = await manager_client.put(
         f"{BOOKINGS_URL}{gotten_booking.id}",
+        model=BookingBaseReadSchema,
         data=dict(date_from=date(2024, 11, 6), date_to=date(2024, 11, 10), price=10000),
     )
-    updated_booking = BookingBaseReadSchema.model_validate(updated_response.json())
-    assert updated_response.status_code == status.HTTP_200_OK
 
     # delete
-    deleted_response = await manager_client.delete(f"{BOOKINGS_URL}{updated_booking.id}")
-    _ = BookingBaseReadSchema.model_validate(deleted_response.json())
-    assert deleted_response.status_code == status.HTTP_200_OK
+    await manager_client.delete(f"{BOOKINGS_URL}{updated_booking.id}", model=BookingBaseReadSchema)
 
 
-async def test_busy_bookings(user_client: AsyncClient, mock_send_email):
+async def test_busy_bookings(user_client: TestClient, mock_send_email):
     """
     Тест, который показывает, что нельзя забронировать комнату, когда все занято
     """
@@ -83,65 +89,52 @@ async def test_busy_bookings(user_client: AsyncClient, mock_send_email):
     check_out = date(2024, 11, 8)
 
     # Поучение доступных комнат
-    response = await user_client.get(
-        url=ROOMS_URL,
-        params=QueryParams(
-            check_into=check_into,
-            check_out=check_out,
-        ),
+    rooms = await user_client.get(
+        ROOMS_URL, params=QueryParams(check_into=check_into, check_out=check_out), model=List[ManyRoomsReadSchema]
     )
-    assert response.status_code == status.HTTP_200_OK
-    rooms = [ManyRoomsReadSchema.model_validate(room) for room in response.json()]
     room = rooms[0]
 
-    async def creating_booking():
+    async def creating_booking(status_code):
         return await user_client.post(
             BOOKINGS_URL,
-            data=dict(
-                date_from=check_into,
-                date_to=check_out,
-                room_id=room.id,
-            ),
+            data=dict(date_from=check_into, date_to=check_out, room_id=room.id),
+            code=status_code,
         )
 
     # Занять все доступные комнаты данного типа в эти даты
     for i in range(room.remain_by_room):
-        response = await creating_booking()
-        assert response.status_code == status.HTTP_200_OK
+        await creating_booking(status.HTTP_200_OK)
     # Убедиться, что теперь нельзя забронировать комнату данного типа в эти даты
-    response = await creating_booking()
-    assert response.status_code == status.HTTP_409_CONFLICT
+    await creating_booking(status.HTTP_409_CONFLICT)
 
 
-async def test_getting_and_deleting_bookings(user_client: AsyncClient, manager_client: AsyncClient):
-    response_user = await user_client.get(USERS_CURRENT_URL)
-    assert response_user.status_code == status.HTTP_200_OK
-    user = UserBaseReadSchema.model_validate(response_user.json())
+async def test_getting_and_deleting_bookings(user_client: TestClient, manager_client: TestClient):
+    user = await user_client.get(USERS_CURRENT_URL, model=UserBaseReadSchema)
 
-    bookings_by_user_response = await manager_client.get(
-        BOOKINGS_URL, params=QueryParams(user_id=user.id, recipient_role=BookingsRecipientRoleEnum.MANAGER.value)
+    bookings_by_user = await manager_client.get(
+        BOOKINGS_URL,
+        model=List[BookingReadSchema],
+        params=QueryParams(user_id=user.id, recipient_role=BookingsRecipientRoleEnum.MANAGER.value),
     )
-    assert bookings_by_user_response.status_code == status.HTTP_200_OK
-    bookings_by_user = [BookingReadSchema.model_validate(b) for b in bookings_by_user_response.json()]
     assert bookings_by_user[0].room.hotel.name is not None
     assert bookings_by_user[0].user is not None
 
-    bookings_self_response = await user_client.get(
-        BOOKINGS_URL, params=QueryParams(user_id=user.id, recipient_role=BookingsRecipientRoleEnum.USER.value)
+    bookings_self = await user_client.get(
+        BOOKINGS_URL,
+        model=List[CurrentUserBookingReadSchema],
+        params=QueryParams(user_id=user.id, recipient_role=BookingsRecipientRoleEnum.USER.value),
     )
-    assert bookings_self_response.status_code == status.HTTP_200_OK
-    bookings_self = [CurrentUserBookingReadSchema.model_validate(b) for b in bookings_self_response.json()]
     assert not hasattr(bookings_self[0], "user")
 
     assert set(b.id for b in bookings_self) == set(b.id for b in bookings_by_user)
 
-    for booking_json in bookings_by_user:
-        booking = BookingReadSchema.model_validate(booking_json)
-        response_delete = await manager_client.delete(f"{BOOKINGS_URL}{booking.id}")
-        assert response_delete.status_code == status.HTTP_200_OK
+    # TODO: delete bulk
+    for booking_item in bookings_by_user:
+        await manager_client.delete(f"{BOOKINGS_URL}{booking_item.id}")
 
-    bookings_self_response = await user_client.get(
-        BOOKINGS_URL, params=QueryParams(recipient_role=BookingsRecipientRoleEnum.USER.value)
+    bookings_self = await user_client.get(
+        BOOKINGS_URL,
+        model=List[CurrentUserBookingReadSchema],
+        params=QueryParams(recipient_role=BookingsRecipientRoleEnum.USER.value),
     )
-    bookings_self = [CurrentUserBookingReadSchema.model_validate(b) for b in bookings_self_response.json()]
     assert len(bookings_self) == 0

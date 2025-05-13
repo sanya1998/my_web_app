@@ -1,12 +1,12 @@
-from httpx import AsyncClient
+from tests.common import TestClient
 
 
 async def test_multy_clients(
-    admin_client: AsyncClient,
-    manager_client: AsyncClient,
-    moderator_client: AsyncClient,
-    user_client: AsyncClient,
-    client: AsyncClient,
+    admin_client: TestClient,
+    manager_client: TestClient,
+    moderator_client: TestClient,
+    user_client: TestClient,
+    client: TestClient,
 ):
     """
     Проверка, что в одном тесте можно использовать сразу несколько клиентов с разными ролями
