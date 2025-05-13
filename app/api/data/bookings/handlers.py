@@ -27,11 +27,12 @@ from app.common.helpers.response import BaseResponse
 from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
 from app.common.tasks.email import send_booking_notify_email
 from fastapi import Path
+from starlette import status
 
 router = VersionedAPIRouter(prefix=BOOKINGS_PATH, tags=["Bookings"])
 
 
-@router.post("/", response_model=BaseResponse[BookingBaseReadSchema])
+@router.post("/", response_model=BaseResponse[BookingBaseReadSchema], status_code=status.HTTP_201_CREATED)
 async def create_booking_for_current_user(
     booking_input: BookingInputCreateDep, booking_service: BookingServiceDep, user: CurrentUserDep
 ):

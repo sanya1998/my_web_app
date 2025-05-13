@@ -10,7 +10,7 @@ from tests.constants.users_info import USER_EMAIL
 @pytest.mark.parametrize(
     "email, password, status_code",
     [
-        ("cat@dog.com", "easy_password", status.HTTP_200_OK),
+        ("cat@dog.com", "easy_password", status.HTTP_201_CREATED),
         ("cat@dog.com", "easy_password", status.HTTP_409_CONFLICT),
         ("bad_email", "easy_password", status.HTTP_422_UNPROCESSABLE_ENTITY),
     ],

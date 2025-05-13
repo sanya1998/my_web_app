@@ -32,6 +32,7 @@ from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
 from app.common.schemas.user import UserBaseReadSchema
 from fastapi import Path
+from starlette import status
 
 router = VersionedAPIRouter(prefix=USERS_PATH, tags=["Users"])
 
@@ -74,7 +75,7 @@ async def sign_out(auth_service: AuthorizationServiceDep):
         raise BaseApiError
 
 
-@router.post(SIGN_UP_PATH, response_model=BaseResponse[UserBaseReadSchema])
+@router.post(SIGN_UP_PATH, response_model=BaseResponse[UserBaseReadSchema], status_code=status.HTTP_201_CREATED)
 async def sign_up(user_input: UserInputDep, auth_service: AuthorizationServiceDep):
     try:
         user = await auth_service.sign_up(user_input)

@@ -16,6 +16,7 @@ from app.services import CacheService
 from app.services.cache.key_builders.listing import build_key_by_listing, build_key_pattern_by_listing
 from app.services.cache.key_builders.object_id import build_key_by_object_id
 from fastapi import Path
+from starlette import status
 
 router = VersionedAPIRouter(prefix=HOTELS_PATH, tags=["Hotels"])
 cache = CacheService(
@@ -26,7 +27,7 @@ cache = CacheService(
 )
 
 
-@router.post("/", response_model=BaseResponse[HotelBaseReadSchema])
+@router.post("/", response_model=BaseResponse[HotelBaseReadSchema], status_code=status.HTTP_201_CREATED)
 async def create_hotel_for_moderator(
     hotel_input: HotelInputCreateDep,
     hotel_repo: HotelRepoDep,

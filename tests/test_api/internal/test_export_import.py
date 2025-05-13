@@ -41,7 +41,7 @@ async def export_file(admin_client: TestClient, info_type: str, params: QueryPar
     "with_deleting, status_code",
     [
         (False, status.HTTP_409_CONFLICT),
-        (True, status.HTTP_200_OK),
+        (True, status.HTTP_201_CREATED),
     ],
 )
 async def test_all_export_all_import(admin_client: TestClient, with_deleting, status_code):

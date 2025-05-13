@@ -24,3 +24,5 @@ async def add_image_for_moderator(
 
     # Задачу во встроенный бэкграунд (плюсы: можно дебажить, можно асинхронные функции выполнять)
     background_tasks.add_task(process_pic_background_task, im_path)
+
+    # Вернуть ответ (id), статус 201, или 202, или 204
