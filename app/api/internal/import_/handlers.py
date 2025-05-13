@@ -7,11 +7,14 @@ from app.common.exceptions.services import AlreadyExistsServiceError, BaseServic
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
 from fastapi import BackgroundTasks, UploadFile
+from starlette import status
 
 router = VersionedAPIRouter(prefix=IMPORT_PATH)
 
 
-@router.post(f"{ALL_PATH}{PATTERN_INFO_TYPE}", response_model=BaseResponse[ImportResult])
+@router.post(
+    f"{ALL_PATH}{PATTERN_INFO_TYPE}", response_model=BaseResponse[ImportResult], status_code=status.HTTP_201_CREATED
+)
 async def import_for_admin(
     background_tasks: BackgroundTasks, file: UploadFile, import_service: ImportServiceDep, admin: AdminUserDep
 ):

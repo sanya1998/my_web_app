@@ -44,7 +44,7 @@ async def test_api_not_created_booking(
 @pytest.mark.parametrize(
     "data, status_code",
     [
-        (dict(date_from=date(2024, 11, 7), date_to=date(2024, 11, 8), room_id=7), status.HTTP_200_OK),
+        (dict(date_from=date(2024, 11, 7), date_to=date(2024, 11, 8), room_id=7), status.HTTP_201_CREATED),
     ],
 )
 async def test_api_crud_booking(
@@ -103,7 +103,7 @@ async def test_busy_bookings(user_client: TestClient, mock_send_email):
 
     # Занять все доступные комнаты данного типа в эти даты
     for i in range(room.remain_by_room):
-        await creating_booking(status.HTTP_200_OK)
+        await creating_booking(status.HTTP_201_CREATED)
     # Убедиться, что теперь нельзя забронировать комнату данного типа в эти даты
     await creating_booking(status.HTTP_409_CONFLICT)
 

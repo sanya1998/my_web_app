@@ -23,9 +23,9 @@ async def test_no_created_hotel(moderator_client, data, status_code):
 @pytest.mark.parametrize(
     "data, status_code",
     [
-        ({"name": "hotel_name1", "location": "big city"}, status.HTTP_200_OK),
-        ({"name": "hotel_name2", "location": "big city", "services": ["Тренажёрный зал"]}, status.HTTP_200_OK),
-        ({"name": "hotel_name3", "location": "big city", "image_id": 8}, status.HTTP_200_OK),
+        ({"name": "hotel_name1", "location": "big city"}, status.HTTP_201_CREATED),
+        ({"name": "hotel_name2", "location": "big city", "services": ["Тренажёрный зал"]}, status.HTTP_201_CREATED),
+        ({"name": "hotel_name3", "location": "big city", "image_id": 8}, status.HTTP_201_CREATED),
     ],
 )
 async def test_crud_hotel(moderator_client, data, status_code):
