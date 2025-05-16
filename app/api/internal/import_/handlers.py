@@ -1,11 +1,11 @@
 from app.common.constants.import_ import IMPORT_RESULT, ImportResult
 from app.common.constants.paths import ALL_PATH, IMPORT_PATH, PATTERN_INFO_TYPE
-from app.common.dependencies.auth import AdminUserDep
-from app.common.dependencies.services import ImportServiceDep
-from app.common.exceptions.api import AlreadyExistsApiError, BaseApiError
-from app.common.exceptions.services import AlreadyExistsServiceError, BaseServiceError
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
+from app.dependencies.auth import AdminUserDep
+from app.dependencies.services import ImportServiceDep
+from app.exceptions.api import AlreadyExistsApiError
+from app.exceptions.services import AlreadyExistsServiceError
 from fastapi import BackgroundTasks, UploadFile
 from starlette import status
 
@@ -24,5 +24,3 @@ async def import_for_admin(
         return BaseResponse(content=IMPORT_RESULT)
     except AlreadyExistsServiceError:
         raise AlreadyExistsApiError
-    except BaseServiceError:
-        raise BaseApiError

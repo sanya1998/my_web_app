@@ -13,7 +13,7 @@ class ApiSettings(BaseSettings):
     API_HOST: str = "0.0.0.0"  # TODO: здесь разве не всегда 0.0.0.0? мб убрать из env-файлов?
     API_PORT: int = 8000
     SWAGGER_UI_PARAMETERS: dict = {"tryItOutEnabled": True}
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     # CORS
     ALLOW_ORIGINS_REGEX: str = r"http://0.0.0.0:3000/*"

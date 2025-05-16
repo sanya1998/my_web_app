@@ -2,16 +2,16 @@ from typing import Annotated, List
 
 from app.common.constants.cache_prefixes import HOTELS_CACHE_PREFIX
 from app.common.constants.paths import HOTELS_PATH, PATTERN_OBJECT_ID
-from app.common.dependencies.auth.moderator import ModeratorUserDep
-from app.common.dependencies.filters import HotelsFiltersDep
-from app.common.dependencies.input import HotelBaseInput, HotelInputCreateDep, HotelInputUpdateDep
-from app.common.dependencies.repositories import HotelRepoDep
-from app.common.exceptions.api import BaseApiError, MultipleResultsApiError, NotFoundApiError
-from app.common.exceptions.repositories import BaseRepoError, MultipleResultsRepoError, NotFoundRepoError
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
 from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
 from app.config.common import settings
+from app.dependencies.auth.moderator import ModeratorUserDep
+from app.dependencies.filters import HotelsFiltersDep
+from app.dependencies.input import HotelBaseInput, HotelInputCreateDep, HotelInputUpdateDep
+from app.dependencies.repositories import HotelRepoDep
+from app.exceptions.api import NotFoundApiError
+from app.exceptions.repositories import NotFoundRepoError
 from app.services import CacheService
 from app.services.cache.key_builders.listing import build_key_by_listing, build_key_pattern_by_listing
 from app.services.cache.key_builders.object_id import build_key_by_object_id
@@ -33,24 +33,18 @@ async def create_hotel_for_moderator(
     hotel_repo: HotelRepoDep,
     moderator: ModeratorUserDep,
 ):
-    try:
-        hotel_create = HotelBaseInput.model_validate(hotel_input)
-        new_hotel = await hotel_repo.create(hotel_create)
-        # TODO: отправлять в консюмер команду на очистку кеша ?
-        await cache.clear(clear_by_pattern=True)
-        return BaseResponse(content=new_hotel)
-    except BaseRepoError:
-        raise BaseApiError
+    hotel_create = HotelBaseInput.model_validate(hotel_input)
+    new_hotel = await hotel_repo.create(hotel_create)
+    # TODO: отправлять в консюмер команду на очистку кеша ?
+    await cache.clear(clear_by_pattern=True)
+    return BaseResponse(content=new_hotel)
 
 
 @router.get("/", response_model=BaseResponse[List[ManyHotelsReadSchema]])
 @cache.caching(build_key=build_key_by_listing)  # TODO: pycharm подчеркивает
 async def get_hotels(filters: HotelsFiltersDep, hotel_repo: HotelRepoDep):
-    try:
-        hotels = await hotel_repo.get_objects(filters=filters)
-        return BaseResponse(content=hotels)
-    except BaseRepoError:
-        raise BaseApiError
+    hotels = await hotel_repo.get_objects(filters=filters)
+    return BaseResponse(content=hotels)
 
 
 @router.get(PATTERN_OBJECT_ID, response_model=BaseResponse[HotelReadSchema])
@@ -60,11 +54,7 @@ async def get_hotel(object_id: Annotated[int, Path(gt=0)], hotel_repo: HotelRepo
         hotel = await hotel_repo.get_object(id=object_id)
         return BaseResponse(content=hotel)
     except NotFoundRepoError:
-        raise NotFoundApiError
-    except MultipleResultsRepoError:
-        raise MultipleResultsApiError
-    except BaseRepoError:
-        raise BaseApiError
+        raise NotFoundApiError(detail="Hotel was not found")  # TODO: дублирование
 
 
 @router.put(PATTERN_OBJECT_ID, response_model=BaseResponse[HotelBaseReadSchema])
@@ -81,9 +71,7 @@ async def update_hotel_for_moderator(
         await cache.clear(clear_by_key=True, clear_by_pattern=True, object_id=object_id)
         return BaseResponse(content=updated_hotel)
     except NotFoundRepoError:
-        raise NotFoundApiError
-    except BaseRepoError:
-        raise BaseApiError
+        raise NotFoundApiError(detail="Hotel was not found")  # TODO: дублирование
 
 
 @router.delete(PATTERN_OBJECT_ID, response_model=BaseResponse[HotelBaseReadSchema])
@@ -94,6 +82,4 @@ async def delete_hotel_for_moderator(object_id: int, hotel_repo: HotelRepoDep, m
         await cache.clear(clear_by_key=True, clear_by_pattern=True, object_id=object_id)
         return BaseResponse(content=deleted_hotel)
     except NotFoundRepoError:
-        raise NotFoundApiError
-    except BaseRepoError:
-        raise BaseApiError
+        raise NotFoundApiError(detail="Hotel was not found")  # TODO: дублирование

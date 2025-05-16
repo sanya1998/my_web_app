@@ -2,30 +2,26 @@ from typing import Annotated, List, Union
 
 from app.common.constants.paths import BOOKINGS_PATH, PATTERN_OBJECT_ID
 from app.common.constants.roles import BookingsRecipientRoleEnum
-from app.common.dependencies.auth import CurrentUserDep, ManagerOrUserDep, ManagerUserDep
-from app.common.dependencies.filters import BookingsQueryParamsDep
-from app.common.dependencies.input import BookingInputCreateDep, BookingInputUpdateDep
-from app.common.dependencies.repositories import BookingRepoDep
-from app.common.dependencies.services import BookingServiceDep
-from app.common.exceptions.api import (
-    BaseApiError,
-    ForbiddenApiError,
-    MultipleResultsApiError,
-    NotFoundApiError,
-    UnavailableApiError,
-)
-from app.common.exceptions.repositories import BaseRepoError, NotFoundRepoError
-from app.common.exceptions.services import (
-    BaseServiceError,
-    ForbiddenServiceError,
-    MultipleResultsServiceError,
-    NotFoundServiceError,
-    UnavailableServiceError,
-)
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
 from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
 from app.common.tasks.email import send_booking_notify_email
+from app.dependencies.auth import CurrentUserDep, ManagerOrUserDep, ManagerUserDep
+from app.dependencies.filters import BookingsQueryParamsDep
+from app.dependencies.input import BookingInputCreateDep, BookingInputUpdateDep
+from app.dependencies.repositories import BookingRepoDep
+from app.dependencies.services import BookingServiceDep
+from app.exceptions.api import (
+    ForbiddenApiError,
+    NotFoundApiError,
+    UnavailableApiError,
+)
+from app.exceptions.repositories import NotFoundRepoError
+from app.exceptions.services import (
+    ForbiddenServiceError,
+    NotFoundServiceError,
+    UnavailableServiceError,
+)
 from fastapi import Path
 from starlette import status
 
@@ -45,8 +41,6 @@ async def create_booking_for_current_user(
         raise NotFoundApiError
     except UnavailableServiceError:
         raise UnavailableApiError
-    except BaseServiceError:
-        raise BaseApiError
 
 
 @router.get(
@@ -64,11 +58,8 @@ async def get_bookings_for_manager_or_current_user(
     - для менеджера: все бронирования
     - для обычного пользователя: только его бронирования
     """
-    try:
-        bookings = await booking_service.get_list(client=manager_or_user, params=query_params)
-        return BaseResponse(content=bookings)
-    except BaseServiceError:
-        raise BaseApiError
+    bookings = await booking_service.get_list(client=manager_or_user, params=query_params)
+    return BaseResponse(content=bookings)
 
 
 @router.get(
@@ -93,13 +84,9 @@ async def get_booking_for_manager_or_current_user(
         )
         return BaseResponse(content=booking)
     except NotFoundServiceError:
-        raise NotFoundApiError
-    except MultipleResultsServiceError:
-        raise MultipleResultsApiError
+        raise NotFoundApiError(detail="Booking was not found")  # TODO: дублирование
     except ForbiddenServiceError:
         raise ForbiddenApiError
-    except BaseServiceError:
-        raise BaseApiError
 
 
 @router.put(PATTERN_OBJECT_ID, response_model=BaseResponse[BookingBaseReadSchema])
@@ -113,9 +100,7 @@ async def update_booking_for_manager(
         booking = await booking_service.update(booking_input, booking_id=object_id)
         return BaseResponse(content=booking)
     except NotFoundServiceError:
-        raise NotFoundApiError
-    except BaseServiceError:
-        raise BaseApiError
+        raise NotFoundApiError(detail="Booking was not found")  # TODO: дублирование
 
 
 @router.delete(PATTERN_OBJECT_ID, response_model=BaseResponse[BookingBaseReadSchema])
@@ -124,6 +109,4 @@ async def delete_booking_for_manager(object_id: int, booking_repo: BookingRepoDe
         booking = await booking_repo.delete_object(id=object_id)
         return BaseResponse(content=booking)
     except NotFoundRepoError:
-        raise NotFoundApiError
-    except BaseRepoError:
-        raise BaseApiError
+        raise NotFoundApiError(detail="Booking was not found")  # TODO: дублирование

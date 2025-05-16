@@ -1,4 +1,4 @@
-from app.common.dependencies.filters import ExportFilters
+from app.dependencies.filters import ExportFilters
 from app.repositories import BaseRepository
 from app.services.base import BaseService
 

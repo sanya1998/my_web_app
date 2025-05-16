@@ -1,15 +1,6 @@
 from typing import List, Union
 
 from app.common.constants.roles import BookingsRecipientRoleEnum
-from app.common.dependencies.filters import BookingsQueryParams
-from app.common.dependencies.input import BookingCreateInputSchema, BookingUpdateInputSchema
-from app.common.exceptions.repositories import MultipleResultsRepoError, NotFoundRepoError
-from app.common.exceptions.services import (
-    ForbiddenServiceError,
-    MultipleResultsServiceError,
-    NotFoundServiceError,
-    UnavailableServiceError,
-)
 from app.common.helpers.check_data import CheckData
 from app.common.schemas.booking import (
     BookingCreateSchema,
@@ -18,6 +9,14 @@ from app.common.schemas.booking import (
     CurrentUserBookingReadSchema,
 )
 from app.common.schemas.user import UserBaseReadSchema
+from app.dependencies.filters import BookingsQueryParams
+from app.dependencies.input import BookingCreateInputSchema, BookingUpdateInputSchema
+from app.exceptions.repositories import NotFoundRepoError
+from app.exceptions.services import (
+    ForbiddenServiceError,
+    NotFoundServiceError,
+    UnavailableServiceError,
+)
 from app.repositories import BookingRepo, RoomRepo
 from app.services.base import BaseService
 
@@ -31,8 +30,8 @@ class BookingService(BaseService):
     ):
         self.booking_repo = booking_repo
         self.room_repo = room_repo
-        self.check_data: CheckData
-        self.selected_room_id: int
+        self.check_data: CheckData | None = None
+        self.selected_room_id: int | None = None
 
     @BaseService.catcher
     async def select_room_and_check_dates(self):
@@ -92,8 +91,6 @@ class BookingService(BaseService):
             booking = await method_map[recipient_role](id=object_id)
         except NotFoundRepoError:
             raise NotFoundServiceError
-        except MultipleResultsRepoError:
-            raise MultipleResultsServiceError
 
         if recipient_role == BookingsRecipientRoleEnum.USER and booking.user_id != client.id:
             raise ForbiddenServiceError

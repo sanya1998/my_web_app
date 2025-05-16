@@ -1,9 +1,9 @@
 from app.common.constants.db_fields import REMAIN_BY_HOTEL, ROOMS_QUANTITY
-from app.common.dependencies.filters import HotelsFilters
-from app.common.dependencies.input import HotelBaseInput
 from app.common.helpers.check_data import CheckData
 from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
 from app.common.tables import Hotels, Rooms
+from app.dependencies.filters import HotelsFilters
+from app.dependencies.input import HotelBaseInput
 from app.repositories.base import BaseRepository
 from app.repositories.room import RoomRepo
 from sqlalchemy import Select, and_, func, label

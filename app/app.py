@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from app.admin.admin import add_admin
 from app.api import api_router
 from app.config.common import settings
+from app.exceptions.handlers import add_exceptions
 from app.middlewares.middlewares import add_middlewares
 from app.resources.hawk_ import add_hawk_fastapi
 from app.resources.prometheus_ import add_prometheus
@@ -27,6 +28,7 @@ app = FastAPI(
 app.include_router(api_router)
 app.mount(path="/static", app=StaticFiles(directory="static/"), name="static")  # TODO: envs
 
+add_exceptions(app)
 add_middlewares(app)
 add_admin(app)
 add_hawk_fastapi(app)
