@@ -1,0 +1,7 @@
+from app.exceptions.repositories.already_exists import AlreadyExistsRepoError
+from app.exceptions.repositories.attribute import AttributeRepoError
+from app.exceptions.repositories.base import BaseRepoError
+from app.exceptions.repositories.connection_refused import ConnectionRefusedRepoError
+from app.exceptions.repositories.multiple_results import MultipleResultsRepoError
+from app.exceptions.repositories.not_found import NotFoundRepoError
+from app.exceptions.repositories.wrong_query import WrongQueryError

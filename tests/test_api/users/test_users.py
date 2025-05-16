@@ -1,5 +1,8 @@
 import pytest
+from app.common.constants.auth import SignInResult
+from app.common.helpers.response import BaseResponse
 from app.common.schemas.user import UserBaseReadSchema
+from app.exceptions.api import NotFoundApiError, UnauthorizedApiError
 from starlette import status
 from tests.common import TestClient
 from tests.conftest import sign_in
@@ -24,15 +27,16 @@ async def test_sign_up(client: TestClient, email, password, status_code):
 
 
 @pytest.mark.parametrize(
-    "email, password, status_code",
+    "email, password, status_code, response_body",
     [
-        ("fedor@moloko.ru", "wrong_password", status.HTTP_401_UNAUTHORIZED),
-        ("fedor@moloko.ru", "hard_password", status.HTTP_200_OK),
-        ("no-person@moloko.ru", "hard_password", status.HTTP_404_NOT_FOUND),
+        ("fedor@moloko.ru", "wrong_password", status.HTTP_401_UNAUTHORIZED, UnauthorizedApiError.detail),
+        ("fedor@moloko.ru", "hard_password", status.HTTP_200_OK, BaseResponse(content=SignInResult(success=True))),
+        ("no-person@moloko.ru", "hard_password", status.HTTP_404_NOT_FOUND, NotFoundApiError.detail),
     ],
 )
-async def test_sign_in(client: TestClient, email, password, status_code):
-    await sign_in(client=client, email=email, password=password, code=status_code)
+async def test_sign_in(client: TestClient, email, password, status_code, response_body):
+    response = await sign_in(client=client, email=email, password=password, code=status_code)
+    assert response.json() == response_body.model_dump()
 
 
 async def test_current_user(user_client: TestClient):

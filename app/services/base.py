@@ -1,5 +1,5 @@
-from app.common.exceptions.catcher import catch_exception
-from app.common.exceptions.services import (
+from app.exceptions.catcher import catch_exception
+from app.exceptions.services import (
     AlreadyExistsServiceError,
     BaseServiceError,
     ExpiredSignatureServiceError,

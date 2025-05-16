@@ -3,13 +3,13 @@ from typing import Any, AsyncGenerator, AsyncIterator
 import pytest_asyncio
 from app.app import app
 from app.common.constants.environments import Environments
-from app.common.dependencies.input import UserInput
-from app.common.dependencies.input.users import DUMP_SECRET_KEY
 from app.common.logger import logger
 from app.common.tables.base import metadata
 from app.config.common import settings
+from app.dependencies.input import UserInput
+from app.dependencies.input.users import DUMP_SECRET_KEY
 from app.resources.postgres import async_session, engine
-from httpx import ASGITransport
+from httpx import ASGITransport, Response
 from pydantic import SecretStr
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,12 +61,12 @@ async def client() -> AsyncGenerator[TestClient, Any]:
 client_for_admin = client_for_manager = client_for_moderator = client_for_user = client
 
 
-async def sign_in(client: TestClient, email: str, password: str, code=status.HTTP_200_OK):
+async def sign_in(client: TestClient, email: str, password: str, code=status.HTTP_200_OK) -> Response:
     """
     Аутентифицирует пользователя
     """
     user_data = UserInput(email=email, password=SecretStr(password)).model_dump(context={DUMP_SECRET_KEY: True})
-    await client.post(USERS_SIGN_IN_URL, data=user_data, code=code)
+    return await client.post(USERS_SIGN_IN_URL, data=user_data, code=code)
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")

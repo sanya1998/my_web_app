@@ -1,5 +1,5 @@
 import pytest
-from app.common.exceptions.repositories import NotFoundRepoError
+from app.exceptions.repositories import NotFoundRepoError
 from app.repositories import UserRepo
 
 

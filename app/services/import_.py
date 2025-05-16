@@ -1,5 +1,5 @@
-from app.common.exceptions.repositories import AlreadyExistsRepoError
-from app.common.exceptions.services import AlreadyExistsServiceError
+from app.exceptions.repositories import AlreadyExistsRepoError
+from app.exceptions.services import AlreadyExistsServiceError
 from app.repositories import BaseRepository
 from app.services.base import BaseService
 from fastapi import UploadFile

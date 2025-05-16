@@ -2,7 +2,7 @@
 import time
 from random import random
 
-from app.common.dependencies.auth import AdminUserDep
+from app.dependencies.auth import AdminUserDep
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/testing")
@@ -16,7 +16,7 @@ def long_answer(admin: AdminUserDep) -> float:
 
 
 @router.get(path="/error")
-def get_error(admin: AdminUserDep):
+def get_error(admin: AdminUserDep, d: int = 0):
     if random() > 0.5:
         raise ZeroDivisionError
     else:
