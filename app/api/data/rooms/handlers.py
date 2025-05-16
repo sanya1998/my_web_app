@@ -1,6 +1,7 @@
 from typing import Annotated, List
 
 from app.common.constants.paths import PATTERN_OBJECT_ID, ROOMS_PATH
+from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
 from app.common.schemas.room import ManyRoomsReadSchema, RoomReadSchema
@@ -10,7 +11,7 @@ from app.exceptions.api import NotFoundApiError
 from app.exceptions.repositories import NotFoundRepoError
 from fastapi import Path
 
-router = VersionedAPIRouter(prefix=ROOMS_PATH, tags=["Rooms"])
+router = VersionedAPIRouter(prefix=ROOMS_PATH, tags=[TagsEnum.ROOMS])
 
 
 @router.get("/", response_model=BaseResponse[List[ManyRoomsReadSchema]])

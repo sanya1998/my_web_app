@@ -3,7 +3,7 @@ from app.common.helpers.check_data import CheckData
 from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
 from app.common.tables import Hotels, Rooms
 from app.dependencies.filters import HotelsFilters
-from app.dependencies.input import HotelBaseInput
+from app.dependencies.input import HotelUpsertInput
 from app.repositories.base import BaseRepository
 from app.repositories.room import RoomRepo
 from sqlalchemy import Select, and_, func, label
@@ -18,7 +18,7 @@ class HotelRepo(BaseRepository):
     one_updated_read_schema = HotelBaseReadSchema
     one_deleted_read_schema = HotelBaseReadSchema
 
-    create_schema = HotelBaseInput
+    create_schema = HotelUpsertInput
 
     @BaseRepository.catcher
     def _modify_query_for_getting_objects(self, query: Select, filters: HotelsFilters, **additional_filters) -> Select:

@@ -6,6 +6,7 @@ from app.common.constants.roles import BookingsRecipientRoleEnum
 from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
 from app.common.schemas.room import ManyRoomsReadSchema
 from app.common.schemas.user import UserBaseReadSchema
+from app.dependencies.input import BookingCreateInputSchema, BookingUpdateInputSchema
 from httpx import QueryParams
 from starlette import status
 from tests.common import TestClient
@@ -71,10 +72,10 @@ async def test_api_crud_booking(
     assert gotten_booking.user is not None
 
     # update
+    data = BookingUpdateInputSchema(date_from=date(2024, 11, 6), date_to=date(2024, 11, 10), price=10000)
+    data_json = data.model_dump(mode="json")
     updated_booking = await manager_client.put(
-        f"{BOOKINGS_URL}{gotten_booking.id}",
-        model=BookingBaseReadSchema,
-        data=dict(date_from=date(2024, 11, 6), date_to=date(2024, 11, 10), price=10000),
+        f"{BOOKINGS_URL}{gotten_booking.id}", model=BookingBaseReadSchema, json=data_json
     )
 
     # delete
@@ -95,9 +96,10 @@ async def test_busy_bookings(user_client: TestClient, mock_send_email):
     room = rooms[0]
 
     async def creating_booking(status_code):
+        data = BookingCreateInputSchema(date_from=check_into, date_to=check_out, room_id=room.id).model_dump()
         return await user_client.post(
             BOOKINGS_URL,
-            data=dict(date_from=check_into, date_to=check_out, room_id=room.id),
+            data=data,
             code=status_code,
         )
 

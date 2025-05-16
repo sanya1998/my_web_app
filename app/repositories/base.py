@@ -40,6 +40,7 @@ class BaseRepository:
 
     create_schema = TypeVar("create_schema", bound=BaseSchema)
     update_schema = TypeVar("update_schema", bound=BaseSchema)
+    patch_schema = TypeVar("patch_schema", bound=BaseSchema)
     filters_schema = TypeVar("filters_schema", bound=BaseFilters)
 
     catcher = catch_exception(
@@ -206,25 +207,38 @@ class BaseRepository:
     async def upsert(self, data) -> upserted_read_schema:
         raise NotImplementedError
 
-    # TODO: проверить, изменяются ли поля, если они не пришли в data, реализовать update_object_field (patch) и сравнить
     @catcher
-    async def update(self, data: update_schema, **filters) -> one_updated_read_schema:
-        query = update(self.db_model).filter_by(**filters).values(**data.model_dump()).returning(self.db_model)
+    async def _update(
+        self, _exclude_unset, data: Union[update_schema, patch_schema], **filters
+    ) -> one_updated_read_schema:
+        query = (
+            update(self.db_model)
+            .filter_by(**filters)
+            .values(**data.model_dump(exclude_unset=_exclude_unset))
+            .returning(self.db_model)
+        )
         result = await self.execute(query)
         await self.session.commit()
         try:
             obj = result.scalar_one()
         except NoResultFound:
             raise NotFoundRepoError
+        # TODO: не нужно ли это тоже использовать?
+        # except MultipleResultsFound:
+        #     raise MultipleResultsRepoError
         return self.one_updated_read_schema.model_validate(obj)
 
     @catcher
-    async def update_bulk(self, data: update_schema, **filters) -> List[many_updated_read_schema]:
+    async def update(self, data: update_schema, **filters) -> one_updated_read_schema:
+        return await self._update(_exclude_unset=False, data=data, **filters)
+
+    @catcher
+    async def update_bulk(self, data: List[update_schema], **filters) -> List[many_updated_read_schema]:
         raise NotImplementedError
 
     @catcher
-    async def update_object_field(self, object_id, data):
-        raise NotImplementedError
+    async def update_object_fields(self, data: patch_schema, **filters):
+        return await self._update(_exclude_unset=True, data=data, **filters)
 
     @catcher
     async def delete_object(self, **filters) -> one_deleted_read_schema:

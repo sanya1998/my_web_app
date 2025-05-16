@@ -5,6 +5,6 @@ from app.common.helpers.api_version import VersionedAPIRouter
 
 data_router = VersionedAPIRouter()
 
-data_router.include_router(router_rooms)
 data_router.include_router(router_hotels)
+data_router.include_router(router_rooms)
 data_router.include_router(router_bookings)
