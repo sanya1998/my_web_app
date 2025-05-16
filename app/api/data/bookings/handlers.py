@@ -2,6 +2,7 @@ from typing import Annotated, List, Union
 
 from app.common.constants.paths import BOOKINGS_PATH, PATTERN_OBJECT_ID
 from app.common.constants.roles import BookingsRecipientRoleEnum
+from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
 from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
@@ -25,7 +26,7 @@ from app.exceptions.services import (
 from fastapi import Path
 from starlette import status
 
-router = VersionedAPIRouter(prefix=BOOKINGS_PATH, tags=["Bookings"])
+router = VersionedAPIRouter(prefix=BOOKINGS_PATH, tags=[TagsEnum.BOOKINGS])
 
 
 @router.post("/", response_model=BaseResponse[BookingBaseReadSchema], status_code=status.HTTP_201_CREATED)
@@ -47,17 +48,19 @@ async def create_booking_for_current_user(
     "/",
     response_model=BaseResponse[List[Union[BookingReadSchema, CurrentUserBookingReadSchema]]],
     response_model_by_alias=False,
+    summary="Получение бронирований для менеджера или для обычного пользователя",
+    description="""
+    Получение бронирований с применением фильтров:
+    \n- для менеджера: все бронирования
+    \n- для обычного пользователя: только его бронирования
+    """,
+    response_description="Бронирования, удовлетворяющие заданным фильтрам",
 )
 async def get_bookings_for_manager_or_current_user(
     query_params: BookingsQueryParamsDep,
     booking_service: BookingServiceDep,
     manager_or_user: ManagerOrUserDep,
 ):
-    """
-    Получение бронирований с применением фильтров:
-    - для менеджера: все бронирования
-    - для обычного пользователя: только его бронирования
-    """
     bookings = await booking_service.get_list(client=manager_or_user, params=query_params)
     return BaseResponse(content=bookings)
 

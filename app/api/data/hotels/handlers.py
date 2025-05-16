@@ -2,13 +2,15 @@ from typing import Annotated, List
 
 from app.common.constants.cache_prefixes import HOTELS_CACHE_PREFIX
 from app.common.constants.paths import HOTELS_PATH, PATTERN_OBJECT_ID
+from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
 from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
 from app.config.common import settings
 from app.dependencies.auth.moderator import ModeratorUserDep
 from app.dependencies.filters import HotelsFiltersDep
-from app.dependencies.input import HotelBaseInput, HotelInputCreateDep, HotelInputUpdateDep
+from app.dependencies.input import HotelInputCreateDep, HotelInputUpdateDep
+from app.dependencies.input.hotels import HotelInputPatchDep
 from app.dependencies.repositories import HotelRepoDep
 from app.exceptions.api import NotFoundApiError
 from app.exceptions.repositories import NotFoundRepoError
@@ -18,7 +20,7 @@ from app.services.cache.key_builders.object_id import build_key_by_object_id
 from fastapi import Path
 from starlette import status
 
-router = VersionedAPIRouter(prefix=HOTELS_PATH, tags=["Hotels"])
+router = VersionedAPIRouter(prefix=HOTELS_PATH, tags=[TagsEnum.HOTELS])
 cache = CacheService(
     prefix_key=HOTELS_CACHE_PREFIX,
     expire=settings.CACHE_EXPIRE_HOTELS,
@@ -33,8 +35,7 @@ async def create_hotel_for_moderator(
     hotel_repo: HotelRepoDep,
     moderator: ModeratorUserDep,
 ):
-    hotel_create = HotelBaseInput.model_validate(hotel_input)
-    new_hotel = await hotel_repo.create(hotel_create)
+    new_hotel = await hotel_repo.create(hotel_input)
     # TODO: отправлять в консюмер команду на очистку кеша ?
     await cache.clear(clear_by_pattern=True)
     return BaseResponse(content=new_hotel)
@@ -57,6 +58,22 @@ async def get_hotel(object_id: Annotated[int, Path(gt=0)], hotel_repo: HotelRepo
         raise NotFoundApiError(detail="Hotel was not found")  # TODO: дублирование
 
 
+@router.patch(PATTERN_OBJECT_ID, response_model=BaseResponse[HotelBaseReadSchema])
+async def update_hotel_fields_for_moderator(
+    object_id: int,
+    hotel_input: HotelInputPatchDep,
+    hotel_repo: HotelRepoDep,
+    moderator: ModeratorUserDep,
+):
+    try:
+        patched_hotel = await hotel_repo.update_object_fields(hotel_input, id=object_id)
+        # TODO: отправлять в консюмер команду на очистку кеша ?
+        await cache.clear(clear_by_key=True, clear_by_pattern=True, object_id=object_id)
+        return BaseResponse(content=patched_hotel)
+    except NotFoundRepoError:
+        raise NotFoundApiError(detail="Hotel was not found")  # TODO: дублирование
+
+
 @router.put(PATTERN_OBJECT_ID, response_model=BaseResponse[HotelBaseReadSchema])
 async def update_hotel_for_moderator(
     object_id: int,
@@ -65,8 +82,7 @@ async def update_hotel_for_moderator(
     moderator: ModeratorUserDep,
 ):
     try:
-        hotel_update = HotelBaseInput.model_validate(hotel_input)
-        updated_hotel = await hotel_repo.update(hotel_update, id=object_id)
+        updated_hotel = await hotel_repo.update(hotel_input, id=object_id)
         # TODO: отправлять в консюмер команду на очистку кеша ?
         await cache.clear(clear_by_key=True, clear_by_pattern=True, object_id=object_id)
         return BaseResponse(content=updated_hotel)

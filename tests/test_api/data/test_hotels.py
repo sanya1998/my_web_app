@@ -23,28 +23,43 @@ async def test_no_created_hotel(moderator_client, data, status_code):
 @pytest.mark.parametrize(
     "data, status_code",
     [
-        ({"name": "hotel_name1", "location": "big city"}, status.HTTP_201_CREATED),
-        ({"name": "hotel_name2", "location": "big city", "services": ["Тренажёрный зал"]}, status.HTTP_201_CREATED),
-        ({"name": "hotel_name3", "location": "big city", "image_id": 8}, status.HTTP_201_CREATED),
+        ({"name": "name1", "location": "big city", "stars": 1}, status.HTTP_201_CREATED),
+        ({"name": "name2", "location": "big city", "stars": 2, "services": ["Swimming pool"]}, status.HTTP_201_CREATED),
+        ({"name": "name3", "location": "big city", "image_id": 8}, status.HTTP_201_CREATED),
     ],
 )
 async def test_crud_hotel(moderator_client, data, status_code):
     # create
-    hotel = await moderator_client.post(HOTELS_URL, code=status_code, model=HotelBaseReadSchema, data=data)
-    assert hotel.id is not None
+    created_hotel = await moderator_client.post(HOTELS_URL, code=status_code, model=HotelBaseReadSchema, data=data)
+    assert created_hotel.id is not None
 
+    # patch
+    new_name, new_location = f"patched {created_hotel.name}", f"patched {created_hotel.location}"
+    await moderator_client.patch(
+        f"{HOTELS_URL}{created_hotel.id}",
+        model=HotelBaseReadSchema,
+        json=dict(name=new_name, location=new_location),
+    )
     # get
-    await moderator_client.get(f"{HOTELS_URL}{hotel.id}", model=HotelReadSchema)
+    gotten_patched_hotel = await moderator_client.get(f"{HOTELS_URL}{created_hotel.id}", model=HotelReadSchema)
+    assert gotten_patched_hotel.name == new_name and gotten_patched_hotel.location == new_location
+    assert gotten_patched_hotel.stars == created_hotel.stars and gotten_patched_hotel.services == created_hotel.services
 
     # update
+    new_name, new_location = f"updated {created_hotel.name}", f"updated {created_hotel.location}"
     await moderator_client.put(
-        f"{HOTELS_URL}{hotel.id}",
+        f"{HOTELS_URL}{created_hotel.id}",
         model=HotelBaseReadSchema,
-        data=dict(name=f"updated_{hotel.name}", location=f"updated_{hotel.location}"),
+        json=dict(name=new_name, location=new_location),
     )
+    # get
+    gotten_put_hotel = await moderator_client.get(f"{HOTELS_URL}{created_hotel.id}", model=HotelReadSchema)
+    assert gotten_put_hotel.name == new_name and gotten_put_hotel.location == new_location
+    # Так как в put ручку не передавались поля `stars` и `services`, то после обновления их значения станут по умолчанию
+    assert gotten_put_hotel.stars is None and gotten_put_hotel.services == []
 
     # delete
-    await moderator_client.delete(f"{HOTELS_URL}{hotel.id}", model=HotelBaseReadSchema)
+    await moderator_client.delete(f"{HOTELS_URL}{created_hotel.id}", model=HotelBaseReadSchema)
 
 
 @pytest.mark.parametrize(

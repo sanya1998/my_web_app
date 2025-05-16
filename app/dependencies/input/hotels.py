@@ -1,13 +1,13 @@
 from typing import Annotated, List
 
 from app.dependencies.input.base import BaseInput
-from fastapi import Form
+from fastapi import Body, Form
 from pydantic import Field
 
 
 class HotelBaseInput(BaseInput):
-    name: str
-    location: str
+    name: str | None = None
+    location: str | None = None
     services: Annotated[
         List[Annotated[str, Field(min_length=1)]],
         Field(
@@ -19,5 +19,11 @@ class HotelBaseInput(BaseInput):
     image_id: int | None = None
 
 
-HotelInputCreateDep = Annotated[HotelBaseInput, Form()]
-HotelInputUpdateDep = Annotated[HotelBaseInput, Form()]
+class HotelUpsertInput(HotelBaseInput):
+    name: str
+    location: str
+
+
+HotelInputPatchDep = Annotated[HotelBaseInput, Body()]
+HotelInputCreateDep = Annotated[HotelUpsertInput, Form()]
+HotelInputUpdateDep = Annotated[HotelUpsertInput, Body()]

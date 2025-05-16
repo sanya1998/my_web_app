@@ -3,7 +3,7 @@ from typing import Annotated
 
 from app.common.constants.datetimes import TODAY, TOMORROW
 from app.dependencies.input.base import BaseInput
-from fastapi import Form
+from fastapi import Body, Form
 from pydantic import Field
 
 
@@ -25,4 +25,4 @@ class BookingUpdateInputSchema(BookingBaseInput):
 
 
 BookingInputCreateDep = Annotated[BookingCreateInputSchema, Form()]
-BookingInputUpdateDep = Annotated[BookingUpdateInputSchema, Form()]
+BookingInputUpdateDep = Annotated[BookingUpdateInputSchema, Body()]

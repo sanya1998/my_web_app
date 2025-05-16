@@ -9,6 +9,7 @@ from app.common.constants.paths import (
     USERS_CURRENT_PATH,
     USERS_PATH,
 )
+from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
 from app.common.schemas.user import UserBaseReadSchema
@@ -31,7 +32,7 @@ from app.exceptions.services import (
 from fastapi import Path
 from starlette import status
 
-router = VersionedAPIRouter(prefix=USERS_PATH, tags=["Users"])
+router = VersionedAPIRouter(prefix=USERS_PATH, tags=[TagsEnum.USERS])
 
 
 @router.get("/", response_model=BaseResponse[List[UserBaseReadSchema]])

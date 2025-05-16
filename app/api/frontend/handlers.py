@@ -1,10 +1,11 @@
 from app.api.data.hotels.handlers import get_hotels
 from app.common.constants.paths import HOTELS_PATH, PAGES_PATH
+from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from fastapi import Depends, Request
 from fastapi.templating import Jinja2Templates
 
-router = VersionedAPIRouter(prefix=PAGES_PATH, tags=["Fronted"])
+router = VersionedAPIRouter(prefix=PAGES_PATH, tags=[TagsEnum.FRONTEND])
 
 templates = Jinja2Templates(directory="app/templates")
 
