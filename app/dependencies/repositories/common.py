@@ -1,31 +1,25 @@
 from typing import Annotated, Union
 
 from app.common.constants.info_types import InfoTypes
-from app.dependencies.repositories.booking import BookingRepoDep
-from app.dependencies.repositories.hotel import HotelRepoDep
-from app.dependencies.repositories.room import RoomRepoDep
-from app.dependencies.repositories.user import UserRepoDep
+from app.dependencies.db import PostgresSessionDep
+from app.dependencies.repositories.booking import get_booking_repo
+from app.dependencies.repositories.hotel import get_hotel_repo
+from app.dependencies.repositories.room import get_room_repo
+from app.dependencies.repositories.user import get_user_repo
 from app.repositories import BookingRepo, HotelRepo, RoomRepo, UserRepo
 from fastapi import Depends
 
 
-# TODO: Мб инициализировать только session: PostgresSessionDep, а возвращать return get_hotel_repo(session) ?
-def get_chosen_repo(
-    info_type: InfoTypes,
-    repo_hotel: HotelRepoDep,
-    repo_room: RoomRepoDep,
-    repo_booking: BookingRepoDep,
-    repo_user: UserRepoDep,
-):
+def get_chosen_repo(info_type: InfoTypes, session: PostgresSessionDep):
     match info_type:
         case InfoTypes.HOTELS:
-            return repo_hotel
+            return get_hotel_repo(session)
         case InfoTypes.ROOMS:
-            return repo_room
+            return get_room_repo(session)
         case InfoTypes.BOOKINGS:
-            return repo_booking
+            return get_booking_repo(session)
         case InfoTypes.USERS:
-            return repo_user
+            return get_user_repo(session)
 
 
 ChosenRepo = Annotated[Union[HotelRepo, RoomRepo, BookingRepo, UserRepo], Depends(get_chosen_repo)]

@@ -13,4 +13,5 @@ async def get_moderator_user(user: Annotated[UserBaseReadSchema, Depends(get_cur
     return user
 
 
-ModeratorUserDep = Annotated[UserBaseReadSchema, Depends(get_moderator_user)]
+ModeratorUserDep = Depends(get_moderator_user)
+ModeratorUserAnn = Annotated[UserBaseReadSchema, ModeratorUserDep]

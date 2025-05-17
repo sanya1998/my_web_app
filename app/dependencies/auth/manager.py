@@ -13,4 +13,5 @@ async def get_manager_user(user: Annotated[UserBaseReadSchema, Depends(get_curre
     return user
 
 
-ManagerUserDep = Annotated[UserBaseReadSchema, Depends(get_manager_user)]
+ManagerUserDep = Depends(get_manager_user)
+ManagerUserAnn = Annotated[UserBaseReadSchema, ManagerUserDep]
