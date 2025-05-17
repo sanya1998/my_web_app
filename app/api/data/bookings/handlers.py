@@ -6,8 +6,8 @@ from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
 from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
-from app.common.tasks.email import send_booking_notify_email
-from app.dependencies.auth import CurrentUserDep, ManagerOrUserDep, ManagerUserDep
+from app.dependencies.auth import CurrentUserAnn, ManagerOrUserAnn
+from app.dependencies.auth.manager import ManagerUserDep
 from app.dependencies.filters import BookingsQueryParamsDep
 from app.dependencies.input import BookingInputCreateDep, BookingInputUpdateDep
 from app.dependencies.repositories import BookingRepoDep
@@ -23,6 +23,7 @@ from app.exceptions.services import (
     NotFoundServiceError,
     UnavailableServiceError,
 )
+from app.tasks.email import send_booking_notify_email
 from fastapi import Path
 from starlette import status
 
@@ -31,7 +32,7 @@ router = VersionedAPIRouter(prefix=BOOKINGS_PATH, tags=[TagsEnum.BOOKINGS])
 
 @router.post("/", response_model=BaseResponse[BookingBaseReadSchema], status_code=status.HTTP_201_CREATED)
 async def create_booking_for_current_user(
-    booking_input: BookingInputCreateDep, booking_service: BookingServiceDep, user: CurrentUserDep
+    booking_input: BookingInputCreateDep, booking_service: BookingServiceDep, user: CurrentUserAnn
 ):
     try:
         booking = await booking_service.create(booking_input, user_id=user.id)
@@ -59,7 +60,7 @@ async def create_booking_for_current_user(
 async def get_bookings_for_manager_or_current_user(
     query_params: BookingsQueryParamsDep,
     booking_service: BookingServiceDep,
-    manager_or_user: ManagerOrUserDep,
+    manager_or_user: ManagerOrUserAnn,
 ):
     bookings = await booking_service.get_list(client=manager_or_user, params=query_params)
     return BaseResponse(content=bookings)
@@ -74,7 +75,7 @@ async def get_booking_for_manager_or_current_user(
     object_id: Annotated[int, Path(gt=0)],
     recipient_role: BookingsRecipientRoleEnum,
     booking_service: BookingServiceDep,
-    manager_or_user: ManagerOrUserDep,
+    manager_or_user: ManagerOrUserAnn,
 ):
     """
     Получение бронирования с применением фильтров:
@@ -92,12 +93,11 @@ async def get_booking_for_manager_or_current_user(
         raise ForbiddenApiError
 
 
-@router.put(PATTERN_OBJECT_ID, response_model=BaseResponse[BookingBaseReadSchema])
+@router.put(PATTERN_OBJECT_ID, response_model=BaseResponse[BookingBaseReadSchema], dependencies=[ManagerUserDep])
 async def update_booking_for_manager(
     object_id: int,
     booking_input: BookingInputUpdateDep,
     booking_service: BookingServiceDep,
-    manager: ManagerUserDep,
 ):
     try:
         booking = await booking_service.update(booking_input, booking_id=object_id)
@@ -106,8 +106,8 @@ async def update_booking_for_manager(
         raise NotFoundApiError(detail="Booking was not found")  # TODO: дублирование
 
 
-@router.delete(PATTERN_OBJECT_ID, response_model=BaseResponse[BookingBaseReadSchema])
-async def delete_booking_for_manager(object_id: int, booking_repo: BookingRepoDep, manager: ManagerUserDep):
+@router.delete(PATTERN_OBJECT_ID, response_model=BaseResponse[BookingBaseReadSchema], dependencies=[ManagerUserDep])
+async def delete_booking_for_manager(object_id: int, booking_repo: BookingRepoDep):
     try:
         booking = await booking_repo.delete_object(id=object_id)
         return BaseResponse(content=booking)

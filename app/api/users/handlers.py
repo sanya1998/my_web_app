@@ -13,7 +13,8 @@ from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
 from app.common.schemas.user import UserBaseReadSchema
-from app.dependencies.auth import AdminUserDep, CurrentUserDep
+from app.dependencies.auth import CurrentUserAnn
+from app.dependencies.auth.admin import AdminUserDep
 from app.dependencies.filters import UsersFiltersDep
 from app.dependencies.input import UserInputDep
 from app.dependencies.repositories import UserRepoDep
@@ -35,14 +36,14 @@ from starlette import status
 router = VersionedAPIRouter(prefix=USERS_PATH, tags=[TagsEnum.USERS])
 
 
-@router.get("/", response_model=BaseResponse[List[UserBaseReadSchema]])
-async def get_users_for_admin(filters: UsersFiltersDep, user_repo: UserRepoDep, admin: AdminUserDep):
+@router.get("/", response_model=BaseResponse[List[UserBaseReadSchema]], dependencies=[AdminUserDep])
+async def get_users_for_admin(filters: UsersFiltersDep, user_repo: UserRepoDep):
     users = await user_repo.get_objects(filters=filters)
     return BaseResponse(content=users)
 
 
 @router.get(USERS_CURRENT_PATH, response_model=BaseResponse[UserBaseReadSchema])
-async def get_current_user(user: CurrentUserDep):
+async def get_current_user(user: CurrentUserAnn):
     return BaseResponse(content=user)
 
 
@@ -72,8 +73,8 @@ async def sign_up(user_input: UserInputDep, auth_service: AuthorizationServiceDe
         raise AlreadyExistsApiError
 
 
-@router.get(PATTERN_OBJECT_ID, response_model=BaseResponse[UserBaseReadSchema])
-async def get_user_for_admin(object_id: Annotated[int, Path(gt=0)], user_repo: UserRepoDep, admin: AdminUserDep):
+@router.get(PATTERN_OBJECT_ID, response_model=BaseResponse[UserBaseReadSchema], dependencies=[AdminUserDep])
+async def get_user_for_admin(object_id: Annotated[int, Path(gt=0)], user_repo: UserRepoDep):
     try:
         user = await user_repo.get_object(id=object_id)
         return BaseResponse(content=user)

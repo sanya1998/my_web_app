@@ -13,4 +13,5 @@ def get_manager_or_user(user: Annotated[UserBaseReadSchema, Depends(get_current_
     return user
 
 
-ManagerOrUserDep = Annotated[UserBaseReadSchema, Depends(get_manager_or_user)]
+ManagerOrUserDep = Depends(get_manager_or_user)
+ManagerOrUserAnn = Annotated[UserBaseReadSchema, ManagerOrUserDep]

@@ -13,4 +13,5 @@ async def get_admin_user(user: Annotated[UserBaseReadSchema, Depends(get_current
     return user
 
 
-AdminUserDep = Annotated[UserBaseReadSchema, Depends(get_admin_user)]
+AdminUserDep = Depends(get_admin_user)
+AdminUserAnn = Annotated[UserBaseReadSchema, AdminUserDep]

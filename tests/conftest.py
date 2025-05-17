@@ -110,5 +110,5 @@ def mock_send_email(mocker):
     def fake_send_email(booking: dict, email_to: str):
         logger.info(f"Имитация отправки сообщения на почту {email_to}. {booking}.")
 
-    # TODO: рассмотреть with mock.patch("app.common.tasks.email.send_booking_notify_email.delay") as fake_send_email
-    mocker.patch("app.common.tasks.email.send_booking_notify_email.delay", fake_send_email)
+    # TODO: рассмотреть with mock.patch("app.tasks.email.send_booking_notify_email.delay") as fake_send_email
+    mocker.patch("app.tasks.email.send_booking_notify_email.delay", fake_send_email)

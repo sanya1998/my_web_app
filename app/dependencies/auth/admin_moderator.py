@@ -17,7 +17,8 @@ def get_admin_or_moderator_user(user: Annotated[UserBaseReadSchema, Depends(get_
     return user
 
 
-AdminOrModeratorUserDep = Annotated[UserBaseReadSchema, Depends(get_admin_or_moderator_user)]
+AdminOrModeratorUserDep = Depends(get_admin_or_moderator_user)
+AdminOrModeratorUserAnn = Annotated[UserBaseReadSchema, AdminOrModeratorUserDep]
 
 
 @with_session

@@ -41,4 +41,5 @@ async def get_current_user(
         raise NotFoundApiError
 
 
-CurrentUserDep = Annotated[UserBaseReadSchema, Depends(get_current_user)]
+CurrentUserDep = Depends(get_current_user)
+CurrentUserAnn = Annotated[UserBaseReadSchema, CurrentUserDep]
