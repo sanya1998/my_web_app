@@ -1,12 +1,12 @@
 from typing import Annotated
 
-from app.dependencies.db import PostgresSessionDep
+from app.dependencies.db import PostgresSessionAnn
 from app.repositories import UserRepo
 from fastapi import Depends
 
 
-def get_user_repo(session: PostgresSessionDep):
+def get_user_repo(session: PostgresSessionAnn):
     return UserRepo(session=session)
 
 
-UserRepoDep = Annotated[UserRepo, Depends(get_user_repo)]
+UserRepoAnn = Annotated[UserRepo, Depends(get_user_repo)]

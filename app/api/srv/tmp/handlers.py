@@ -1,13 +1,11 @@
 # TODO: удалить весь файл и связи с ним после того, как будет проведена работа с графаной
 import time
 from random import random
-from typing import Annotated, List, Optional
 
-from app.dependencies.auth.admin import AdminUserDep
-from fastapi import APIRouter, Body, Depends, Query
-from pydantic import BaseModel
+from app.dependencies.auth.roles.admin import AdminDep
+from fastapi import APIRouter
 
-router = APIRouter(prefix="/testing", dependencies=[AdminUserDep])
+router = APIRouter(prefix="/testing", dependencies=[AdminDep])
 
 
 @router.get(path="/long")
@@ -31,45 +29,25 @@ def memory():
     return 0
 
 
-class Item(BaseModel):
-    name: str | None = None
-    description: str | None = None
-    price: float | None = None
-    tax: float | None = 10.5
-    tags: list[str] | None = []
+# TODO: сделать OAuth2PasswordBearer SIGN_IN_URL
+# TODO: без auto_error=False, вместо user_input: UserInputDep
+#  приходится использовать form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+#  user_input = UserInput(username=form_data.username, password=SecretStr(form_data.password))
+#  мб как-то добавить заголовок: Authorization: Annotated[str, Header()] = "bearer"
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl=URL_FOR_GETTING_OF_TOKEN)
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl=URL_FOR_GETTING_OF_TOKEN, auto_error=False)
 
 
-@router.patch("/items/{item_id}", response_model=None)
-async def update_item(item_id: str, item: Annotated[Item, Body()]):
-    update_data = item.model_dump(exclude_unset=True)
-    return update_data
+# # TODO: не вызывается, если в куках нет поля session
+# @router.post(path=f"/token")
+# async def login(user_input: UserInputDep, auth_service: AuthorizationServiceDep):
+#     access_token = await auth_service.sign_in(user_input)
+#     return {"access_token": access_token, "token_type": "bearer"}  # TODO: response_model ORJSONResponse
 
 
-# Define a nested schema using Pydantic
-class SubItem(BaseModel):
-    name: str
-    count: int
-
-
-class Item(BaseModel):
-    name: str
-    description: Optional[str] = None
-    subitems: List[SubItem]
-
-
-# Dependency function to handle complex query parameters
-def get_item_query(
-    name: str = Query(..., min_length=1), description: Optional[str] = Query(None), subitems: List[str] = Query(None)
-) -> Item:
-    # This simulates parsing 'subitems' which is a list of strings like 'name,count'
-    subitems_parsed = []
-    if subitems:
-        for subitem in subitems:
-            name, count = subitem.split(",")
-            subitems_parsed.append(SubItem(name=name, count=int(count)))
-    return Item(name=name, description=description, subitems=subitems_parsed)
-
-
-@router.get("/items/")
-async def read_items(item: Item = Depends(get_item_query)):
-    return item
+# @router.post(path=f"/token")
+# async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], auth_service: AuthorizationServiceDep):
+#     user_input = UserInput(username=form_data.username, password=SecretStr(form_data.password))
+#     access_token = await auth_service.sign_in(user_input)
+#     return {"access_token": access_token, "token_type": "bearer"}  # TODO: response_model ORJSONResponse

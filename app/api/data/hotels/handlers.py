@@ -7,11 +7,11 @@ from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
 from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
 from app.config.common import settings
-from app.dependencies.auth.moderator import ModeratorUserAnn, ModeratorUserDep
+from app.dependencies.auth.roles.moderator import ModeratorDep
 from app.dependencies.filters import HotelsFiltersDep
-from app.dependencies.input import HotelInputCreateDep, HotelInputUpdateDep
-from app.dependencies.input.hotels import HotelInputPatchDep
-from app.dependencies.repositories import HotelRepoDep
+from app.dependencies.input import HotelInputCreateAnn, HotelInputUpdateAnn
+from app.dependencies.input.hotels import HotelInputPatchAnn
+from app.dependencies.repositories import HotelRepoAnn
 from app.exceptions.api import NotFoundApiError
 from app.exceptions.repositories import NotFoundRepoError
 from app.services import CacheService
@@ -29,11 +29,15 @@ cache = CacheService(
 )
 
 
-@router.post("/", response_model=BaseResponse[HotelBaseReadSchema], status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=BaseResponse[HotelBaseReadSchema],
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[ModeratorDep],
+)
 async def create_hotel_for_moderator(
-    hotel_input: HotelInputCreateDep,
-    hotel_repo: HotelRepoDep,
-    moderator: ModeratorUserAnn,
+    hotel_input: HotelInputCreateAnn,
+    hotel_repo: HotelRepoAnn,
 ):
     new_hotel = await hotel_repo.create(hotel_input)
     # TODO: отправлять в консюмер команду на очистку кеша ?
@@ -43,14 +47,14 @@ async def create_hotel_for_moderator(
 
 @router.get("/", response_model=BaseResponse[List[ManyHotelsReadSchema]])
 @cache.caching(build_key=build_key_by_listing)  # TODO: pycharm подчеркивает
-async def get_hotels(filters: HotelsFiltersDep, hotel_repo: HotelRepoDep):
+async def get_hotels(filters: HotelsFiltersDep, hotel_repo: HotelRepoAnn):
     hotels = await hotel_repo.get_objects(filters=filters)
     return BaseResponse(content=hotels)
 
 
 @router.get(PATTERN_OBJECT_ID, response_model=BaseResponse[HotelReadSchema])
 @cache.caching(build_key=build_key_by_object_id)  # TODO: pycharm подчеркивает
-async def get_hotel(object_id: Annotated[int, Path(gt=0)], hotel_repo: HotelRepoDep):
+async def get_hotel(object_id: Annotated[int, Path(gt=0)], hotel_repo: HotelRepoAnn):
     try:
         hotel = await hotel_repo.get_object(id=object_id)
         return BaseResponse(content=hotel)
@@ -58,12 +62,11 @@ async def get_hotel(object_id: Annotated[int, Path(gt=0)], hotel_repo: HotelRepo
         raise NotFoundApiError(detail="Hotel was not found")  # TODO: дублирование
 
 
-@router.patch(PATTERN_OBJECT_ID, response_model=BaseResponse[HotelBaseReadSchema])
+@router.patch(PATTERN_OBJECT_ID, response_model=BaseResponse[HotelBaseReadSchema], dependencies=[ModeratorDep])
 async def update_hotel_fields_for_moderator(
     object_id: int,
-    hotel_input: HotelInputPatchDep,
-    hotel_repo: HotelRepoDep,
-    moderator: ModeratorUserAnn,
+    hotel_input: HotelInputPatchAnn,
+    hotel_repo: HotelRepoAnn,
 ):
     try:
         patched_hotel = await hotel_repo.update_object_fields(hotel_input, id=object_id)
@@ -74,11 +77,11 @@ async def update_hotel_fields_for_moderator(
         raise NotFoundApiError(detail="Hotel was not found")  # TODO: дублирование
 
 
-@router.put(PATTERN_OBJECT_ID, response_model=BaseResponse[HotelBaseReadSchema], dependencies=[ModeratorUserDep])
+@router.put(PATTERN_OBJECT_ID, response_model=BaseResponse[HotelBaseReadSchema], dependencies=[ModeratorDep])
 async def update_hotel_for_moderator(
     object_id: int,
-    hotel_input: HotelInputUpdateDep,
-    hotel_repo: HotelRepoDep,
+    hotel_input: HotelInputUpdateAnn,
+    hotel_repo: HotelRepoAnn,
 ):
     try:
         updated_hotel = await hotel_repo.update(hotel_input, id=object_id)
@@ -89,8 +92,8 @@ async def update_hotel_for_moderator(
         raise NotFoundApiError(detail="Hotel was not found")  # TODO: дублирование
 
 
-@router.delete(PATTERN_OBJECT_ID, response_model=BaseResponse[HotelBaseReadSchema], dependencies=[ModeratorUserDep])
-async def delete_hotel_for_moderator(object_id: int, hotel_repo: HotelRepoDep):
+@router.delete(PATTERN_OBJECT_ID, response_model=BaseResponse[HotelBaseReadSchema], dependencies=[ModeratorDep])
+async def delete_hotel_for_moderator(object_id: int, hotel_repo: HotelRepoAnn):
     try:
         deleted_hotel = await hotel_repo.delete_object(id=object_id)
         # TODO: отправлять в консюмер команду на очистку кеша ?

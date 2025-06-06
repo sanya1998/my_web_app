@@ -6,6 +6,7 @@ from starlette import status
 class UnauthorizedApiError(BaseApiError):
     status_code = status.HTTP_401_UNAUTHORIZED
     detail = DetailSchema(detail="User is unauthorized")
+    headers = {"WWW-Authenticate": "Bearer"}
 
 
 class MissingTokenApiError(UnauthorizedApiError):

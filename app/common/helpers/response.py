@@ -1,3 +1,4 @@
+# TODO: rename to responses.py
 from typing import Generic, List, Optional, TypeVar, Union
 
 from app.common.schemas.base import BaseSchema
@@ -12,3 +13,8 @@ class BaseResponse(BaseModel, Generic[ResponseType]):
     """
 
     content: Optional[ResponseType] = None
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"

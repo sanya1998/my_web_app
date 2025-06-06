@@ -9,4 +9,4 @@ def get_import_service(repo: ChosenRepo):
     return ImportService(repo=repo)
 
 
-ImportServiceDep = Annotated[ImportService, Depends(get_import_service)]
+ImportServiceAnn = Annotated[ImportService, Depends(get_import_service)]

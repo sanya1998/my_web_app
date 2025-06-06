@@ -1,4 +1,4 @@
-from app.admin.views.base import BaseView
+from app.cms.views.base import BaseView
 from app.common.tables import Users
 
 

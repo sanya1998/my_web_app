@@ -4,14 +4,14 @@ from typing import List
 from app.common.constants.info_types import InfoTypes
 from app.common.constants.paths import IMAGES_PATH, PATTERN_INFO_TYPE
 from app.common.helpers.api_version import VersionedAPIRouter
-from app.dependencies.auth.moderator import ModeratorUserDep
+from app.dependencies.auth.roles.moderator import ModeratorDep
 from app.tasks.img import process_pic, process_pic_background_task
 from fastapi import BackgroundTasks, UploadFile
 
 router = VersionedAPIRouter(prefix=IMAGES_PATH)
 
 
-@router.post(PATTERN_INFO_TYPE, dependencies=[ModeratorUserDep])
+@router.post(PATTERN_INFO_TYPE, dependencies=[ModeratorDep])
 async def add_images_for_moderator(
     info_type: InfoTypes,
     name: str,

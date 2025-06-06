@@ -10,4 +10,4 @@ async def get_postgres_session() -> AsyncIterator[AsyncSession]:
         yield session
 
 
-PostgresSessionDep = Annotated[AsyncSession, Depends(get_postgres_session)]
+PostgresSessionAnn = Annotated[AsyncSession, Depends(get_postgres_session)]

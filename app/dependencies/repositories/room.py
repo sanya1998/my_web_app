@@ -1,12 +1,12 @@
 from typing import Annotated
 
-from app.dependencies.db import PostgresSessionDep
+from app.dependencies.db import PostgresSessionAnn
 from app.repositories import RoomRepo
 from fastapi import Depends
 
 
-def get_room_repo(session: PostgresSessionDep):
+def get_room_repo(session: PostgresSessionAnn):
     return RoomRepo(session=session)
 
 
-RoomRepoDep = Annotated[RoomRepo, Depends(get_room_repo)]
+RoomRepoAnn = Annotated[RoomRepo, Depends(get_room_repo)]

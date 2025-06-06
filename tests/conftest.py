@@ -6,8 +6,7 @@ from app.common.constants.environments import Environments
 from app.common.logger import logger
 from app.common.tables.base import metadata
 from app.config.common import settings
-from app.dependencies.input import UserInput
-from app.dependencies.input.users import DUMP_SECRET_KEY
+from app.dependencies.auth.credentials import CredentialsInput
 from app.resources.postgres import async_session, engine
 from httpx import ASGITransport, Response
 from pydantic import SecretStr
@@ -15,7 +14,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 from tests.common import TestClient
-from tests.constants.urls import USERS_SIGN_IN_URL
+from tests.constants.urls import AUTH_SIGN_IN_URL
 from tests.constants.users_info import (
     ADMIN_EMAIL,
     ADMIN_PASSWORD,
@@ -65,8 +64,8 @@ async def sign_in(client: TestClient, email: str, password: str, code=status.HTT
     """
     Аутентифицирует пользователя
     """
-    user_data = UserInput(email=email, password=SecretStr(password)).model_dump(context={DUMP_SECRET_KEY: True})
-    return await client.post(USERS_SIGN_IN_URL, data=user_data, code=code)
+    user_data = CredentialsInput(username=email, password=SecretStr(password)).model_dump()
+    return await client.post(AUTH_SIGN_IN_URL, data=user_data, code=code)
 
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
