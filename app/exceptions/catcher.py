@@ -33,6 +33,7 @@ def catch_exception(
                     raise base_error
 
                 data = {
+                    # TODO: не сработает type(self)?
                     "class": self.__class__.__name__,  # TODO: вроде args[0].__class__.__name__ if args else None,
                     "method": method.__name__,
                     "method_args": args,

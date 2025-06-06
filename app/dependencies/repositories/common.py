@@ -1,7 +1,7 @@
 from typing import Annotated, Union
 
 from app.common.constants.info_types import InfoTypes
-from app.dependencies.db import PostgresSessionDep
+from app.dependencies.db import PostgresSessionAnn
 from app.dependencies.repositories.booking import get_booking_repo
 from app.dependencies.repositories.hotel import get_hotel_repo
 from app.dependencies.repositories.room import get_room_repo
@@ -10,7 +10,7 @@ from app.repositories import BookingRepo, HotelRepo, RoomRepo, UserRepo
 from fastapi import Depends
 
 
-def get_chosen_repo(info_type: InfoTypes, session: PostgresSessionDep):
+def get_chosen_repo(info_type: InfoTypes, session: PostgresSessionAnn):
     match info_type:
         case InfoTypes.HOTELS:
             return get_hotel_repo(session)

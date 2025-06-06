@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
-from app.admin.admin import add_admin
 from app.api import api_router
+from app.cms.cms import add_cms
 from app.config.common import settings
 from app.exceptions.handlers import add_exceptions
 from app.middlewares.middlewares import add_middlewares
@@ -30,6 +30,6 @@ app.mount(path="/static", app=StaticFiles(directory="static/"), name="static")  
 
 add_exceptions(app)
 add_middlewares(app)
-add_admin(app)
+add_cms(app)
 add_hawk_fastapi(app)
 add_prometheus(app)

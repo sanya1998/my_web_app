@@ -9,4 +9,4 @@ def get_export_service(repo: ChosenRepo):
     return ExportService(repo=repo)
 
 
-ExportServiceDep = Annotated[ExportService, Depends(get_export_service)]
+ExportServiceAnn = Annotated[ExportService, Depends(get_export_service)]

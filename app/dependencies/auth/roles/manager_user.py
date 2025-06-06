@@ -1,14 +1,14 @@
 from typing import Annotated
 
-from app.common.constants.roles import AllRolesEnum
 from app.common.schemas.user import UserBaseReadSchema
-from app.dependencies.auth.base import get_current_user
+from app.dependencies.auth.token import CurrentUserAnn
+from app.dependencies.services import RolesAuthServiceAnn
 from app.exceptions.api import ForbiddenApiError
 from fastapi import Depends
 
 
-def get_manager_or_user(user: Annotated[UserBaseReadSchema, Depends(get_current_user)]):
-    if {AllRolesEnum.MANAGER, AllRolesEnum.USER}.isdisjoint(user.roles):
+def get_manager_or_user(auth_service: RolesAuthServiceAnn, user: CurrentUserAnn):
+    if not auth_service.authenticate_manager_or_user_by_user(user):
         raise ForbiddenApiError
     return user
 

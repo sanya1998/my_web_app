@@ -24,5 +24,5 @@ class BookingUpdateInputSchema(BookingBaseInput):
     price: Annotated[int, Field(ge=0)]
 
 
-BookingInputCreateDep = Annotated[BookingCreateInputSchema, Form()]
-BookingInputUpdateDep = Annotated[BookingUpdateInputSchema, Body()]
+BookingInputCreateAnn = Annotated[BookingCreateInputSchema, Form()]
+BookingInputUpdateAnn = Annotated[BookingUpdateInputSchema, Body()]

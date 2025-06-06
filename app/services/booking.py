@@ -12,11 +12,7 @@ from app.common.schemas.user import UserBaseReadSchema
 from app.dependencies.filters import BookingsQueryParams
 from app.dependencies.input import BookingCreateInputSchema, BookingUpdateInputSchema
 from app.exceptions.repositories import NotFoundRepoError
-from app.exceptions.services import (
-    ForbiddenServiceError,
-    NotFoundServiceError,
-    UnavailableServiceError,
-)
+from app.exceptions.services import ForbiddenServiceError, NotFoundServiceError, UnavailableServiceError
 from app.repositories import BookingRepo, RoomRepo
 from app.services.base import BaseService
 

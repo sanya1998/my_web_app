@@ -1,42 +1,8 @@
-import pytest
-from app.common.constants.auth import SignInResult
-from app.common.helpers.response import BaseResponse
 from app.common.schemas.user import UserBaseReadSchema
-from app.exceptions.api import NotFoundApiError, UnauthorizedApiError
 from starlette import status
 from tests.common import TestClient
-from tests.conftest import sign_in
-from tests.constants.urls import USERS_CURRENT_URL, USERS_SIGN_OUT_URL, USERS_SIGN_UP_URL, USERS_URL
+from tests.constants.urls import AUTH_SIGN_OUT_URL, USERS_CURRENT_URL, USERS_URL
 from tests.constants.users_info import USER_EMAIL
-
-
-@pytest.mark.parametrize(
-    "email, password, status_code",
-    [
-        ("cat@dog.com", "easy_password", status.HTTP_201_CREATED),
-        ("cat@dog.com", "easy_password", status.HTTP_409_CONFLICT),
-        ("bad_email", "easy_password", status.HTTP_422_UNPROCESSABLE_ENTITY),
-    ],
-)
-async def test_sign_up(client: TestClient, email, password, status_code):
-    await client.post(
-        url=USERS_SIGN_UP_URL,
-        code=status_code,
-        data={"email": email, "password": password},
-    )
-
-
-@pytest.mark.parametrize(
-    "email, password, status_code, response_body",
-    [
-        ("fedor@moloko.ru", "wrong_password", status.HTTP_401_UNAUTHORIZED, UnauthorizedApiError.detail),
-        ("fedor@moloko.ru", "hard_password", status.HTTP_200_OK, BaseResponse(content=SignInResult(success=True))),
-        ("no-person@moloko.ru", "hard_password", status.HTTP_404_NOT_FOUND, NotFoundApiError.detail),
-    ],
-)
-async def test_sign_in(client: TestClient, email, password, status_code, response_body):
-    response = await sign_in(client=client, email=email, password=password, code=status_code)
-    assert response.json() == response_body.model_dump()
 
 
 async def test_current_user(user_client: TestClient):
@@ -45,7 +11,7 @@ async def test_current_user(user_client: TestClient):
     assert user.email == USER_EMAIL
 
     # Выйти
-    await user_client.post(USERS_SIGN_OUT_URL)
+    await user_client.post(AUTH_SIGN_OUT_URL)
 
     # Нет доступа для неавторизованного пользователя
     await user_client.get(USERS_CURRENT_URL, code=status.HTTP_401_UNAUTHORIZED)

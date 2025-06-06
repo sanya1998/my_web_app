@@ -24,6 +24,6 @@ class HotelUpsertInput(HotelBaseInput):
     location: str
 
 
-HotelInputPatchDep = Annotated[HotelBaseInput, Body()]
-HotelInputCreateDep = Annotated[HotelUpsertInput, Form()]
-HotelInputUpdateDep = Annotated[HotelUpsertInput, Body()]
+HotelInputPatchAnn = Annotated[HotelBaseInput, Body()]
+HotelInputCreateAnn = Annotated[HotelUpsertInput, Form()]
+HotelInputUpdateAnn = Annotated[HotelUpsertInput, Body()]

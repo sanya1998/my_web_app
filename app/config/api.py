@@ -16,7 +16,7 @@ class ApiSettings(BaseSettings):
     DEBUG: bool = False
 
     # CORS
-    ALLOW_ORIGINS_REGEX: str = r"http://0.0.0.0:3000/*"
+    ALLOW_ORIGINS_REGEX: str = r"http://0.0.0.0:*"
     ALLOW_CREDENTIALS: bool = True
     ALLOW_METHODS: List[str] = ["GET", "POST", "PUT", "DELETE", "PATCH"]
     ALLOW_HEADERS: List[str] = [
@@ -25,7 +25,7 @@ class ApiSettings(BaseSettings):
         "Access-Control-Allow-Headers",
         "Access-Control-Allow-Origin",
         "Authorization",
-    ]
+    ]  # TODO: обдумать
 
     LIMIT_DEFAULT: int = 10
     LIMIT_MAX: int = 100

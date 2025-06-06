@@ -1,1 +1,1 @@
-from app.dependencies.db.postgres import PostgresSessionDep
+from app.dependencies.db.postgres import PostgresSessionAnn
