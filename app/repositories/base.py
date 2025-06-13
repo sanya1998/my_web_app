@@ -182,6 +182,7 @@ class BaseRepository:
     @catcher
     async def create(self, data: create_schema) -> one_created_read_schema:
         # TODO: можно ли упростить values(**data.model_dump()) - возможно, SQLModel решит проблему
+        # TODO: если в data есть None, то server_default нe будет отрабатывать для этого поля
         query = insert(self.db_model).values(**data.model_dump()).returning(self.db_model)
         result = await self.execute(query)
         await self.session.commit()

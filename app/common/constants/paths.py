@@ -6,6 +6,9 @@ API_V2_PATH = "/v2"
 
 PAGES_PATH = "/pages"
 
+PAGES_HOTELS_PATH = "/hotels"
+PAGES_SSE_PATH = "/sse"
+
 MEDIA_PATH = "/media"
 IMAGES_PATH = "/images"
 
