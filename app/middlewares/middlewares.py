@@ -1,7 +1,9 @@
 import time
 
-from app.common.logger import logger
+from app.common.schemas.query_history import QueryHistoryBaseSchema
 from app.config.common import settings
+from app.repositories.query_history import QueryHistoryRepo
+from app.resources.postgres import async_session
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -18,14 +20,23 @@ def add_middlewares(app: FastAPI):
     )
     app.add_middleware(SessionMiddleware, secret_key=settings.JWT_SECRET_KEY)
 
-    # TODO: сделать единообразно
-    # TODO: когда появится что-то со смыслом, этот можно будет убрать
     @app.middleware("http")
-    async def add_process_time_header(request: Request, call_next):
-        # TODO: вместо логирования отправлять сообщение в кролик с информацией, сколько длился запрос,
-        #  а он пусть пишет в бд
-        start_time = time.time()
+    async def compute_process_time(request: Request, call_next):
+        start_time = time.perf_counter()
         response = await call_next(request)
-        process_time = time.time() - start_time
-        logger.info("Request handling time", extra={"process_time": round(process_time, 4)})
+        process_time = time.perf_counter() - start_time
+
+        # TODO: отправлять сообщение в кролик с информацией, сколько длился запрос, а он пусть пишет в бд
+        # TODO: обрабатывать ошибку, если запрос был дольше 100 секунд (бд не примет его)
+        q = QueryHistoryBaseSchema(
+            method=request.method,
+            url_path=request.url.path,
+            query_string=request.url.query,
+            status_code=response.status_code,
+            process_time=process_time,
+        )
+        async with async_session() as session:
+            r = QueryHistoryRepo(session=session)
+            await r.create(q)
+
         return response

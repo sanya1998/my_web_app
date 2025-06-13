@@ -1,6 +1,7 @@
 from app.common.helpers.db import get_back_populates
 from app.common.tables.bookings import Bookings
 from app.common.tables.hotels import Hotels
+from app.common.tables.query_history import QueryHistory
 from app.common.tables.rooms import Rooms
 from app.common.tables.users import Users
 from sqlalchemy.orm import relationship

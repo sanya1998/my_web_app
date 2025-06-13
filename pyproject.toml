@@ -28,6 +28,7 @@ sentry-sdk = {extras = ["fastapi"], version = "^2.19.2"}
 hawk-python-sdk = {extras = ["fastapi"], version = "^3.5.2"}
 prometheus-fastapi-instrumentator = "^7.1.0"
 orjson = "^3.10.18"
+sse-starlette = "^2.3.6"
 
 [tool.poetry.group.dev.dependencies]
 alembic = "^1.13.1"
