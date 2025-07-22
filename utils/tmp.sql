@@ -13,3 +13,15 @@ FROM rooms
 LEFT JOIN booked_rooms ON booked_rooms.room_id = rooms.id -- Показать остаток во всех комнатах
 -- INNER JOIN booked_rooms ON booked_rooms.room_id = rooms.id  -- Показать остаток только в тех комнатах, которые есть в booked_rooms
 GROUP BY rooms.id;
+
+
+SELECT pid,
+       to_char(query_start, 'HH24:MI:SS') as start,
+       to_char(now() - pg_stat_activity.query_start,'MI:SS') as duration,
+       query,
+       state,
+       client_addr
+FROM pg_stat_activity
+WHERE state is not null
+ORDER BY query_start desc
+LIMIT 500;

@@ -7,6 +7,7 @@ from app.exceptions.handlers import add_exceptions
 from app.middlewares.middlewares import add_middlewares
 from app.resources.hawk_ import add_hawk_fastapi
 from app.resources.prometheus_ import add_prometheus
+from app.resources.rmq.base_publisher import BasePublisher
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -14,7 +15,9 @@ from fastapi.staticfiles import StaticFiles
 
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
-    yield
+    # TODO: поле app_.history_publisher функционирует, но нет подсказок IDE для app_.history_publisher
+    async with BasePublisher(settings.HISTORY_ROUTING_KEY, settings.HISTORY_EXCHANGE_NAME) as app_.history_publisher:
+        yield
 
 
 app = FastAPI(

@@ -12,7 +12,7 @@ $ npm install axios --save
 $ cd my_front
 $ npm start
 ```
-3. Переименовать файл `frontend/my_front/src/App.jsx` в `frontend/my_front/src/App.jsx`.
+3. Переименовать файл `frontend/my_front/src/App.jsx` в `frontend/my_front/src/App.jsx`. (todo: разобраться, и мб сделать вв виде команды копирования из шаблона)
 4. Наполнить `frontend/my_front/src/App.jsx` своей логикой
 
 

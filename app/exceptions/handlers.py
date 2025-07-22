@@ -24,7 +24,7 @@ class ErrorResponseSchema(BaseModel):
 
 def common_preparing_of_handlers(request: Request, exc: Exception) -> ORJSONResponse:
     unexpected_error_response = ORJSONResponse(**ErrorResponseSchema().model_dump())
-    logger.error("Error (%s: %s) %s", request.url, request.method, exc)
+    logger.error("Error (%s %s) %s", request.method, request.url, exc)
     return unexpected_error_response
 
 
@@ -42,7 +42,7 @@ def add_exceptions(app: FastAPI):
     @app.exception_handler(RequestValidationError)
     async def custom_validation_exception_handler(request: Request, exc: RequestValidationError):
         """Любое исключение валидации можно переопределить здесь"""
-        logger.warning("Error (%s: %s) %s", request.url, request.method, exc)
+        logger.warning("Error (%s %s) %s", request.method, request.url, exc)
         return await request_validation_exception_handler(request, exc)
 
     @app.exception_handler(BaseApiError)
@@ -54,7 +54,10 @@ def add_exceptions(app: FastAPI):
     @app.exception_handler(StarletteHTTPException)
     async def custom_http_exception_handler(request: Request, exc: StarletteHTTPException):
         """Любое необрабатываемое исключение api, не родственное BaseApiError"""
-        logger.error("Error (%s: %s) %s", request.url, request.method, exc)
+        if 400 <= exc.status_code < 500:
+            logger.warning("Warning (%s %s) %s", request.method, request.url, exc)
+        else:
+            logger.error("Error (%s %s) %s", request.method, request.url, exc)
         return await http_exception_handler(request, exc)
 
     @app.exception_handler(Exception)

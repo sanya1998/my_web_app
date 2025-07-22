@@ -110,7 +110,7 @@ class CacheService(BaseService):
                 if old_serialized_response is not None:
                     return pickle.loads(old_serialized_response)
                 new_response = await func(*args, **kwargs)
-                serialized_response = pickle.dumps(new_response, protocol=-1)
+                serialized_response = pickle.dumps(new_response, protocol=settings.PICKLE_PROTOCOL)
                 await redis_client.set(key, serialized_response, ex=expire)
                 return new_response
 

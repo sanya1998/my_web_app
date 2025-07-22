@@ -29,6 +29,8 @@ hawk-python-sdk = {extras = ["fastapi"], version = "^3.5.2"}
 prometheus-fastapi-instrumentator = "^7.1.0"
 orjson = "^3.10.18"
 sse-starlette = "^2.3.6"
+aio-pika = "^9.5.5"
+asgi-lifespan = "^2.1.0"
 
 [tool.poetry.group.dev.dependencies]
 alembic = "^1.13.1"
