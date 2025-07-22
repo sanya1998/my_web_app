@@ -1,23 +1,26 @@
 x-env: &base-env
   env_file:
     - ../envs/base.env
+  environment:
+    - PYTHONDONTWRITEBYTECODE=1
+    - POSTGRES_HOST=postgres
+    - REDIS_HOST=redis
+    - RMQ_HOST=rabbitmq
 
 x-base-python: &base-python
   build:
     context: ../
     dockerfile: docker/custom_python/Dockerfile
   <<: *base-env
-  environment:
-    - POSTGRES_HOST=postgres
-    - REDIS_HOST=redis
-    - PYTHONDONTWRITEBYTECODE=1
   volumes:  # TODO: со временем, возможно, придется что-то добавлять/изменять, либо использовать `- .:/code`
     - ../alembic:/code/alembic
     - ../alembic.ini:/code/alembic.ini
     - ../app:/code/app
+    - ../docker:/code/docker
     - ../manage.py:/code/manage.py
     - ../envs:/code/envs
     - ../static:/code/static
+    - ../scripts:/code/scripts
 
 services:
   postgres:
@@ -86,13 +89,26 @@ services:
     depends_on:
       - prometheus
 
+  rabbitmq:
+    image: rabbitmq:${RMQ_VERSION}
+    container_name: rabbitmq
+    restart: unless-stopped
+    <<: *base-env
+    ports:
+      - 5672:${RMQ_PORT}
+      - 15672:${RMQ_GUI_PORT}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:15672" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
   celery-worker:
     container_name: celery-worker
     <<: *base-python
     command: ["/code/docker/custom_python/celery.sh", "worker"]
-    depends_on:
-      - postgres
-      - redis
 
   celery-flower:
     container_name: celery-flower
@@ -100,17 +116,26 @@ services:
     ports:
       - 5555:${FLOWER_PORT}
     command: ["/code/docker/custom_python/celery.sh", "flower", "${FLOWER_PORT}"]
+
+  history-consumer:
+    container_name: history-consumer
+    restart: on-failure:5
+    <<: *base-python
+    command: ["/code/docker/custom_python/history.sh"]
     depends_on:
       - postgres
-      - redis
+      - rabbitmq
 
   api:
     container_name: api
+    restart: on-failure:5
     <<: *base-python
     ports:
       - 8000:${API_PORT}
     command: ["/code/docker/custom_python/api.sh"]
     depends_on:
+      - rabbitmq
+      - history-consumer
       - celery-worker
       - celery-flower
       - postgres
@@ -122,3 +147,4 @@ volumes:
   grafana_config:
   prometheus_data:
   prometheus_config:
+  rabbitmq_data:

@@ -11,7 +11,7 @@ class DbSettings(BaseSettings):
 
     # REDIS
     REDIS_VERSION: str
-    REDIS_DRIVER: str = "redis"
+    REDIS_DRIVER: str = "redis"  # TODO: или DIALECT, а не DRIVER?
     REDIS_HOST: str
     REDIS_PORT: int
     REDIS_USER: str
@@ -31,7 +31,6 @@ class DbSettings(BaseSettings):
             f"{self.REDIS_HOST}:{self.REDIS_PORT}/"
             f"{self.CACHE_DB}"
         )
-        # TODO: можно ли что-то вроде `return self.CACHE_URL or value` ? или будет рекурсия?
         return value
 
     CELERY_BROKER_DB: int
@@ -50,7 +49,8 @@ class DbSettings(BaseSettings):
 
     # POSTGRES
     POSTGRES_VERSION: str
-    POSTGRES_DRIVER: str = "postgresql+asyncpg"
+    POSTGRES_DIALECT: str = "postgresql"
+    POSTGRES_DRIVER: str = "asyncpg"
     POSTGRES_HOST: str
     POSTGRES_PORT: int
     POSTGRES_USER: str
@@ -67,7 +67,7 @@ class DbSettings(BaseSettings):
     @property
     def POSTGRES_URL(self) -> str:
         value = (
-            f"{self.POSTGRES_DRIVER}://"
+            f"{self.POSTGRES_DIALECT}+{self.POSTGRES_DRIVER}://"
             f"{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@"
             f"{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/"
             f"{self.POSTGRES_DB}"

@@ -8,6 +8,7 @@ from app.common.tables.base import metadata
 from app.config.common import settings
 from app.dependencies.auth.credentials import CredentialsInput
 from app.resources.postgres import async_session, engine
+from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, Response
 from pydantic import SecretStr
 from sqlalchemy import text
@@ -52,7 +53,7 @@ async def session() -> AsyncIterator[AsyncSession]:
 
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
 async def client() -> AsyncGenerator[TestClient, Any]:
-    async with TestClient(transport=ASGITransport(app), base_url="http://test") as ac:
+    async with TestClient(transport=ASGITransport(app), base_url="http://test") as ac, LifespanManager(app):
         yield ac
 
 
@@ -89,7 +90,7 @@ async def manager_client(client_for_manager: TestClient) -> TestClient:
 @pytest_asyncio.fixture(loop_scope="function", scope="function")
 async def moderator_client(client_for_moderator: TestClient) -> TestClient:
     """
-    Аутентификация пользователя с правами менеджера
+    Аутентификация пользователя с правами модератора
     """
     await sign_in(client=client_for_moderator, email=MODERATOR_EMAIL, password=MODERATOR_PASSWORD)
     return client_for_moderator

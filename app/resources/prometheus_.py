@@ -9,3 +9,4 @@ instrumentator = Instrumentator(
 
 def add_prometheus(app: FastAPI) -> None:
     instrumentator.instrument(app).expose(app)
+    # TODO: не нужно ли PrometheusMiddleware ?

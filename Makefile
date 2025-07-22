@@ -55,31 +55,31 @@ clear-celery-tasks:
 
 
 build-related-base-services:
-	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" up -d --build postgres prometheus grafana redis celery-worker celery-flower
+	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" up -d --build postgres prometheus grafana redis rabbitmq celery-worker celery-flower
 
 up-related-base-services:
-	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" up -d postgres prometheus grafana redis celery-worker celery-flower
+	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" up -d postgres prometheus grafana redis rabbitmq celery-worker celery-flower
 
 
 build-base-app:
-	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-app" up -d --build prometheus grafana api
+	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-app" up -d --build prometheus grafana history-consumer api
 
 up-base-app:
-	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-app" up -d prometheus grafana api
+	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-app" up -d prometheus grafana history-consumer api
 
 build-dev-app:
 	docker-compose \
 		--env-file envs/base.env --env-file envs/dev.env \
 		-f docker/docker-compose.yaml -f docker/docker-compose-dev.yaml \
 		-p "my-web-app-dev" \
-		up -d --build prometheus grafana api
+		up -d --build prometheus grafana history-consumer api
 
 up-dev-app:
 	docker-compose
 		--env-file envs/base.env --env-file envs/dev.env \
 		-f docker/docker-compose.yaml -f docker/docker-compose-dev.yaml \
 		-p "my-web-app-dev" \
-		up -d prometheus grafana api
+		up -d prometheus grafana history-consumer api
 
 
 run-tests:

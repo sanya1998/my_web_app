@@ -1,6 +1,11 @@
 x-env: &dev-env
   env_file:
     - ../envs/dev.env
+  environment:  # TODO: дублирование
+    - PYTHONDONTWRITEBYTECODE=1
+    - POSTGRES_HOST=postgres
+    - REDIS_HOST=redis
+    - RMQ_HOST=rabbitmq
 
 services:
   postgres:
@@ -12,10 +17,16 @@ services:
   grafana:
     <<: *dev-env
 
+  rabbitmq:
+    <<: *dev-env
+
   celery-worker:
     <<: *dev-env
 
   celery-flower:
+    <<: *dev-env
+
+  history-consumer:
     <<: *dev-env
 
   api:
