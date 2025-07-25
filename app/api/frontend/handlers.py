@@ -19,11 +19,10 @@ templates = Jinja2Templates(directory="app/templates")
 async def get_hotels_page(
     request: Request,
     hotels=Depends(get_hotels),
-):  # todo: -> templates.TemplateResponse
-    # TODO: HTMLResponse ?
+):  # todo: `): -> templates.TemplateResponse` ломает ручку
     return templates.TemplateResponse(
         name="hotels.html",
-        context={"request": request, "hotels": hotels},
+        context={"request": request, "hotels": hotels.content},
     )
 
 

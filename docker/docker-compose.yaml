@@ -26,7 +26,7 @@ services:
   postgres:
     image: postgres:${POSTGRES_VERSION}
     container_name: postgres
-    tty: true  # TODO: попробовать стереть и войти в контейнер
+    tty: true  # TODO: разобраться
     volumes:
       - postgresql_data:/var/lib/postgresql/data
     <<: *base-env
@@ -140,6 +140,24 @@ services:
       - celery-flower
       - postgres
       - redis
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ../
+      dockerfile: docker/custom_node/Dockerfile
+    <<: *base-env  # Енвы пока не используются во фронтенде
+    ports:
+      - 80:3000
+    volumes:
+      - ../frontend/src:/app/src
+      - ../frontend/public:/app/public
+    depends_on:
+      - api
+    command: npm start
+    stdin_open: true  # TODO: Разобраться:
+    tty: true  # TODO: Разобраться:
+
 
 volumes:
   postgresql_data:

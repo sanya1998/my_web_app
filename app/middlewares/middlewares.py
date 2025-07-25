@@ -12,11 +12,11 @@ from starlette.requests import Request
 def add_middlewares(app: FastAPI):
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.ALLOW_ORIGINS_REGEX,
+        allow_origins=settings.ALLOW_ORIGINS,
         allow_credentials=settings.ALLOW_CREDENTIALS,
         allow_methods=settings.ALLOW_METHODS,
         allow_headers=settings.ALLOW_HEADERS,
-    )
+    )  # TODO: есть еще поле max_age, по умолчанию 600 - максимальное время в секундах для кеша. как это используется?
     app.add_middleware(SessionMiddleware, secret_key=settings.JWT_SECRET_KEY)  # pycharm подчеркивает
 
     @app.middleware("http")
