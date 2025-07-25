@@ -10,13 +10,14 @@ class ApiSettings(BaseSettings):
 
     APPLICATION_NAME: str = "My web application"
     APPLICATION_DESCRIPTION: str = "My web application description"
-    API_HOST: str = "0.0.0.0"  # TODO: здесь разве не всегда 0.0.0.0? мб убрать из env-файлов?
+    API_HOST: str = "0.0.0.0"  # Хост используется для запуска uvicorn. Он не всегда совпадает с хостом api для фронта
     API_PORT: int = 8000
     SWAGGER_UI_PARAMETERS: dict = {"tryItOutEnabled": True}
     DEBUG: bool = False
 
     # CORS
-    ALLOW_ORIGINS_REGEX: str = r"http://0.0.0.0:*"
+    # TODO: когда будет https составить регулярку на 0 или 1 символ или поставить четкий url фронта
+    ALLOW_ORIGINS: List[str] = ["http://localhost", "http://0.0.0.0"]
     ALLOW_CREDENTIALS: bool = True
     ALLOW_METHODS: List[str] = ["GET", "POST", "PUT", "DELETE", "PATCH"]
     ALLOW_HEADERS: List[str] = [
@@ -25,7 +26,7 @@ class ApiSettings(BaseSettings):
         "Access-Control-Allow-Headers",
         "Access-Control-Allow-Origin",
         "Authorization",
-    ]  # TODO: обдумать
+    ]  # TODO: когда будет фронт, обдумать, нет ли тут лишнего
 
     LIMIT_DEFAULT: int = 10
     LIMIT_MAX: int = 100

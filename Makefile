@@ -62,24 +62,24 @@ up-related-base-services:
 
 
 build-base-app:
-	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-app" up -d --build prometheus grafana history-consumer api
+	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-app" up -d --build prometheus grafana history-consumer api frontend
 
 up-base-app:
-	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-app" up -d prometheus grafana history-consumer api
+	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-app" up -d prometheus grafana history-consumer api frontend
 
 build-dev-app:
 	docker-compose \
 		--env-file envs/base.env --env-file envs/dev.env \
 		-f docker/docker-compose.yaml -f docker/docker-compose-dev.yaml \
 		-p "my-web-app-dev" \
-		up -d --build prometheus grafana history-consumer api
+		up -d --build prometheus grafana history-consumer api frontend
 
 up-dev-app:
 	docker-compose
 		--env-file envs/base.env --env-file envs/dev.env \
 		-f docker/docker-compose.yaml -f docker/docker-compose-dev.yaml \
 		-p "my-web-app-dev" \
-		up -d prometheus grafana history-consumer api
+		up -d prometheus grafana history-consumer api frontend
 
 
 run-tests:

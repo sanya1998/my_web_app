@@ -31,3 +31,6 @@ services:
 
   api:
     <<: *dev-env
+
+  frontend:
+    <<: *dev-env
