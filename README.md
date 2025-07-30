@@ -100,6 +100,7 @@
 25) решить проблему при запуске fastapi "GET /favicon.ico HTTP/1.1" 404 Not Found
 26) При включенном vpn не дернулась ручка локально, не открывается rmq gui
 27) Этот README.md преобразовать так, чтоб была простая инструкция, как равзернуть все в докере, и инструкция для локальных экспериментов (добавить сюда же frontend/README.md)
+28) app/dependencies/filters/common это миксины? мб тогда и переименовать все
 
 ### Celery. Flower.
 1) Для celery можно почитать https://github.com/celery/celery/issues/8724, чтобы задать корректно разрешения
@@ -172,6 +173,7 @@
 9) До конца реализовать базовый репо.
 10) id: uuid.UUID
 11) В приветственных логах api написать ссылку на сваггер, чтобы не делать лишних переходов
+12) airium · PyPI создать html на python https://pypi.org/project/airium/
 
 ### NEW
 1) в русской версии не все https://fastapi.tiangolo.com/ru/tutorial/schema-extra-example/#body-examples
@@ -186,8 +188,7 @@
 10) использовать http2 protocol вместо http/1.1  (https://readmedium.com/deploy-fastapi-with-hypercorn-http-2-asgi-8cfc304e9e7a) (https://pypi.org/project/Hypercorn/)
 11) можно ли бесплатно сделать https, есть мидлвэйр для проверки HTTPSRedirectMiddleware.
 12) рассмотреть BrotliMiddleware
-13) airium · PyPI создать html на python https://pypi.org/project/airium/
-14) использовать filters как свою либу.
-15) придумать что-нибудь с submodule (например, модели) и со своей библиотекой
-16) Почитать про строку scope в форме с username и password  (users:read или users:write)
-17) Добавить схему в readme https://stackoverflow.com/questions/14494747/how-to-add-images-to-readme-md-on-github
+13) использовать filters как свою либу.
+14) придумать что-нибудь с submodule (например, модели) и со своей библиотекой
+15) Почитать про строку scope в форме с username и password  (users:read или users:write)
+16) Добавить схему в readme https://stackoverflow.com/questions/14494747/how-to-add-images-to-readme-md-on-github

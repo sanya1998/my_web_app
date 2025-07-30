@@ -4,7 +4,7 @@ from app.common.constants.paths import PATTERN_OBJECT_ID, USERS_CURRENT_PATH, US
 from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
-from app.common.schemas.user import UserBaseReadSchema
+from app.common.models.user import UserBaseReadSchema
 from app.dependencies.auth.roles.admin import AdminDep
 from app.dependencies.auth.token import CurrentUserAnn
 from app.dependencies.filters import UsersFiltersDep

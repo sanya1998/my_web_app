@@ -2,7 +2,7 @@ from datetime import date
 from typing import List
 
 import pytest
-from app.common.schemas.room import ManyRoomsReadSchema, RoomReadSchema
+from app.common.models.room import ManyRoomsReadSchema, RoomReadSchema
 from httpx import QueryParams
 from starlette import status
 from tests.common import TestClient

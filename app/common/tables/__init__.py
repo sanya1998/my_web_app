@@ -6,6 +6,7 @@ from app.common.tables.rooms import Rooms
 from app.common.tables.users import Users
 from sqlalchemy.orm import relationship
 
+# TODO: минус такого подхода в том, что нет подсказок IDE для Rooms.hotel
 Rooms.hotel = relationship(Hotels, foreign_keys=Rooms.hotel_id)
 Hotels.rooms = relationship(Rooms, back_populates=get_back_populates(Rooms.hotel))
 

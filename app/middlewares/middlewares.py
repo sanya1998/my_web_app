@@ -1,7 +1,7 @@
 import time
 
 from app.common.logger import logger
-from app.common.schemas.query_history import QueryHistoryBaseSchema
+from app.common.models.query_history import QueryHistoryBaseSchema
 from app.config.common import settings
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware

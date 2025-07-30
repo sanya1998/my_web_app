@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from app.common.constants.paths import SIGN_IN_URL
-from app.common.schemas.user import UserBaseReadSchema
+from app.common.models.user import UserBaseReadSchema
 from app.config.common import settings
 from app.dependencies.services import ApiAuthServiceAnn
 from app.exceptions.api import (

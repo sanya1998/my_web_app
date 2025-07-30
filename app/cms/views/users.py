@@ -1,5 +1,5 @@
 from app.cms.views.base import BaseView
-from app.common.tables import Users
+from app.common.models import Users
 
 
 class UsersView(BaseView, model=Users):

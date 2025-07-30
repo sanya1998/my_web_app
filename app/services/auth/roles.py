@@ -1,5 +1,5 @@
 from app.common.constants.roles import AllRolesEnum
-from app.common.schemas.user import UserBaseReadSchema
+from app.common.models.user import UserBaseReadSchema
 from app.services.auth.base import BaseAuthService
 
 

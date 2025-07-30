@@ -1,7 +1,7 @@
 from typing import List
 
 from app.common.helpers.db import get_columns_by_table
-from app.common.schemas.booking import (
+from app.common.models.booking import (
     BookingBaseReadSchema,
     BookingCreateSchema,
     BookingReadSchema,

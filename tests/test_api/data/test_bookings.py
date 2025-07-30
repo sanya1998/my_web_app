@@ -3,9 +3,9 @@ from typing import List
 
 import pytest
 from app.common.constants.roles import BookingsRecipientRoleEnum
-from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
-from app.common.schemas.room import ManyRoomsReadSchema
-from app.common.schemas.user import UserBaseReadSchema
+from app.common.models.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
+from app.common.models.room import ManyRoomsReadSchema
+from app.common.models.user import UserBaseReadSchema
 from app.dependencies.input import BookingCreateInputSchema, BookingUpdateInputSchema
 from httpx import QueryParams
 from starlette import status

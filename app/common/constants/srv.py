@@ -1,12 +1,12 @@
-from app.common.schemas.base import BaseSchema
+from pydantic import BaseModel
 
 
-class PingResult(BaseSchema):
+class PingResult(BaseModel):
     api_version: str
     success: bool
 
 
-class WelcomeMessage(BaseSchema):
+class WelcomeMessage(BaseModel):
     message: str
 
 

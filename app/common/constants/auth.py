@@ -1,7 +1,7 @@
-from app.common.schemas.base import BaseSchema
+from pydantic import BaseModel
 
 
-class SignOutResult(BaseSchema):
+class SignOutResult(BaseModel):
     success: bool
 
 

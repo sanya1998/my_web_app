@@ -1,7 +1,10 @@
 from typing import List
 
-from app.common.schemas.base import BaseSchema
+from app.common.models.base import BaseSchema, BaseSQLModel, IdMixin
 from pydantic import field_validator
+from sqlalchemy import BigInteger, Column, String
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlmodel import Field
 
 
 class HotelBaseSchema(BaseSchema):
@@ -10,6 +13,15 @@ class HotelBaseSchema(BaseSchema):
     services: List[str]
     stars: int | None = None
     image_id: int | None = None
+
+
+# class Hotels(BaseSQLModel, IdMixin, HotelBaseSchema, table=True):
+class Hotels(BaseSQLModel, HotelBaseSchema, table=True):
+    id: int = Field(sa_column=Column(BigInteger, primary_key=True, autoincrement=False))
+    services: List[str] = Field(sa_column=Column(ARRAY(String), default=list()))
+
+    def __str__(self):
+        return f"Hotel #{self.id} ({self.name})"
 
 
 class HotelBaseReadSchema(HotelBaseSchema):

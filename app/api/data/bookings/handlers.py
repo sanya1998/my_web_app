@@ -5,7 +5,7 @@ from app.common.constants.roles import BookingsRecipientRoleEnum
 from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
-from app.common.schemas.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
+from app.common.models.booking import BookingBaseReadSchema, BookingReadSchema, CurrentUserBookingReadSchema
 from app.dependencies.auth.roles.manager import ManagerDep
 from app.dependencies.auth.roles.manager_user import ManagerOrUserAnn
 from app.dependencies.auth.token import CurrentUserAnn

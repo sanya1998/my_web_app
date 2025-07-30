@@ -2,8 +2,8 @@ from datetime import date
 from typing import List
 
 import pytest
-from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
-from app.common.schemas.room import ManyRoomsReadSchema
+from app.common.models.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
+from app.common.models.room import ManyRoomsReadSchema
 from httpx import QueryParams
 from starlette import status
 from tests.constants.urls import HOTELS_URL, ROOMS_URL
