@@ -1,6 +1,6 @@
 from app.common.constants.db_fields import REMAIN_BY_HOTEL, ROOMS_QUANTITY
 from app.common.helpers.check_data import CheckData
-from app.common.models.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
+from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
 from app.common.tables import Hotels, Rooms
 from app.dependencies.filters import HotelsFilters
 from app.dependencies.input import HotelUpsertInput

@@ -4,7 +4,7 @@ from app.common.constants.paths import PATTERN_OBJECT_ID, ROOMS_PATH
 from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
-from app.common.models.room import ManyRoomsReadSchema, RoomReadSchema
+from app.common.schemas.room import ManyRoomsReadSchema, RoomReadSchema
 from app.dependencies.filters import RoomsFiltersDep
 from app.dependencies.repositories import RoomRepoAnn
 from app.exceptions.api import NotFoundApiError

@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from app.common.models.user import UserBaseReadSchema
+from app.common.schemas.user import UserBaseReadSchema
 from app.dependencies.auth.token import CurrentUserAnn
 from app.dependencies.services import RolesAuthServiceAnn
 from app.exceptions.api import ForbiddenApiError

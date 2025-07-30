@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from app.common.schemas.base import BaseSchema
 
 
-class ImportResult(BaseModel):
+class ImportResult(BaseSchema):
     success: bool
 
 

@@ -3,7 +3,7 @@ from app.common.constants.paths import AUTH_PATH, SIGN_IN_PATH, SIGN_OUT_PATH, S
 from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse, TokenResponse
-from app.common.models.user import UserBaseReadSchema
+from app.common.schemas.user import UserBaseReadSchema
 from app.dependencies.auth.credentials import CredentialsInputDep
 from app.dependencies.services import ApiAuthServiceAnn
 from app.exceptions.api import AlreadyExistsApiError, NotFoundApiError, UnauthorizedApiError

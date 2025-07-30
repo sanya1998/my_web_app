@@ -2,7 +2,7 @@ import hashlib
 
 from app.common.constants.roles import AllRolesEnum
 from app.common.helpers.db import get_columns_by_table
-from app.common.models.user import UserBaseReadSchema, UserCreateSchema
+from app.common.schemas.user import UserBaseReadSchema, UserCreateSchema
 from app.common.tables import Users
 from app.config.common import settings
 from app.dependencies.auth.credentials import CredentialsInput

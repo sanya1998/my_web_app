@@ -1,4 +1,4 @@
-from app.common.models.user import UserBaseReadSchema, UserCreateSchema
+from app.common.schemas.user import UserBaseReadSchema, UserCreateSchema
 from app.common.tables import Users
 from app.repositories.base import BaseRepository
 

@@ -5,7 +5,7 @@ from app.common.constants.paths import HOTELS_PATH, PATTERN_OBJECT_ID
 from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
-from app.common.models.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
+from app.common.schemas.hotel import HotelBaseReadSchema, HotelReadSchema, ManyHotelsReadSchema
 from app.config.common import settings
 from app.dependencies.auth.roles.moderator import ModeratorDep
 from app.dependencies.filters import HotelsFiltersDep

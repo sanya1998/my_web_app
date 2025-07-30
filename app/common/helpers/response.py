@@ -1,9 +1,10 @@
 # TODO: rename to responses.py
 from typing import Generic, List, Optional, TypeVar, Union
 
+from app.common.schemas.base import BaseSchema
 from pydantic import BaseModel
 
-ResponseType = TypeVar("ResponseType", bound=Union[BaseModel, List[BaseModel]])
+ResponseType = TypeVar("ResponseType", bound=Union[BaseSchema, List[BaseSchema]])
 
 
 class BaseResponse(BaseModel, Generic[ResponseType]):

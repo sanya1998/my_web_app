@@ -3,7 +3,7 @@ from typing import Any, List, TypeVar, Union
 
 from app.common.helpers.db import get_columns_by_table
 from app.common.logger import logger
-from app.common.models.base import BaseSchema
+from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
 from app.config.common import settings
 from app.dependencies.filters import BaseFilters, ExportFilters

@@ -2,13 +2,13 @@ from typing import List, Union
 
 from app.common.constants.roles import BookingsRecipientRoleEnum
 from app.common.helpers.check_data import CheckData
-from app.common.models.booking import (
+from app.common.schemas.booking import (
     BookingCreateSchema,
     BookingReadSchema,
     BookingUpdateSchema,
     CurrentUserBookingReadSchema,
 )
-from app.common.models.user import UserBaseReadSchema
+from app.common.schemas.user import UserBaseReadSchema
 from app.dependencies.filters import BookingsQueryParams
 from app.dependencies.input import BookingCreateInputSchema, BookingUpdateInputSchema
 from app.exceptions.repositories import NotFoundRepoError

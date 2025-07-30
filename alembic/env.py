@@ -3,7 +3,7 @@ from distutils.util import strtobool
 from logging.config import fileConfig
 
 from alembic import context
-from app.common.models.base import metadata
+from app.common.tables.base import metadata
 from app.config.common import settings
 from sqlalchemy import engine_from_config, pool
 

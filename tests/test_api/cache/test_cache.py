@@ -1,7 +1,7 @@
 from typing import List
 
 from app.common.constants.cache_prefixes import HOTELS_CACHE_PREFIX
-from app.common.models.hotel import ManyHotelsReadSchema
+from app.common.schemas.hotel import ManyHotelsReadSchema
 from app.services import CacheService
 from app.services.cache.key_builders.listing import build_key_pattern_by_listing
 from tests.constants.urls import HOTELS_URL

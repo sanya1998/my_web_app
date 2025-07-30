@@ -1,4 +1,4 @@
-from app.common.models.user import UserBaseReadSchema
+from app.common.schemas.user import UserBaseReadSchema
 from starlette import status
 from tests.common import TestClient
 from tests.constants.urls import AUTH_SIGN_OUT_URL, USERS_CURRENT_URL, USERS_URL
