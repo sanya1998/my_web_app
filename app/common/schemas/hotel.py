@@ -1,6 +1,7 @@
 from typing import List
 
 from app.common.schemas.base import BaseSchema
+from app.common.schemas.mixins.id_created_updated import IdCreatedUpdatedMixin
 from pydantic import field_validator
 
 
@@ -12,8 +13,8 @@ class HotelBaseSchema(BaseSchema):
     image_id: int | None = None
 
 
-class HotelBaseReadSchema(HotelBaseSchema):
-    id: int
+class HotelBaseReadSchema(HotelBaseSchema, IdCreatedUpdatedMixin):
+    pass
 
 
 class HotelReadSchema(HotelBaseReadSchema):

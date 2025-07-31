@@ -2,6 +2,7 @@ from typing import List
 
 from app.common.constants.roles import AllRolesEnum
 from app.common.schemas.base import BaseSchema
+from app.common.schemas.mixins.id_created_updated import IdCreatedUpdatedMixin
 from pydantic import EmailStr
 
 
@@ -26,5 +27,5 @@ class UserDataUpdateSchema(UserBaseSchema):
     last_name: str | None = None
 
 
-class UserBaseReadSchema(UserDataUpdateSchema, UserRolesSchema):
-    id: int
+class UserBaseReadSchema(UserDataUpdateSchema, UserRolesSchema, IdCreatedUpdatedMixin):
+    pass

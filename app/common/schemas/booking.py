@@ -2,6 +2,7 @@ from datetime import date
 from typing import Annotated
 
 from app.common.schemas.base import BaseSchema
+from app.common.schemas.mixins.id_created_updated import IdCreatedUpdatedMixin
 from app.common.schemas.room import RoomReadSchema
 from app.common.schemas.user import UserBaseReadSchema
 from pydantic import AliasChoices, Field
@@ -21,8 +22,7 @@ class BookingCreateSchema(BookingUpdateSchema):
     user_id: int
 
 
-class BookingBaseReadSchema(BookingCreateSchema):
-    id: int
+class BookingBaseReadSchema(BookingCreateSchema, IdCreatedUpdatedMixin):
     total_days: int
     total_cost: int
 

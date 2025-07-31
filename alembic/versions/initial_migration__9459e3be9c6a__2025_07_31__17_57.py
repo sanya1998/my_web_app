@@ -1,13 +1,13 @@
 """Initial migration
 
 Revision ID:
-fba4a59078f0
+9459e3be9c6a
 
 Revises:
 
 
 Create Date:
-2025-04-30 17:10:34.797839
+2025-07-31 17:57:08.367077
 """
 
 from typing import Sequence, Union
@@ -17,7 +17,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = "fba4a59078f0"
+revision: str = "9459e3be9c6a"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -33,6 +33,20 @@ def upgrade() -> None:
         sa.Column("stars", sa.Integer(), nullable=True),
         sa.Column("image_id", sa.Integer(), nullable=True),
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("created_dt", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("updated_dt", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_table(
+        "query_history",
+        sa.Column("method", sa.String(), nullable=False),
+        sa.Column("url_path", sa.String(), nullable=False),
+        sa.Column("query_string", sa.String(), nullable=False),
+        sa.Column("status_code", sa.Integer(), nullable=False),
+        sa.Column("process_time", sa.Numeric(precision=8, scale=6), nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("created_dt", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("updated_dt", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_table(
@@ -43,6 +57,8 @@ def upgrade() -> None:
         sa.Column("roles", sa.ARRAY(sa.String()), nullable=False),
         sa.Column("hashed_password", sa.String(), nullable=False),
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("created_dt", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("updated_dt", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("email"),
     )
@@ -56,6 +72,8 @@ def upgrade() -> None:
         sa.Column("quantity", sa.Integer(), nullable=False),
         sa.Column("image_id", sa.Integer(), nullable=True),
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("created_dt", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("updated_dt", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["hotel_id"],
             ["hotels.id"],
@@ -86,6 +104,8 @@ def upgrade() -> None:
             nullable=True,
         ),
         sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column("created_dt", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column("updated_dt", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["room_id"],
             ["rooms.id"],
@@ -104,5 +124,6 @@ def downgrade() -> None:
     op.drop_table("bookings")
     op.drop_table("rooms")
     op.drop_table("users")
+    op.drop_table("query_history")
     op.drop_table("hotels")
     # ### end Alembic commands ###

@@ -1,6 +1,5 @@
-from datetime import datetime
-
 from app.common.schemas.base import BaseSchema
+from app.common.schemas.mixins.id_created_updated import IdCreatedUpdatedMixin
 
 
 class QueryHistoryBaseSchema(BaseSchema):
@@ -11,6 +10,5 @@ class QueryHistoryBaseSchema(BaseSchema):
     process_time: float
 
 
-class QueryHistoryReadSchema(QueryHistoryBaseSchema):
-    id: int
-    created_dt: datetime
+class QueryHistoryReadSchema(QueryHistoryBaseSchema, IdCreatedUpdatedMixin):
+    pass

@@ -43,6 +43,9 @@ alembic_upgrade_head:
 alembic_downgrade_1:
 	alembic downgrade -1
 
+alembic_downgrade_base:
+	alembic downgrade base
+
 create_first_migration_base: set_base_env alembic_create_first_revision
 
 forward_migrations_head_base: set_base_env alembic_upgrade_head

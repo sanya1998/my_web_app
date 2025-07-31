@@ -2,6 +2,7 @@ from typing import Annotated, List
 
 from app.common.schemas.base import BaseSchema
 from app.common.schemas.hotel import HotelBaseReadSchema
+from app.common.schemas.mixins.id_created_updated import IdCreatedUpdatedMixin
 from pydantic import AliasChoices, Field
 
 
@@ -15,8 +16,8 @@ class RoomBaseSchema(BaseSchema):
     image_id: int | None = None
 
 
-class RoomBaseReadSchema(RoomBaseSchema):
-    id: int
+class RoomBaseReadSchema(RoomBaseSchema, IdCreatedUpdatedMixin):
+    pass
 
 
 class RoomReadSchema(RoomBaseReadSchema):
@@ -26,5 +27,4 @@ class RoomReadSchema(RoomBaseReadSchema):
 
 class ManyRoomsReadSchema(RoomReadSchema):
     remain_by_room: int
-    # Если не указаны даты, то 0, потому что невозможно посчитать
-    total_cost: int
+    total_cost: int  # Если не указаны даты, то 0, потому что невозможно посчитать

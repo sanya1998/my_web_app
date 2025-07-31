@@ -1,5 +1,5 @@
 from app.common.tables.base import BaseTable
-from sqlalchemy import DateTime, Integer, Numeric, String, func
+from sqlalchemy import Integer, Numeric, String
 from sqlalchemy.orm import mapped_column
 
 
@@ -9,7 +9,6 @@ class QueryHistory(BaseTable):
     query_string = mapped_column(String, nullable=False)
     status_code = mapped_column(Integer, nullable=False)
     process_time = mapped_column(Numeric(8, 6), nullable=False)
-    created_dt = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     def __str__(self):
         return f"QueryHistory #{self.id}"

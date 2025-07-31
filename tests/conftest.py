@@ -1,10 +1,10 @@
+import os
 from typing import Any, AsyncGenerator, AsyncIterator
 
 import pytest_asyncio
 from app.app import app
 from app.common.constants.environments import Environments
 from app.common.logger import logger
-from app.common.tables.base import metadata
 from app.config.common import settings
 from app.dependencies.auth.credentials import CredentialsInput
 from app.resources.postgres import async_session, engine
@@ -37,11 +37,13 @@ async def prepare_db():
     assert settings.POSTGRES_HOST in ALLOWED_POSTGRES_HOSTS
     assert settings.REDIS_HOST in ALLOWED_REDIS_HOSTS
 
+    os.system("alembic downgrade base")
+    os.system("alembic upgrade head")
+
+    with open("tests/dump/dump.sql", "r") as f:
+        commands = f.read()
+
     async with engine.begin() as conn:
-        await conn.run_sync(metadata.drop_all)
-        await conn.run_sync(metadata.create_all)
-        with open("tests/dump/dump.sql", "r") as f:
-            commands = f.read()
         [await conn.execute(text(cmd)) for cmd in commands.split(sep=";") if cmd.strip()]
 
 
