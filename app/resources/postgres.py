@@ -1,27 +1,33 @@
 import json
 
 import pydantic.json
-from app.common.constants.environments import Environments
+from app.common.constants.pool_names import PoolNameEnum
 from app.config.common import settings
-from sqlalchemy import AsyncAdaptedQueuePool, NullPool
+from sqlalchemy import AsyncAdaptedQueuePool, NullPool, QueuePool, SingletonThreadPool, StaticPool
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+classes_pool_map = {
+    PoolNameEnum.NullPool: NullPool,
+    PoolNameEnum.StaticPool: StaticPool,
+    PoolNameEnum.QueuePool: QueuePool,
+    PoolNameEnum.AsyncAdaptedQueuePool: AsyncAdaptedQueuePool,
+    PoolNameEnum.SingletonThreadPool: SingletonThreadPool,
+}
 
 engine = create_async_engine(
     url=settings.POSTGRES_URL,
-    poolclass=NullPool if settings.ENVIRONMENT == Environments.TEST else AsyncAdaptedQueuePool,
+    poolclass=classes_pool_map.get(settings.DB_POOL_CLASS),
     json_serializer=lambda *args, **kwargs: json.dumps(*args, default=pydantic.json.pydantic_encoder, **kwargs),
-    # pool_size=settings.DB_POOL_SIZE,
-    # max_overflow=settings.DB_MAX_OVERFLOW,
-    # pool_recycle=settings.DB_POOL_RECYCLE,
-    # pool_pre_ping=settings.DB_POOL_PRE_PING,
-    # echo=settings.DEBUG,
+    pool_size=settings.DB_POOL_SIZE,
+    max_overflow=settings.DB_MAX_OVERFLOW,
+    pool_recycle=settings.DB_POOL_RECYCLE,
+    pool_pre_ping=settings.DB_POOL_PRE_PING,
 )
 async_session = async_sessionmaker(
     engine,
     class_=AsyncSession,
-    expire_on_commit=False,
-    # autocommit=False,
-    autoflush=True,
+    expire_on_commit=False,  # False: экземпляры останутся доступными на время транзакции, даже после вызова commit()
+    autoflush=True,  # True: автоматически синхронизирует не обработанные изменения после каждой операции.
 )
 
 
@@ -40,7 +46,7 @@ def with_session(func):
         # try:
         #     ...
         # except Exception:
-        #     # TODO: await session.rollback()
+        #     # TODO: мб await session.rollback() ?
         #     raise
 
     return wrapper

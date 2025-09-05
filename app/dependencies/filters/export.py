@@ -6,6 +6,7 @@ from app.config.common import settings
 from app.dependencies.filters.base import MainFilters, get_depends_by_filters_model
 from pydantic import Field
 
+# TODO: remove ??
 columns = get_columns_by_table(Rooms)
 
 

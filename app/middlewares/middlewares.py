@@ -34,7 +34,7 @@ def add_middlewares(app: FastAPI):
                 status_code=response.status_code,
                 process_time=process_time,
             )
-            await request.app.history_publisher.publish(message=q)
+            await request.app.state.history_publisher.publish(message=q)
         except Exception as e:
             logger.error(e)
 

@@ -1,6 +1,5 @@
 from app.exceptions.repositories.base import BaseRepoError
 
 
-# TODO: deprecated
-class WrongQueryError(BaseRepoError):
+class IntegrityRepoError(BaseRepoError):
     pass

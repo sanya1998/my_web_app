@@ -8,4 +8,4 @@ class RoomsView(BaseView, model=Rooms):
     name_plural = "Номера"
     icon = "fa-solid fa-bed"
 
-    column_list = [*get_columns_by_table(Rooms), Rooms.hotel]
+    column_list = [Rooms.hotel, *get_columns_by_table(Rooms)]

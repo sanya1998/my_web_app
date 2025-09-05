@@ -20,9 +20,9 @@ class BookingRepo(BaseRepository):
 
     one_read_schema = BookingReadSchema
     many_read_schema = BookingReadSchema
-    one_created_read_schema = BookingBaseReadSchema
-    one_updated_read_schema = BookingBaseReadSchema
-    one_deleted_read_schema = BookingBaseReadSchema
+    one_created_schema = BookingBaseReadSchema
+    one_updated_schema = BookingBaseReadSchema
+    one_deleted_schema = BookingBaseReadSchema
 
     create_schema = BookingCreateSchema
 

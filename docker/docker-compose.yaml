@@ -25,7 +25,7 @@ x-base-python: &base-python
 services:
   postgres:
     image: postgres:${POSTGRES_VERSION}
-    container_name: postgres
+    container_name: my-web-app-postgres
     tty: true  # TODO: разобраться
     volumes:
       - postgresql_data:/var/lib/postgresql/data
@@ -127,7 +127,7 @@ services:
       - rabbitmq
 
   api:
-    container_name: api
+    container_name: my-web-app-api
     restart: on-failure:5
     <<: *base-python
     ports:

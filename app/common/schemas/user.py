@@ -14,6 +14,7 @@ class UserRolesSchema(UserBaseSchema):
     roles: List[AllRolesEnum]
 
 
+# TODO: мб hashed_password: bytes ?
 class UserHashedPasswordSchema(UserBaseSchema):
     hashed_password: str
 

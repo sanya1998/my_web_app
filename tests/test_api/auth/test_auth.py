@@ -16,11 +16,12 @@ from tests.constants.urls import AUTH_SIGN_UP_URL
     ],
 )
 async def test_sign_up(client: TestClient, email, password, status_code):
-    await client.post(
+    response = await client.post(
         url=AUTH_SIGN_UP_URL,
         code=status_code,
         data={"username": email, "password": password},
     )
+    assert response.status_code == status_code
 
 
 @pytest.mark.parametrize(

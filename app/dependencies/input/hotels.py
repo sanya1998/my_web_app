@@ -24,6 +24,14 @@ class HotelUpsertInput(HotelBaseInput):
     location: str
 
 
+class HotelUpdateInput(HotelUpsertInput):
+    pass
+
+
+class HotelCreateInput(HotelUpsertInput):
+    pass
+
+
 HotelInputPatchAnn = Annotated[HotelBaseInput, Body()]
-HotelInputCreateAnn = Annotated[HotelUpsertInput, Form()]
-HotelInputUpdateAnn = Annotated[HotelUpsertInput, Body()]
+HotelInputCreateAnn = Annotated[HotelCreateInput, Form()]
+HotelInputUpdateAnn = Annotated[HotelUpdateInput, Body()]

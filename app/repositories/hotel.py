@@ -14,9 +14,9 @@ class HotelRepo(BaseRepository):
 
     one_read_schema = HotelReadSchema
     many_read_schema = ManyHotelsReadSchema
-    one_created_read_schema = HotelBaseReadSchema
-    one_updated_read_schema = HotelBaseReadSchema
-    one_deleted_read_schema = HotelBaseReadSchema
+    one_created_schema = HotelBaseReadSchema
+    one_updated_schema = HotelBaseReadSchema
+    one_deleted_schema = HotelBaseReadSchema
 
     create_schema = HotelUpsertInput
 

@@ -4,6 +4,7 @@ from app.common.helpers.db import get_columns_by_table
 from app.common.schemas.room import ManyRoomsReadSchema, RoomBaseReadSchema, RoomReadSchema
 from app.common.tables import Bookings, Hotels, Rooms
 from app.dependencies.filters import RoomsFilters
+from app.dependencies.input.rooms import RoomUpsertInput
 from app.repositories.base import BaseRepository
 from sqlalchemy import ColumnElement, Select, and_, func, label, or_, select
 
@@ -13,8 +14,9 @@ class RoomRepo(BaseRepository):
 
     one_read_schema = RoomReadSchema
     many_read_schema = ManyRoomsReadSchema
+    upserted_schema = RoomBaseReadSchema
 
-    create_schema = RoomBaseReadSchema
+    upsert_schema = RoomUpsertInput
 
     @BaseRepository.catcher
     def _modify_query_for_getting_objects(self, query: Select, filters: RoomsFilters, **additional_filters) -> Select:

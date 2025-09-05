@@ -4,8 +4,10 @@ from app.common.constants.paths import PATTERN_OBJECT_ID, ROOMS_PATH
 from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.common.helpers.response import BaseResponse
-from app.common.schemas.room import ManyRoomsReadSchema, RoomReadSchema
+from app.common.schemas.room import ManyRoomsReadSchema, RoomBaseReadSchema, RoomReadSchema
+from app.dependencies.auth.roles.moderator import ModeratorDep
 from app.dependencies.filters import RoomsFiltersDep
+from app.dependencies.input.rooms import RoomInputUpsertAnn
 from app.dependencies.repositories import RoomRepoAnn
 from app.exceptions.api import NotFoundApiError
 from app.exceptions.repositories import NotFoundRepoError
@@ -22,6 +24,14 @@ async def get_rooms(filters: RoomsFiltersDep, room_repo: RoomRepoAnn):
     """
     rooms = await room_repo.get_objects(filters=filters)
     return BaseResponse(content=rooms)
+
+
+@router.post(
+    "/", response_model=BaseResponse[RoomBaseReadSchema], dependencies=[ModeratorDep], response_model_by_alias=False
+)
+async def upsert_room(room_input: RoomInputUpsertAnn, room_repo: RoomRepoAnn):
+    room = await room_repo.upsert(room_input)
+    return BaseResponse(content=room)
 
 
 @router.get(PATTERN_OBJECT_ID, response_model=BaseResponse[RoomReadSchema], response_model_by_alias=False)

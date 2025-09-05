@@ -8,4 +8,4 @@ class BookingsView(BaseView, model=Bookings):
     name_plural = "Бронирования"
     icon = "fa-solid fa-book"
 
-    column_list = [*get_columns_by_table(Bookings), Bookings.user]
+    column_list = [Bookings.user, Bookings.room, *get_columns_by_table(Bookings)]

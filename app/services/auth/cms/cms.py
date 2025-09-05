@@ -1,19 +1,15 @@
 from app.repositories import UserRepo
-from app.resources.postgres import async_session
-from app.services import BaseService
 from app.services.auth import ApiAuthService, RolesAuthService
+from app.services.base import BaseService
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
 
 class CmsAuthService(ApiAuthService, RolesAuthService):
     @BaseService.catcher
-    def __init__(self, request: Request):
-        self.session = async_session()
+    def __init__(self, request: Request, session: AsyncSession):
+        self.session = session
         super().__init__(user_repo=UserRepo(self.session), request=request)
-
-    @BaseService.catcher
-    def __del__(self):
-        self.session.close()
 
     @BaseService.catcher
     async def authenticate_admin_or_moderator_by_token(self, token: str) -> bool:

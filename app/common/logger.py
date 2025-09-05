@@ -24,6 +24,7 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
 
 formatter = CustomJsonFormatter("%(timestamp)s %(level)s %(message)s %(module)s %(funcName)s")
 
-logHandler.setFormatter(formatter)
+# TODO: не удобно читать
+# logHandler.setFormatter(formatter)
 logger.addHandler(logHandler)
 logger.setLevel(settings.LOG_LEVEL)

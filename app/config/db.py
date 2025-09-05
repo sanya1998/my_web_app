@@ -1,3 +1,4 @@
+from app.common.constants.pool_names import PoolNameEnum
 from pydantic import computed_field
 from pydantic_settings import BaseSettings
 
@@ -57,11 +58,23 @@ class DbSettings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
 
+    # размер пула соединений
+    DB_POOL_SIZE: int = 20
+    # Если соединений не хватает, то можно создать на время дополнительные
+    DB_MAX_OVERFLOW: int = 10
+
+    # TODO: хорошая практика - разделить пулы на запись и чтение
     # DB_WRITE_MIN_POOL_SIZE: int = 4
     # DB_WRITE_MAX_POOL_SIZE: int = 10
     # DB_READ_MIN_POOL_SIZE: int = 5
     # DB_READ_MAX_POOL_SIZE: int = 20
-    # DB_COMMAND_TIMEOUT: float = 10.0
+
+    # Время жизни соединения в пуле. Если оно не используется указанное время (в секундах), то будет заменено на новое
+    DB_POOL_RECYCLE: int = 600
+    # Перед использованием соединения происходит пинг БД (SELECT 1), если соединение не работает, будет переподключение
+    DB_POOL_PRE_PING: bool = True
+
+    DB_POOL_CLASS: PoolNameEnum = PoolNameEnum.AsyncAdaptedQueuePool
 
     @computed_field
     @property

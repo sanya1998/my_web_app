@@ -7,6 +7,6 @@ class QueryHistoryRepo(BaseRepository):
     db_model = QueryHistory
 
     one_read_schema = QueryHistoryReadSchema
-    one_created_read_schema = QueryHistoryReadSchema
+    one_created_schema = QueryHistoryReadSchema
 
     create_schema = QueryHistoryBaseSchema

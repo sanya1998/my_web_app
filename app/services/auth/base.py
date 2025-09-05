@@ -11,7 +11,7 @@ from app.exceptions.services import (
     MissingRequiredClaimServiceError,
 )
 from app.repositories import UserRepo
-from app.services import BaseService
+from app.services.base import BaseService
 from jwt.exceptions import ExpiredSignatureError, InvalidAlgorithmError, InvalidTokenError, MissingRequiredClaimError
 
 

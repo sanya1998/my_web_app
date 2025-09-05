@@ -15,6 +15,7 @@ def catch_exception(
     skips: List = None,
     infos: List = None,
     warnings: List = None,
+    ignore: List = None,
 ) -> Callable:
     """Декоратор, который позволяет ловить все исключения в методе с помощью 'except <base_error>'"""
 
@@ -26,7 +27,7 @@ def catch_exception(
             except Exception as ex:
 
                 def raise_exception(ex_):
-                    if ex_ is base_error:
+                    if ex_ is base_error or ignore and ex_.__class__ in ignore:
                         raise
                     if isinstance(ex_, base_error):
                         raise ex_
@@ -47,7 +48,7 @@ def catch_exception(
                     logger.info(description, extra=data)
                 elif warnings and ex.__class__ in warnings:
                     logger.warning(description, extra=data)
-                else:
+                elif ignore and ex.__class__ not in ignore:
                     logger.error(description, extra=data, exc_info=exc_info)
                 raise_exception(ex)
 

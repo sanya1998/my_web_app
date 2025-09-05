@@ -8,8 +8,8 @@ from app.resources.rmq.base import BaseRabbitMQ
 
 class BasePublisher(BaseRabbitMQ):
     def __init__(self, routing_key: str, exchange_name: str, **kwargs):
-        self.exchange_name = exchange_name
         self.routing_key = routing_key
+        self.exchange_name = exchange_name
         super().__init__(**kwargs)
 
     @staticmethod

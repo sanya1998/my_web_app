@@ -11,12 +11,19 @@ from app.resources.rmq.base_publisher import BasePublisher
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.datastructures import State
+from starlette.routing import Mount
 
 
 @asynccontextmanager
 async def lifespan(app_: FastAPI):
-    # TODO: поле app_.history_publisher функционирует, но нет подсказок IDE для app_.history_publisher
-    async with BasePublisher(settings.HISTORY_ROUTING_KEY, settings.HISTORY_EXCHANGE_NAME) as app_.history_publisher:
+    # TODO: поле app_.state.history_publisher функционирует, но нет подсказок IDE для
+    async with BasePublisher(settings.HISTORY_ROUTING_KEY, settings.HISTORY_EXCHANGE_NAME) as history_publisher:
+        app_.state = State()  # TODO: это делать не обязательно, но без этого pycharm подчеркивает
+        app_.state.history_publisher = history_publisher
+        for r in app_.routes:
+            if isinstance(r, Mount):
+                r.app.state = app_.state
         yield
 
 

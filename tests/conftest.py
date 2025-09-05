@@ -1,6 +1,8 @@
+import asyncio
 import os
 from typing import Any, AsyncGenerator, AsyncIterator
 
+import pytest
 import pytest_asyncio
 from app.app import app
 from app.common.constants.environments import Environments
@@ -31,7 +33,15 @@ ALLOWED_POSTGRES_HOSTS = ["0.0.0.0"]  # TODO: возможно, для тест�
 ALLOWED_REDIS_HOSTS = ["0.0.0.0"]
 
 
-@pytest_asyncio.fixture(loop_scope="session", scope="session", autouse=True)
+@pytest.fixture(scope="session")
+def event_loop():
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
+    yield loop
+    loop.close()
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
 async def prepare_db():
     assert settings.ENVIRONMENT == Environments.TEST
     assert settings.POSTGRES_HOST in ALLOWED_POSTGRES_HOSTS
