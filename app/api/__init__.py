@@ -1,19 +1,13 @@
-from app.api.auth import auth_router
-from app.api.data import data_router
-from app.api.frontend import pages_router
-from app.api.internal import internal_router
-from app.api.media import media_router
-from app.api.srv import srv_router
-from app.api.users import users_router
+from app.api import auth, data, frontend, internal, media, srv, users
 from app.common.constants.paths import ROOT_API_PATH
 from app.common.helpers.api_version import VersionedAPIRouter
 
 api_router = VersionedAPIRouter(prefix=ROOT_API_PATH, is_root_router=True)
 
-api_router.include_router(srv_router)
-api_router.include_router(auth_router)
-api_router.include_router(users_router)
-api_router.include_router(data_router)
-api_router.include_router(media_router)
-api_router.include_router(pages_router)
-api_router.include_router(internal_router)
+api_router.include_router(srv.router)
+api_router.include_router(auth.router)
+api_router.include_router(users.router)
+api_router.include_router(data.router)
+api_router.include_router(media.router)
+api_router.include_router(frontend.router)
+api_router.include_router(internal.router)

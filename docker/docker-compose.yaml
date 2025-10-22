@@ -35,7 +35,7 @@ services:
 
   redis:
     image: redis:${REDIS_VERSION}
-    container_name: redis
+    container_name: my-web-app-redis
     restart: unless-stopped
     <<: *base-env
     ports:
@@ -67,7 +67,7 @@ services:
 
   prometheus:
     image: prom/prometheus:${PROMETHEUS_VERSION}
-    container_name: prometheus
+    container_name: my-web-app-prometheus
     volumes:
       - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -78,7 +78,7 @@ services:
 
   grafana:
     image: grafana/grafana:${GRAFANA_VERSION}
-    container_name: grafana
+    container_name: my-web-app-grafana
     restart: unless-stopped
     <<: *base-env
     ports:
@@ -91,7 +91,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:${RMQ_VERSION}
-    container_name: rabbitmq
+    container_name: my-web-app-rabbitmq
     restart: unless-stopped
     <<: *base-env
     ports:
@@ -106,19 +106,19 @@ services:
       retries: 5
 
   celery-worker:
-    container_name: celery-worker
+    container_name: my-web-app-celery-worker
     <<: *base-python
     command: ["/code/docker/custom_python/celery.sh", "worker"]
 
   celery-flower:
-    container_name: celery-flower
+    container_name: my-web-app-celery-flower
     <<: *base-python
     ports:
       - 5555:${FLOWER_PORT}
     command: ["/code/docker/custom_python/celery.sh", "flower", "${FLOWER_PORT}"]
 
   history-consumer:
-    container_name: history-consumer
+    container_name: my-web-app-history-consumer
     restart: on-failure:5
     <<: *base-python
     command: ["/code/docker/custom_python/history.sh"]

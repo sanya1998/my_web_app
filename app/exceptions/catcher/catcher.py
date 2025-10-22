@@ -1,3 +1,10 @@
+"""
+Для удобного дебага, чтобы не заходить постоянно в декоратор catch_exception,
+нужно `app/exceptions/catcher/catcher.py` (путь до этого файла) добавить в
+PyCharm → Preferences → Build, Execution, Deployment → Debugger → Stepping -> script filters configured
+и нажимать синюю стрелку "Step into my code".
+"""
+
 import asyncio
 from contextlib import contextmanager
 from functools import wraps
@@ -15,7 +22,6 @@ def catch_exception(
     skips: List = None,
     infos: List = None,
     warnings: List = None,
-    ignore: List = None,
 ) -> Callable:
     """Декоратор, который позволяет ловить все исключения в методе с помощью 'except <base_error>'"""
 
@@ -27,7 +33,7 @@ def catch_exception(
             except Exception as ex:
 
                 def raise_exception(ex_):
-                    if ex_ is base_error or ignore and ex_.__class__ in ignore:
+                    if ex_ is base_error or skips and ex_.__class__ in skips:
                         raise
                     if isinstance(ex_, base_error):
                         raise ex_
@@ -43,12 +49,12 @@ def catch_exception(
                     "ex": ex,
                 }
                 if skips and ex.__class__ in skips:
-                    raise_exception(ex)
-                elif infos and ex.__class__ in infos:
-                    logger.info(description, extra=data)
+                    pass
                 elif warnings and ex.__class__ in warnings:
                     logger.warning(description, extra=data)
-                elif ignore and ex.__class__ not in ignore:
+                elif infos and ex.__class__ in infos:
+                    logger.info(description, extra=data)
+                else:
                     logger.error(description, extra=data, exc_info=exc_info)
                 raise_exception(ex)
 

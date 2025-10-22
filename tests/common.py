@@ -16,7 +16,7 @@ def prepare_response(func):
     return wrapper
 
 
-class TestClient(AsyncClient):
+class CustomAsyncClient(AsyncClient):
     @prepare_response
     async def post(self, *args, **kwargs) -> ResponseType | Response:
         return await super().post(*args, **kwargs)

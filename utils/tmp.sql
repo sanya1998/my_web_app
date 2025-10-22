@@ -25,3 +25,7 @@ FROM pg_stat_activity
 WHERE state is not null
 ORDER BY query_start desc
 LIMIT 500;
+
+SHOW max_connections;
+
+SELECT COUNT(*) FROM pg_stat_activity;

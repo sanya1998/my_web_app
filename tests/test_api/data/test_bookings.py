@@ -9,7 +9,7 @@ from app.common.schemas.user import UserBaseReadSchema
 from app.dependencies.input import BookingCreateInputSchema, BookingUpdateInputSchema
 from httpx import QueryParams
 from starlette import status
-from tests.common import TestClient
+from tests.common import CustomAsyncClient
 from tests.constants.urls import BOOKINGS_URL, ROOMS_URL, USERS_CURRENT_URL
 
 
@@ -22,7 +22,7 @@ from tests.constants.urls import BOOKINGS_URL, ROOMS_URL, USERS_CURRENT_URL
         ),
     ],
 )
-async def test_unauthorized_create_bookings(client: TestClient, mock_send_email, data, status_code):
+async def test_unauthorized_create_bookings(client: CustomAsyncClient, mock_send_email, data, status_code):
     """Неавторизованный пользователь не может бронировать"""
     await client.post(BOOKINGS_URL, code=status_code, data=data)
 
@@ -36,7 +36,7 @@ async def test_unauthorized_create_bookings(client: TestClient, mock_send_email,
     ],
 )
 async def test_api_not_created_booking(
-    user_client: TestClient, manager_client: TestClient, mock_send_email, data, status_code
+    user_client: CustomAsyncClient, manager_client: CustomAsyncClient, mock_send_email, data, status_code
 ):
     """Некорректные данные при создании"""
     await user_client.post(BOOKINGS_URL, code=status_code, data=data)
@@ -49,7 +49,7 @@ async def test_api_not_created_booking(
     ],
 )
 async def test_api_crud_booking(
-    user_client: TestClient, manager_client: TestClient, mock_send_email, data, status_code
+    user_client: CustomAsyncClient, manager_client: CustomAsyncClient, mock_send_email, data, status_code
 ):
     # create
     created_booking = await user_client.post(BOOKINGS_URL, code=status_code, model=BookingBaseReadSchema, data=data)
@@ -82,7 +82,7 @@ async def test_api_crud_booking(
     await manager_client.delete(f"{BOOKINGS_URL}{updated_booking.id}", model=BookingBaseReadSchema)
 
 
-async def test_busy_bookings(user_client: TestClient, mock_send_email):
+async def test_busy_bookings(user_client: CustomAsyncClient, mock_send_email):
     """
     Тест, который показывает, что нельзя забронировать комнату, когда все занято
     """
@@ -110,7 +110,7 @@ async def test_busy_bookings(user_client: TestClient, mock_send_email):
     await creating_booking(status.HTTP_409_CONFLICT)
 
 
-async def test_getting_and_deleting_bookings(user_client: TestClient, manager_client: TestClient):
+async def test_getting_and_deleting_bookings(user_client: CustomAsyncClient, manager_client: CustomAsyncClient):
     user = await user_client.get(USERS_CURRENT_URL, model=UserBaseReadSchema)
 
     bookings_by_user = await manager_client.get(

@@ -1,123 +1,137 @@
-import asyncio
 import os
-from typing import Any, AsyncGenerator, AsyncIterator
+from functools import wraps
+from typing import AsyncIterator
 
 import pytest
-import pytest_asyncio
-from app.app import app
+import sqlparse
+from app.app import app as _app
 from app.common.constants.environments import Environments
+from app.common.constants.roles import AllRolesEnum
 from app.common.logger import logger
 from app.config.common import settings
 from app.dependencies.auth.credentials import CredentialsInput
-from app.resources.postgres import async_session, engine
+from app.resources.postgres import PostgresManager
 from asgi_lifespan import LifespanManager
 from httpx import ASGITransport, Response
 from pydantic import SecretStr
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
-from tests.common import TestClient
+from tests.common import CustomAsyncClient
 from tests.constants.urls import AUTH_SIGN_IN_URL
-from tests.constants.users_info import (
-    ADMIN_EMAIL,
-    ADMIN_PASSWORD,
-    MANAGER_EMAIL,
-    MANAGER_PASSWORD,
-    MODERATOR_EMAIL,
-    MODERATOR_PASSWORD,
-    USER_EMAIL,
-    USER_PASSWORD,
-)
+from tests.constants.users_info import CREDENTIALS
 
 ALLOWED_POSTGRES_HOSTS = ["0.0.0.0"]  # TODO: возможно, для тестов в ci/cd здесь понадобится postgres, redis
 ALLOWED_REDIS_HOSTS = ["0.0.0.0"]
 
 
+@pytest.fixture(scope="session", autouse=True)
+def anyio_backend():
+    """Почему-то без этой фикстуры тесты пропускаются, хотя выносил в ini `anyio_mode = "auto"`"""
+    return "asyncio"
+
+
 @pytest.fixture(scope="session")
-def event_loop():
-    policy = asyncio.get_event_loop_policy()
-    loop = policy.new_event_loop()
-    yield loop
-    loop.close()
+async def postgres_manager() -> AsyncIterator[PostgresManager]:
+    async with PostgresManager() as manager:
+        yield manager
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
-async def prepare_db():
+@pytest.fixture(scope="session", autouse=True)
+async def prepare_postgres(postgres_manager):
     assert settings.ENVIRONMENT == Environments.TEST
     assert settings.POSTGRES_HOST in ALLOWED_POSTGRES_HOSTS
-    assert settings.REDIS_HOST in ALLOWED_REDIS_HOSTS
+    assert settings.REDIS_HOST in ALLOWED_REDIS_HOSTS  # TODO: не здесь надо проверять
 
     os.system("alembic downgrade base")
     os.system("alembic upgrade head")
 
     with open("tests/dump/dump.sql", "r") as f:
-        commands = f.read()
+        sql_content = f.read()
 
-    async with engine.begin() as conn:
-        [await conn.execute(text(cmd)) for cmd in commands.split(sep=";") if cmd.strip()]
+    commands = sqlparse.split(sql_content)
 
-
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def session() -> AsyncIterator[AsyncSession]:
-    async with async_session() as _session:
-        yield _session
+    async with postgres_manager.engine.begin() as conn:
+        for cmd in commands:
+            if cmd.strip():
+                await conn.execute(text(cmd))
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def client() -> AsyncGenerator[TestClient, Any]:
-    async with TestClient(transport=ASGITransport(app), base_url="http://test") as ac, LifespanManager(app):
-        yield ac
+@pytest.fixture
+async def postgres_session(postgres_manager: PostgresManager) -> AsyncIterator[AsyncSession]:
+    async with postgres_manager.session_factory() as session:
+        yield session
 
 
-# TODO: в идеале использовать только client, но при этом должен отрабатывать test_multy_clients
-client_for_admin = client_for_manager = client_for_moderator = client_for_user = client
+@pytest.fixture(scope="session")
+async def app():
+    async with LifespanManager(_app) as manager:
+        yield manager.app
 
 
-async def sign_in(client: TestClient, email: str, password: str, code=status.HTTP_200_OK) -> Response:
-    """
-    Аутентифицирует пользователя
-    """
+async def sign_in(new_client: CustomAsyncClient, email: str, password: str, code=status.HTTP_200_OK) -> Response:
+    """Аутентифицирует клиента"""
     user_data = CredentialsInput(username=email, password=SecretStr(password)).model_dump()
-    return await client.post(AUTH_SIGN_IN_URL, data=user_data, code=code)
+    return await new_client.post(AUTH_SIGN_IN_URL, data=user_data, code=code)
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def admin_client(client_for_admin: TestClient) -> TestClient:
-    """
-    Аутентификация пользователя с правами админа
-    """
-    await sign_in(client=client_for_admin, email=ADMIN_EMAIL, password=ADMIN_PASSWORD)
-    return client_for_admin
+def auth_client_fixture(role: AllRolesEnum = None):
+    def decorator(fixture_func):
+        @wraps(fixture_func)
+        @pytest.fixture
+        async def wrapper(app):
+            async with CustomAsyncClient(transport=ASGITransport(app), base_url="http://test") as new_client:
+                if role:
+                    email, password = CREDENTIALS[role]
+                    await sign_in(new_client=new_client, email=email, password=password)
+
+                # Вариант с кастомизацией клиента внутри фикстуры:
+                # async for result in fixture_func(new_client):
+                #     yield result
+
+                # Текущий простой вариант:
+                yield new_client
+
+        return wrapper
+
+    return decorator
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def manager_client(client_for_manager: TestClient) -> TestClient:
-    """
-    Аутентификация пользователя с правами менеджера
-    """
-    await sign_in(client=client_for_manager, email=MANAGER_EMAIL, password=MANAGER_PASSWORD)
-    return client_for_manager
+# Вариант с кастомизацией (закомментирован на будущее):
+# @auth_client_fixture(AllRolesEnum.ADMIN)
+# async def admin_client(new_client: CustomAsyncClient) -> AsyncIterator[CustomAsyncClient]:
+#     # new_client.default_headers["X-Admin"] = "true"
+#     # new_client.timeout = 30.0
+#     yield new_client
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def moderator_client(client_for_moderator: TestClient) -> TestClient:
-    """
-    Аутентификация пользователя с правами модератора
-    """
-    await sign_in(client=client_for_moderator, email=MODERATOR_EMAIL, password=MODERATOR_PASSWORD)
-    return client_for_moderator
+# Текущий вариант
+@auth_client_fixture(AllRolesEnum.ADMIN)
+async def admin_client() -> AsyncIterator[CustomAsyncClient]:
+    pass
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
-async def user_client(client_for_user: TestClient) -> TestClient:
-    """
-    Аутентификация обычного пользователя
-    """
-    await sign_in(client=client_for_user, email=USER_EMAIL, password=USER_PASSWORD)
-    return client_for_user
+@auth_client_fixture(AllRolesEnum.MANAGER)
+async def manager_client() -> AsyncIterator[CustomAsyncClient]:
+    pass
 
 
-@pytest_asyncio.fixture(loop_scope="function", scope="function")
+@auth_client_fixture(AllRolesEnum.MODERATOR)
+async def moderator_client() -> AsyncIterator[CustomAsyncClient]:
+    pass
+
+
+@auth_client_fixture(AllRolesEnum.USER)
+async def user_client() -> AsyncIterator[CustomAsyncClient]:
+    pass
+
+
+@auth_client_fixture()
+async def client() -> AsyncIterator[CustomAsyncClient]:
+    pass
+
+
+@pytest.fixture
 def mock_send_email(mocker):
     def fake_send_email(booking: dict, email_to: str):
         logger.info(f"Имитация отправки сообщения на почту {email_to}. {booking}.")

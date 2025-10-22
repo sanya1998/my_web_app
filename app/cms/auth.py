@@ -1,6 +1,4 @@
-from app.config.common import settings
 from app.exceptions.services import BaseServiceError
-from app.resources.postgres import with_session
 from app.services.auth.cms import CmsAuthService
 from pydantic import ValidationError
 from sqladmin.authentication import AuthenticationBackend
@@ -9,11 +7,26 @@ from starlette.requests import Request
 
 
 class AdminAuth(AuthenticationBackend):
-    @with_session
+    def __init__(self, session_factory, secret_key: str):
+        self.session_factory = session_factory
+        super().__init__(secret_key=secret_key)
+
+    @staticmethod
+    def _with_session(method):
+        """Внутренний декоратор для работы с сессией"""
+
+        async def wrapper(self, request: Request, *args, **kwargs):
+            async with self.session_factory() as session:
+                try:
+                    return await method(self, request, session, *args, **kwargs)
+                except Exception:
+                    await session.rollback()
+                    raise
+
+        return wrapper
+
+    @_with_session
     async def login(self, request: Request, session: AsyncSession) -> bool:
-        """
-        Выполняется при входе
-        """
         try:
             auth_service = CmsAuthService(request=request, session=session)
             access_token = await auth_service.sign_in()
@@ -21,11 +34,8 @@ class AdminAuth(AuthenticationBackend):
         except (ValidationError, BaseServiceError):
             return False
 
-    @with_session
+    @_with_session
     async def logout(self, request: Request, session: AsyncSession) -> bool:
-        """
-        Выполняется при выходе
-        """
         try:
             auth_service = CmsAuthService(request=request, session=session)
             auth_service.sign_out()
@@ -33,16 +43,10 @@ class AdminAuth(AuthenticationBackend):
         except BaseServiceError:
             return False
 
-    @with_session
+    @_with_session
     async def authenticate(self, request: Request, session: AsyncSession) -> bool:
-        """
-        Выполняется при каждом переходе между страницами
-        """
         try:
             auth_service = CmsAuthService(request=request, session=session)
             return await auth_service.authenticate_admin_or_moderator()
         except BaseServiceError:
             return False
-
-
-authentication_backend = AdminAuth(secret_key=settings.JWT_SECRET_KEY)

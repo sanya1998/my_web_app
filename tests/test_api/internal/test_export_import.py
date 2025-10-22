@@ -8,10 +8,9 @@ from app.common.constants.paths import ALL_PATH, FILTERED_PATH
 from app.common.tables import Bookings, Hotels, Rooms, Users
 from app.common.tables.base import metadata
 from app.config.common import settings
-from app.resources.postgres import engine
 from httpx import QueryParams
 from starlette import status
-from tests.common import TestClient
+from tests.common import CustomAsyncClient
 from tests.constants.urls import ROOT_V1_EXPORT, ROOT_V1_IMPORT
 
 INFO_TYPE_MAP_TABLE = {
@@ -22,7 +21,7 @@ INFO_TYPE_MAP_TABLE = {
 }
 
 
-async def export_file(admin_client: TestClient, info_type: str, params: QueryParams = None):
+async def export_file(admin_client: CustomAsyncClient, info_type: str, params: QueryParams = None):
     path = FILTERED_PATH if params else ALL_PATH
     type_path = f"/{info_type}"
     response_export = await admin_client.get(f"{ROOT_V1_EXPORT}{path}{type_path}", params=params)
@@ -44,14 +43,14 @@ async def export_file(admin_client: TestClient, info_type: str, params: QueryPar
         (True, status.HTTP_201_CREATED),
     ],
 )
-async def test_all_export_all_import(admin_client: TestClient, with_deleting, status_code):
+async def test_all_export_all_import(postgres_manager, admin_client: CustomAsyncClient, with_deleting, status_code):
     info_type = InfoTypes.BOOKINGS.value
     type_path = f"/{info_type}"
     file = await export_file(admin_client, info_type)
 
     if with_deleting:
         tables = [INFO_TYPE_MAP_TABLE.get(InfoTypes.BOOKINGS).__table__]
-        async with engine.begin() as conn:
+        async with postgres_manager.engine.begin() as conn:
             await conn.run_sync(metadata.drop_all, tables=tables)
             await conn.run_sync(metadata.create_all, tables=tables)
 
@@ -59,7 +58,7 @@ async def test_all_export_all_import(admin_client: TestClient, with_deleting, st
     await admin_client.post(f"{ROOT_V1_IMPORT}{ALL_PATH}{type_path}", code=status_code, files={"file": file})
 
 
-async def test_filtered_export(admin_client: TestClient):
+async def test_filtered_export(admin_client: CustomAsyncClient):
     exclude_id = 1
     info_type = InfoTypes.ROOMS.value
     file = await export_file(admin_client, info_type, QueryParams(id__not_in=[exclude_id]))

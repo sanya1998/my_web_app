@@ -1,11 +1,9 @@
-from app.api.srv.ping import router as ping_router
-from app.api.srv.tmp import router as testing_router
-from app.api.srv.welcome import router as welcome_router
+from app.api.srv import ping, tmp, welcome
 from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 
-srv_router = VersionedAPIRouter(tags=[TagsEnum.SRV])
+router = VersionedAPIRouter(tags=[TagsEnum.SRV])
 
-srv_router.include_router(welcome_router)
-srv_router.include_router(ping_router)
-srv_router.include_router(testing_router)
+router.include_router(welcome.router)
+router.include_router(ping.router)
+router.include_router(tmp.router)

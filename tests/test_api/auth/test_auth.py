@@ -2,7 +2,7 @@ import pytest
 from app.common.helpers.response import TokenResponse
 from app.exceptions.api import NotFoundApiError, UnauthorizedApiError
 from starlette import status
-from tests.common import TestClient
+from tests.common import CustomAsyncClient
 from tests.conftest import sign_in
 from tests.constants.urls import AUTH_SIGN_UP_URL
 
@@ -15,7 +15,7 @@ from tests.constants.urls import AUTH_SIGN_UP_URL
         ("bad_email", "easy_password", status.HTTP_422_UNPROCESSABLE_ENTITY),
     ],
 )
-async def test_sign_up(client: TestClient, email, password, status_code):
+async def test_sign_up(client: CustomAsyncClient, email, password, status_code):
     response = await client.post(
         url=AUTH_SIGN_UP_URL,
         code=status_code,
@@ -31,8 +31,8 @@ async def test_sign_up(client: TestClient, email, password, status_code):
         ("no-person@moloko.ru", "hard_password", status.HTTP_404_NOT_FOUND, NotFoundApiError.detail),
     ],
 )
-async def test_bad_sign_in(client: TestClient, email, password, status_code, response_body):
-    response = await sign_in(client=client, email=email, password=password, code=status_code)
+async def test_bad_sign_in(client: CustomAsyncClient, email, password, status_code, response_body):
+    response = await sign_in(new_client=client, email=email, password=password, code=status_code)
     assert response.json() == response_body.model_dump()
 
 
@@ -42,7 +42,7 @@ async def test_bad_sign_in(client: TestClient, email, password, status_code, res
         ("fedor@moloko.ru", "hard_password"),
     ],
 )
-async def test_sign_in(client: TestClient, email, password):
-    response = await sign_in(client=client, email=email, password=password)
+async def test_sign_in(client: CustomAsyncClient, email, password):
+    response = await sign_in(new_client=client, email=email, password=password)
     token_response = TokenResponse.model_validate(response.json())
     assert token_response.access_token

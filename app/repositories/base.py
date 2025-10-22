@@ -7,7 +7,7 @@ from app.common.schemas.base import BaseSchema
 from app.common.tables.base import BaseTable
 from app.config.common import settings
 from app.dependencies.filters import BaseFilters, ExportFilters
-from app.exceptions.catcher import catch_exception
+from app.exceptions.catcher.catcher import catch_exception
 from app.exceptions.repositories import (
     AlreadyExistsRepoError,
     AttributeRepoError,
@@ -20,7 +20,7 @@ from app.exceptions.repositories.integrity import IntegrityRepoError
 from app.exceptions.repositories.programming import ProgrammingRepoError
 from asyncpg import UniqueViolationError
 from fastapi import UploadFile
-from sqlalchemy import Result, Select, TextClause, delete, exists, select, text, update
+from sqlalchemy import Result, Select, TextClause, delete, exists, func, select, text, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound, ProgrammingError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,6 +37,7 @@ class BaseRepository:
     one_updated_schema = TypeVar("one_updated_schema", bound=BaseSchema)
     many_updated_schema = TypeVar("many_updated_schema", bound=BaseSchema)
     upserted_schema = TypeVar("upserted_schema", bound=BaseSchema)
+    many_upserted_schema = TypeVar("many_upserted_schema", bound=BaseSchema)
     one_deleted_schema = TypeVar("one_deleted_schema", bound=BaseSchema)
     many_deleted_schema = TypeVar("many_deleted_schema", bound=BaseSchema)
 
@@ -49,8 +50,8 @@ class BaseRepository:
     catcher = catch_exception(
         base_error=BaseRepoError,
         description="Repository exception",
-        warnings=[NotFoundRepoError],
-        ignore=[IntegrityError, ProgrammingError],
+        skips=[IntegrityError, ProgrammingError],
+        warnings=[NotFoundRepoError, AlreadyExistsRepoError, IntegrityRepoError, ProgrammingRepoError],
     )
 
     @catcher
@@ -209,7 +210,7 @@ class BaseRepository:
         try:
             result = await self.execute(query)
         except IntegrityError:
-            # Нарушены индекс уникальности или уникальность поля. Так же сюда может при некорректном sql-запросе.
+            # Нарушены индекс уникальности или уникальность поля, либо некорректный sql-запросе.
             raise IntegrityRepoError
         await self.session.commit()
         obj = result.scalar_one()
@@ -235,10 +236,16 @@ class BaseRepository:
         if not index_elements:
             index_elements = [self.db_model.id]
         data_dict = data.model_dump()
+        set_dict = {**data_dict}
+
+        #  При on_conflict_do_update не вызывается то, что указали в onupdate. TODO: не универсально
+        if hasattr(self.db_model, "updated_dt"):
+            set_dict["updated_dt"] = func.now()
+
         query = (
             insert(self.db_model)
             .values(**data_dict)
-            .on_conflict_do_update(index_elements=index_elements, set_=data_dict)
+            .on_conflict_do_update(index_elements=index_elements, set_=set_dict)
             .returning(self.db_model)
         )
         try:
@@ -249,6 +256,10 @@ class BaseRepository:
         await self.session.commit()
         obj = result.scalar_one()
         return self.upserted_schema.model_validate(obj)
+
+    @catcher
+    async def upsert_bulk(self, data: upsert_schema, index_elements: list = None) -> List[many_upserted_schema]:
+        raise NotImplementedError
 
     @catcher
     async def _update(self, _exclude_unset, data: Union[update_schema, patch_schema], **filters) -> one_updated_schema:

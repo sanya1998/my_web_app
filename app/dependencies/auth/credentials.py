@@ -13,6 +13,9 @@ class CredentialsInput(OAuth2PasswordRequestForm):
         username: Annotated[EmailStr, Form(description="Электронная почта")],
         password: Annotated[SecretStr, Form(min_length=settings.PASSWORD_MIN_LENGTH)],
     ):
+        # TODO: check FastAPI 0.115.13:
+        #  Set format to password for fields password and client_secret in OAuth2PasswordRequestForm, make docs show
+        #  password fields for passwords.
         password_str = password if isinstance(password, str) else password.get_secret_value()
         password_secret = password if isinstance(password, SecretStr) else SecretStr(password)
         super().__init__(username=username, password=password_str)

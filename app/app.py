@@ -5,29 +5,35 @@ from app.cms.cms import add_cms
 from app.config.common import settings
 from app.exceptions.handlers import add_exceptions
 from app.middlewares.middlewares import add_middlewares
+from app.publishers.base import BasePublisher
 from app.resources.hawk_ import add_hawk_fastapi
+from app.resources.postgres import PostgresManager
 from app.resources.prometheus_ import add_prometheus
-from app.resources.rmq.base_publisher import BasePublisher
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.datastructures import State
-from starlette.routing import Mount
+
+
+class App(FastAPI):
+    state: State
 
 
 @asynccontextmanager
-async def lifespan(app_: FastAPI):
-    # TODO: поле app_.state.history_publisher функционирует, но нет подсказок IDE для
-    async with BasePublisher(settings.HISTORY_ROUTING_KEY, settings.HISTORY_EXCHANGE_NAME) as history_publisher:
-        app_.state = State()  # TODO: это делать не обязательно, но без этого pycharm подчеркивает
+async def lifespan(app_: App):
+    async with (
+        BasePublisher(settings.HISTORY_ROUTING_KEY, settings.HISTORY_EXCHANGE_NAME) as history_publisher,
+        PostgresManager() as postgres_manager,
+    ):
+        app_.state.postgres_manager = postgres_manager
         app_.state.history_publisher = history_publisher
-        for r in app_.routes:
-            if isinstance(r, Mount):
-                r.app.state = app_.state
+
+        await add_cms(app_, postgres_manager)
+
         yield
 
 
-app = FastAPI(
+app = App(
     lifespan=lifespan,
     debug=settings.DEBUG,
     title=settings.APPLICATION_NAME,
@@ -40,6 +46,5 @@ app.mount(path="/static", app=StaticFiles(directory="static/"), name="static")  
 
 add_exceptions(app)
 add_middlewares(app)
-add_cms(app)
 add_hawk_fastapi(app)
 add_prometheus(app)

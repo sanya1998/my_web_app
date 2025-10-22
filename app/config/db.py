@@ -1,4 +1,3 @@
-from app.common.constants.pool_names import PoolNameEnum
 from pydantic import computed_field
 from pydantic_settings import BaseSettings
 
@@ -73,8 +72,6 @@ class DbSettings(BaseSettings):
     DB_POOL_RECYCLE: int = 600
     # Перед использованием соединения происходит пинг БД (SELECT 1), если соединение не работает, будет переподключение
     DB_POOL_PRE_PING: bool = True
-
-    DB_POOL_CLASS: PoolNameEnum = PoolNameEnum.AsyncAdaptedQueuePool
 
     @computed_field
     @property

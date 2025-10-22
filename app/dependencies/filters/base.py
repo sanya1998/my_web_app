@@ -99,11 +99,23 @@ class BaseFilters(BaseModel):
             where_clauses.append(clause)
         return where_clauses
 
+    def execute_addings(self, filters, query: Select, exclude_fields=None):
+        # TODO: неэффективно, так как можно одним проходом цикла выбрать все методы add__ и запомнить
+        for method in dir(filters):
+            if method.startswith("add__"):
+                query = getattr(filters, method)(query=query, _exclude_fields=exclude_fields)
+
+        # TODO: неэффективно, так как в get_where_clauses используется цикл по этим же полям
+        fields = dict(filters)
+        for field_name, value in fields.items():
+            if isinstance(value, BaseFilters):
+                query = self.execute_addings(value, query, exclude_fields)
+
+        return query
+
     def modify_query(self, query: Select, exclude_fields=None, **additional_filters) -> Select:
         """Добавляет фильтры к sqlalchemy-запросу"""
-        for method in dir(self):
-            if method.startswith("add__"):
-                query = getattr(self, method)(query=query, _exclude_fields=exclude_fields)
+        query = self.execute_addings(self, query, exclude_fields)
 
         if where_clauses := self.get_where_clauses(exclude_fields, **additional_filters):
             query = query.where(*where_clauses)
@@ -133,6 +145,7 @@ class OrderByFilters(BaseFilters):
         if not self.order_by:
             return query
         sort_fields = []
+        # TODO: не сработает, если в коде использовать, из-за enum value (см translated_telegram)
         for field_name in self.order_by:
             if field_name.startswith(Helper.prefix_desc):
                 field_name = field_name.removeprefix(Helper.prefix_desc)
@@ -144,7 +157,7 @@ class OrderByFilters(BaseFilters):
 
             field_with_direction = getattr(field, direction)()
             sort_fields.append(field_with_direction)
-            query = query.order_by(*sort_fields)
+        query = query.order_by(*sort_fields)  # TODO: check (убрал tab)
         return query
 
 

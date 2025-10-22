@@ -13,17 +13,17 @@ from tests.constants.users_info import USER_EMAIL
         (100500, "...", False),
     ],
 )
-async def test_get_user_by_id(session, user_id, email, is_exist):
+async def test_get_user_by_id(postgres_session, user_id, email, is_exist):
     try:
-        user = await UserRepo(session).get_object(id=user_id)
+        user = await UserRepo(postgres_session).get_object(id=user_id)
         assert is_exist
         assert user.email == email
     except NotFoundRepoError:
         assert not is_exist
 
 
-async def test_unique_email(session):
+async def test_unique_email(postgres_session):
     with pytest.raises(IntegrityRepoError):
-        await UserRepo(session).create(
+        await UserRepo(postgres_session).create(
             UserCreateSchema(email=USER_EMAIL, hashed_password="hashed_password", roles=["user"])
         )

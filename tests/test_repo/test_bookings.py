@@ -7,8 +7,8 @@ from app.repositories import BookingRepo
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-async def test_bookings_total_cost(session: AsyncSession):
-    booking_repo = BookingRepo(session)
+async def test_bookings_total_cost(postgres_session: AsyncSession):
+    booking_repo = BookingRepo(postgres_session)
 
     create_schema = BookingCreateSchema(
         date_from=date(2023, 7, 20),
@@ -31,8 +31,8 @@ async def test_bookings_total_cost(session: AsyncSession):
     assert got_booking.updated_dt != updated_booking.updated_dt
 
 
-async def test_repo_crd_bookings(session):
-    booking_repo = BookingRepo(session)
+async def test_repo_crd_bookings(postgres_session):
+    booking_repo = BookingRepo(postgres_session)
 
     create_schema = BookingCreateSchema(
         date_from=date(2023, 7, 20),

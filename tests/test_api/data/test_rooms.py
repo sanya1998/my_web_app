@@ -5,7 +5,7 @@ import pytest
 from app.common.schemas.room import ManyRoomsReadSchema, RoomReadSchema
 from httpx import QueryParams
 from starlette import status
-from tests.common import TestClient
+from tests.common import CustomAsyncClient
 from tests.constants.urls import ROOMS_URL
 
 
@@ -16,7 +16,7 @@ from tests.constants.urls import ROOMS_URL
         ({}, status.HTTP_200_OK),
     ],
 )
-async def test_get_by_check_dates(client: TestClient, params: dict, status_code: int):
+async def test_get_by_check_dates(client: CustomAsyncClient, params: dict, status_code: int):
     await client.get(ROOMS_URL, params=QueryParams(**params))
 
 
@@ -33,7 +33,7 @@ async def test_get_by_check_dates(client: TestClient, params: dict, status_code:
         ({"order_by": ["price", "-id"], "price__gt": 26000, "price__lt": 27000, "limit": 1}, 11),
     ],
 )
-async def test_get_by_params(client: TestClient, params: dict, id_: int):
+async def test_get_by_params(client: CustomAsyncClient, params: dict, id_: int):
     """Проверка, что определенный тип комнаты находится в результате при определенных фильтрах"""
     rooms = await client.get(ROOMS_URL, model=List[ManyRoomsReadSchema], params=QueryParams(**params))
     assert id_ in set(r.id for r in rooms)
@@ -46,7 +46,7 @@ async def test_get_by_params(client: TestClient, params: dict, id_: int):
         (2, "Делюкс Плюс", 24450),
     ],
 )
-async def test_get_room(client: TestClient, id_: int, name: str, price: int):
+async def test_get_room(client: CustomAsyncClient, id_: int, name: str, price: int):
     room = await client.get(f"{ROOMS_URL}{id_}", model=RoomReadSchema)
     assert room.name == name
     assert room.price == price

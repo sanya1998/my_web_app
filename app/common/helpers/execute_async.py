@@ -13,7 +13,9 @@ def execute_async(func: Coroutine):
     execute_async(func(*args, **kwargs))
     ```
     """
+    # TODO: обработать кейс, если нет loop
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(func)
+    result = loop.run_until_complete(func)
     loop.close()
+    return result

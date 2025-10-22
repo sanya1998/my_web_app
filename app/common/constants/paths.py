@@ -5,6 +5,7 @@ API_V1_PATH = f"/{DEFAULT_VERSION}"
 API_V2_PATH = "/v2"
 
 PAGES_PATH = "/pages"
+SSE_PATH = "/sse"
 
 PAGES_HOTELS_PATH = "/hotels"
 PAGES_SSE_PATH = "/sse"

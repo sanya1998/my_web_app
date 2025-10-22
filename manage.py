@@ -14,9 +14,7 @@ def cli() -> None:
 
 @cli.command()
 def runserver() -> None:
-    """
-    Run the server.
-    """
+    """Run the server."""
     import uvicorn
     from app.app import app
 
@@ -31,15 +29,13 @@ def runserver() -> None:
 
 @cli.command()
 def run_history_consumer() -> None:
-    """
-    Run consumer of history of queries.
-    """
+    """Run consumer of history of queries."""
     import asyncio
 
     from app.consumers.history import HistoryConsumer
 
     consumer = HistoryConsumer(queue_name=settings.HISTORY_QUEUE_NAME)
-    asyncio.run(consumer.consume())
+    asyncio.run(consumer.blocking_consume())
 
 
 if __name__ == "__main__":

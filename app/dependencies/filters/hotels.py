@@ -15,6 +15,7 @@ class HotelsFilters(MainFilters, SearchFilters, HotelBaseFilters):
     stars__ge: int | None = None
     services__contains: List[str] | None = None
     order_by: List[HotelsOrderingEnum] | None = [HotelsOrderingEnum.ID]
+    # TODO: try order_by: List[HotelsOrderingEnum] = [HotelsOrderingEnum.ID]
     rooms: RoomsBaseFilters
 
     class Helper(SearchFilters.Helper):

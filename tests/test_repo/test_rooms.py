@@ -4,9 +4,9 @@ from app.exceptions.repositories.programming import ProgrammingRepoError
 from app.repositories import RoomRepo
 
 
-async def test_bad_upsert(session):
+async def test_bad_upsert(postgres_session):
     with pytest.raises(ProgrammingRepoError):
-        await RoomRepo(session).upsert(
+        await RoomRepo(postgres_session).upsert(
             data=RoomUpsertInput(
                 hotel_id=5,
                 name="new room",

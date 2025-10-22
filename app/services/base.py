@@ -1,4 +1,4 @@
-from app.exceptions.catcher import catch_exception
+from app.exceptions.catcher.catcher import catch_exception
 from app.exceptions.services import (
     AlreadyExistsServiceError,
     BaseServiceError,

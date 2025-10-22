@@ -2,7 +2,7 @@ import asyncio
 
 from app.common.logger import logger
 from app.config.common import settings
-from app.resources.rmq.base import BaseRabbitMQ
+from app.resources.rmq import BaseRabbitMQ
 
 
 async def main():

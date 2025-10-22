@@ -117,6 +117,7 @@
 2) можно использовать hostname в докер-компус, если есть какое-то дублирование
 3) Попробовать взять sentry из https://hub.docker.com
 4) Залезть на сайт docker на python (почитать про alpine, bookworm и тд)
+5) если настроить poetry на установку пакетов внутри репозитория, то можно будет не пересобирать после каждого изменения пакетов, а лишь передавать как volume
 
 ### Grafana. Prometheus.
 1) прометеус можно попробовать 3 версии, также глянуть последнюю версию графаны
@@ -136,6 +137,9 @@
 6) Потокобезопасный async_scoped_session (news-migrator)
 7) почему пул для бд создаю не с помощью create_async_pool_from_url?
 8) использовать схему таблиц в бд (см news_migrator)
+     if settings.POSTGRES_SCHEMA:
+         from sqlalchemy.sql import text
+         await session.execute(text(f"SET search_path TO {settings.POSTGRES_SCHEMA}"))
 9) вот так по названию можно получать таблицу table_ = metadata.tables.get(table_name_) и await mysql_session.execute(insert(table_).values(rows_))
 10) После того, как вынес все отношения между таблицами в init, в админке стали подчеркиваться поля отношений (Bookings.user)
 11) Проверять подключение к бд при старте приложения (Lifespan) (ping)
@@ -168,7 +172,7 @@
 6) где-нибудь использовать Body(embed=True), а не Form. + Несколько примеров с заголовком https://fastapi.tiangolo.com/tutorial/schema-extra-example/#using-the-openapi_examples-parameter
 7) продумать систему хранения и добавления изображения (медиа), связь с отелями через image_id, можно в одной форме для создания в ручке
 8) добавить тесты для фоновых задач (celery and fastapi background)
-9) До конца реализовать базовый репо.
+9) ! До конца реализовать базовый репо.
 10) id: uuid.UUID
 11) В приветственных логах api написать ссылку на сваггер, чтобы не делать лишних переходов
 
@@ -177,7 +181,7 @@
 2) Что будет, если вычисляемое POSTGRES_URL записать в енвы сразу целиокм?
 3) поработать с вебсокетами
 4) познакомиться с Invoke (альтернатива Makefile)
-5) для общего развития можно использовать JSON в столбце бд
+5) для общего развития можно использовать JSON в столбце бд (translated_telegram)
 6) Дебагом проверить @computed_field @property в pydantic_settings кешируется? try `from functools import cached_property`
 7) можно ли хорошо протестировать отправку сообщения на электронную почту mailhog. 265 стр в книге "Паттерны разработки на Python"
 8) mypy попробовать

@@ -1,12 +1,12 @@
-from tests.common import TestClient
+from tests.common import CustomAsyncClient
 
 
 async def test_multy_clients(
-    admin_client: TestClient,
-    manager_client: TestClient,
-    moderator_client: TestClient,
-    user_client: TestClient,
-    client: TestClient,
+    admin_client: CustomAsyncClient,
+    manager_client: CustomAsyncClient,
+    moderator_client: CustomAsyncClient,
+    user_client: CustomAsyncClient,
+    client: CustomAsyncClient,
 ):
     """
     Проверка, что в одном тесте можно использовать сразу несколько клиентов с разными ролями
