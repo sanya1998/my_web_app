@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from app.api import api_router
 from app.cms.cms import add_cms
 from app.config.common import settings
+from app.consumers.sse import SSEConsumer
 from app.exceptions.handlers import add_exceptions
 from app.middlewares.middlewares import add_middlewares
 from app.publishers.base import BasePublisher
@@ -22,9 +23,14 @@ class App(FastAPI):
 @asynccontextmanager
 async def lifespan(app_: App):
     async with (
+        SSEConsumer(settings.SSE_QUEUE_NAME) as sse_consumer,
+        BasePublisher(settings.SSE_ROUTING_KEY, settings.SSE_EXCHANGE_NAME) as sse_publisher,
         BasePublisher(settings.HISTORY_ROUTING_KEY, settings.HISTORY_EXCHANGE_NAME) as history_publisher,
         PostgresManager() as postgres_manager,
     ):
+        app_.state.sse_consumer = sse_consumer
+        await app_.state.sse_consumer.consume()
+        app_.state.sse_publisher = sse_publisher
         app_.state.postgres_manager = postgres_manager
         app_.state.history_publisher = history_publisher
 

@@ -1,9 +1,9 @@
 import asyncio
 import logging
-import signal
 from typing import Generic, Optional, TypeVar
 
 from aio_pika.abc import AbstractIncomingMessage
+from app.common.helpers.stop_events import configure_event_of_stop_signal
 from app.common.schemas.base import BaseSchema
 from app.config.common import settings
 from app.resources.rmq import BaseRabbitMQ
@@ -44,22 +44,8 @@ class BaseConsumer(BaseRabbitMQ, Generic[MessageClass]):
 
     def __init__(self, queue_name: str = "", **kwargs):
         self.queue_name: str = queue_name
-        self.stop_event: Optional[asyncio.Event] = None
+        self.stop_event: Optional[asyncio.Event] = None  # Используется только в блокирующем режиме
         super().__init__(**kwargs)
-
-    def _set_stop_events(self):
-        """Инициализация stop_event и регистрация обработчиков сигналов"""
-        if self.stop_event is None:
-            self.stop_event = asyncio.Event()
-            loop = asyncio.get_running_loop()
-            signals = (
-                signal.SIGINT,  # ctrl+c из терминала
-                signal.SIGTERM,  # Сигнал завершения от системы (kill)
-                signal.SIGQUIT,  # ctrl+\ из терминала (создает core dump)
-            )
-            for sig in signals:
-                loop.add_signal_handler(sig, self.stop_event.set)
-        return self.stop_event
 
     async def on_message(self, message: AbstractIncomingMessage) -> None:
         """Обработка входящего сообщения"""
@@ -86,7 +72,7 @@ class BaseConsumer(BaseRabbitMQ, Generic[MessageClass]):
         await queue.consume(self.on_message)
 
     async def consume(self, prefetch_count=settings.RMQ_PREFETCH_COUNT_DEFAULT):
-        """Асинхронный запуск потребителя"""
+        """Асинхронный запуск потребителя (работает в фоне)"""
         if not self.connection or not self.channel:
             raise RuntimeError("RabbitMQ connection or channel are not initialized.")
 
@@ -96,19 +82,17 @@ class BaseConsumer(BaseRabbitMQ, Generic[MessageClass]):
 
     async def blocking_consume(self, prefetch_count=settings.RMQ_PREFETCH_COUNT_DEFAULT):
         """Блокирующий запуск потребителя (работает до сигнала остановки)"""
-        self._set_stop_events()
-
+        self.stop_event = configure_event_of_stop_signal()
         async with self:
             await self.__consume(prefetch_count=prefetch_count)
             logger.info(f"Consumer {self.queue_name}: blocking mode started")
             logger.info("[*] To exit press CTRL+C.")
-
             try:
                 await self.stop_event.wait()
             except KeyboardInterrupt:
                 logger.info("Received Ctrl+C, shutting down...")
             finally:
-                logger.info(f"Consumer {self.queue_name}: stopped gracefully")
+                logger.info(f"Consumer {self.queue_name}: stopped gracefully.")
 
     async def stop(self):
         """Принудительная остановка потребителя"""

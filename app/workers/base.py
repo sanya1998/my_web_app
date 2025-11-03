@@ -1,7 +1,7 @@
 import asyncio
-import signal
 from typing import Optional
 
+from app.common.helpers.stop_events import configure_event_of_stop_signal
 from app.common.logger import logger
 
 
@@ -28,20 +28,6 @@ class BaseWorker:
         self.stop_event: Optional[asyncio.Event] = None
         self._task: Optional[asyncio.Task] = None
 
-    def _set_stop_events(self):
-        """Инициализация stop_event и регистрация обработчиков сигналов"""
-        if self.stop_event is None:
-            self.stop_event = asyncio.Event()
-            loop = asyncio.get_running_loop()
-            signals = (
-                signal.SIGINT,  # ctrl+c из терминала
-                signal.SIGTERM,  # Сигнал завершения от системы (kill)
-                signal.SIGQUIT,  # ctrl+\ из терминала (создает core dump)
-            )
-            for sig in signals:
-                loop.add_signal_handler(sig, self.stop_event.set)
-        return self.stop_event
-
     async def work(self) -> None:
         """Основная работа воркера. Переопределяется в дочерних классах."""
         raise NotImplementedError
@@ -61,26 +47,26 @@ class BaseWorker:
 
     async def _run_worker(self) -> None:
         """Внутренний метод для запуска воркера"""
-        self._set_stop_events()
         while not self.stop_event.is_set():
             await self._safe_work()
             await self._safe_timeout()
 
+    async def start(self) -> None:
+        """Асинхронный запуск (работает в фоне)"""
+        logger.info(f"Worker {self.name}: async start with interval {self.interval}s.")
+        if self._task and not self._task.done():
+            logger.warning(f"Worker {self.name}: already running.")
+            return
+
+        self._task = asyncio.create_task(self._run_worker(), name=f"worker_{self.name}.")
+
     async def blocking_start(self) -> None:
         """Блокирующий запуск (работает до сигнала остановки)"""
+        self.stop_event = configure_event_of_stop_signal()
         logger.info(f"Worker {self.name}: blocking start with interval {self.interval}s")
         logger.info("[*] To exit press CTRL+C")
         await self._run_worker()
         logger.info(f"Worker {self.name}: stopped")
-
-    async def start(self) -> None:
-        """Асинхронный запуск (работает в фоне)"""
-        logger.info(f"Worker {self.name}: async start with interval {self.interval}s")
-        if self._task and not self._task.done():
-            logger.warning(f"Worker {self.name}: already running")
-            return
-
-        self._task = asyncio.create_task(self._run_worker(), name=f"worker_{self.name}")
 
     async def setup(self) -> None:
         """Асинхронная инициализация ресурсов"""

@@ -19,3 +19,7 @@ class RabbitMQSettings(BaseSettings):
     HISTORY_ROUTING_KEY: str = "history_routing_key"
     HISTORY_QUEUE_NAME: str = "history_queue"
     HISTORY_EXCHANGE_NAME: str = "history_exchange"
+
+    SSE_ROUTING_KEY: str = "sse_routing_key"
+    SSE_QUEUE_NAME: str = "sse_queue"
+    SSE_EXCHANGE_NAME: str = "sse_exchange"

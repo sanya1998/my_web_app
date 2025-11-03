@@ -6,10 +6,11 @@ from app.resources.rmq import BaseRabbitMQ
 
 
 async def main():
-    logger.info("Creating RabbitMQ bindings for History...")
+    logger.info("Creating RabbitMQ bindings...")
     async with BaseRabbitMQ() as base_rmq:
         await base_rmq.bind(settings.HISTORY_EXCHANGE_NAME, settings.HISTORY_QUEUE_NAME, settings.HISTORY_ROUTING_KEY)
-    logger.info("Created RabbitMQ bindings for History")
+        await base_rmq.bind(settings.SSE_EXCHANGE_NAME, settings.SSE_QUEUE_NAME, settings.SSE_ROUTING_KEY)
+    logger.info("Created RabbitMQ bindings.")
 
 
 if __name__ == "__main__":

@@ -83,6 +83,8 @@ class BaseRepository:
         filtered_objects = result.all()
         return [self.many_read_schema.model_validate(obj) for obj in filtered_objects]
 
+    # TODO: курсор, итератор... см translated_telegram (async def get_all_objects)
+
     @catcher
     async def configure_autoincrement(self):
         # TODO: можно ли это сделать силами sqlalchemy ?
@@ -234,6 +236,7 @@ class BaseRepository:
     @catcher
     async def upsert(self, data: upsert_schema, index_elements: list = None) -> upserted_schema:
         if not index_elements:
+            # TODO: везде, где используется id: hasattr(self.db_model, "id")
             index_elements = [self.db_model.id]
         data_dict = data.model_dump()
         set_dict = {**data_dict}
