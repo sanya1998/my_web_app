@@ -194,3 +194,4 @@
 15) придумать что-нибудь с submodule (например, модели) и со своей библиотекой
 16) Почитать про строку scope в форме с username и password  (users:read или users:write)
 17) Добавить схему в readme https://stackoverflow.com/questions/14494747/how-to-add-images-to-readme-md-on-github
+18) почитать про weakref.WeakKeyDictionary, попробовать применить в SSE для клиентов

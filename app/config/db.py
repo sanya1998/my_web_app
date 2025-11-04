@@ -24,6 +24,15 @@ class DbSettings(BaseSettings):
 
     @computed_field
     @property
+    def REDIS_BASE_URL(self) -> str:
+        value = (
+            f"{self.REDIS_DRIVER}://" f"{self.REDIS_USER}:{self.REDIS_PASSWORD}@" f"{self.REDIS_HOST}:{self.REDIS_PORT}"
+        )
+        return value
+
+    # TODO: use REDIS_BASE_URL
+    @computed_field
+    @property
     def CACHE_URL(self) -> str:
         value = (
             f"{self.REDIS_DRIVER}://"
@@ -36,6 +45,7 @@ class DbSettings(BaseSettings):
     CELERY_BROKER_DB: int
     FLOWER_PORT: int
 
+    # TODO: use REDIS_BASE_URL
     @computed_field
     @property
     def CELERY_BROKER_URL(self) -> str:

@@ -41,3 +41,7 @@ class ApiSettings(BaseSettings):
     JWT_SECRET_KEY: str
     ENCODE_ALGORITHM: str
     DECODE_ALGORITHMS: List[str]
+
+    SSE_QUEUE_SIZE: int = 10
+    SSE_MESSAGE_WAITING_TIMEOUT: float = 5.0
+    SSE_PUBSUB_TIMEOUT: float = 5.0
