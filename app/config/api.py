@@ -42,6 +42,7 @@ class ApiSettings(BaseSettings):
     ENCODE_ALGORITHM: str
     DECODE_ALGORITHMS: List[str]
 
-    SSE_QUEUE_SIZE: int = 10
-    SSE_MESSAGE_WAITING_TIMEOUT: float = 5.0
-    SSE_PUBSUB_TIMEOUT: float = 5.0
+    SSE_QUEUE_SIZE: int = 1
+    SSE_MAX_CONNECTION_TIME: int = 300
+    SSE_QUEUE_TIMEOUT: float = 5.0
+    SSE_PING_TIMEOUT: int = 20

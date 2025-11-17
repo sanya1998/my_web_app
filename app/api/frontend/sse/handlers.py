@@ -4,6 +4,7 @@ from datetime import datetime
 
 from app.common.constants.paths import SSE_PATH
 from app.common.helpers.api_version import VersionedAPIRouter
+from app.config.common import settings
 from app.consumers.sse import SSEMessageSchema
 from fastapi import Request
 from sse_starlette.sse import EventSourceResponse
@@ -28,13 +29,17 @@ async def datetime_sse(request: Request):
 # sse server
 @router.get("/messages")
 async def messages_sse(request: Request):
-    sse_manager = request.app.state.sse_consumer.sse_manager
-    return EventSourceResponse(sse_manager.event_generator(request))
+    sse_pubsub = request.app.state.sse_pubsub
+    return EventSourceResponse(
+        content=sse_pubsub.messages_listener(request),
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        ping=settings.SSE_PING_TIMEOUT,
+    )
 
 
 @router.post("/send_message")
 async def send_sse_message_endpoint(request: Request, message_request: SSEMessageSchema):
     """Эндпоинт для отправки тестовых сообщений в SSE"""
-    sse_publisher = request.app.state.sse_publisher
-    await sse_publisher.publish(message_request)
+    publisher_of_new_sse_messages = request.app.state.publisher_of_new_sse_messages
+    await publisher_of_new_sse_messages.publish(message_request)
     return {"success": True}

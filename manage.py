@@ -19,12 +19,31 @@ def runserver() -> None:
     from app.app import app
 
     uvicorn.run(app=app, host=settings.API_HOST, port=settings.API_PORT)
-    # TODO: http2
-    # import asyncio
-    # from hypercorn.config import Config
-    # from hypercorn.asyncio import serve
-    #
-    # asyncio.run(serve(app, Config()))
+
+
+# TODO:
+@cli.command()
+def runserver_hypercorn() -> None:
+    """Run the server with Hypercorn (better HTTP/2 support)."""
+    import asyncio
+
+    from app.app import app
+    from hypercorn.asyncio import serve
+    from hypercorn.config import Config
+
+    config = Config()
+    config.bind = [f"{settings.API_HOST}:{settings.API_PORT}"]
+    config.certfile = getattr(settings, "SSL_CERTFILE", None)
+    config.keyfile = getattr(settings, "SSL_KEYFILE", None)
+
+    # Явно включаем HTTP/2
+    config.http2 = True  # Пока браузер пишет, что все равно http/1.1
+
+    # Дополнительные настройки для лучшей поддержки HTTP/2
+    config.worker_class = "asyncio"
+
+    click.echo(f"Starting server with HTTP/2 support on https://{settings.API_HOST}:{settings.API_PORT}")
+    asyncio.run(serve(app, config))
 
 
 @cli.command()
