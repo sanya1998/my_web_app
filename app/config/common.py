@@ -20,6 +20,9 @@ class Settings(ApiSettings, DbSettings, HashSettings, EmailSettings, GrafanaSett
     SENTRY_DSN: str
     HAWK_TOKEN: str
     PICKLE_PROTOCOL: int = -1
+    STATIC_DIRECTORY: str = "app/static/"
+    STATIC_NAME: str = "static"
+    STATIC_PATH: str = "/static"
 
     model_config = SettingsConfigDict(env_file="envs/base.env", env_file_encoding="utf-8")
 

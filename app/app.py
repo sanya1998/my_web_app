@@ -45,13 +45,14 @@ async def lifespan(app_: App):
 app = App(
     lifespan=lifespan,
     debug=settings.DEBUG,
+    version=settings.RELEASE_VERSION,
     title=settings.APPLICATION_NAME,
     description=settings.APPLICATION_DESCRIPTION,
     swagger_ui_parameters=settings.SWAGGER_UI_PARAMETERS,
     default_response_class=ORJSONResponse,
 )
 app.include_router(api_router)
-app.mount(path="/static", app=StaticFiles(directory="static/"), name="static")  # TODO: envs
+app.mount(path=settings.STATIC_PATH, app=StaticFiles(directory=settings.STATIC_DIRECTORY), name=settings.STATIC_NAME)
 
 add_exceptions(app)
 add_middlewares(app)

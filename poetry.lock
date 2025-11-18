@@ -105,7 +105,7 @@ trio = ["trio (>=0.31.0)"]
 name = "asgi-lifespan"
 version = "2.1.0"
 description = "Programmatic startup/shutdown of ASGI apps."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -2952,4 +2952,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "11df48416f2f077286cb3d98c34eb5970dca6d49a6d71d6ee2d5274ab76234ff"
+content-hash = "89c76f6cb8e2c7612762f14808be2758c70b5e0ee3fe9a6c50eafd4e8a5e56ee"
