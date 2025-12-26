@@ -11,6 +11,7 @@ from app.resources.hawk_ import add_hawk_fastapi
 from app.resources.postgres import PostgresManager
 from app.resources.prometheus_ import add_prometheus
 from app.resources.sse import SSEPubsubListener
+from es.clients.pydantic_ import PydanticESClient
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -29,6 +30,7 @@ async def lifespan(app_: App):
         BasePublisher(settings.SSE_ROUTING_KEY, settings.SSE_EXCHANGE_NAME) as publisher_of_new_sse_messages,
         BasePublisher(settings.HISTORY_ROUTING_KEY, settings.HISTORY_EXCHANGE_NAME) as history_publisher,
         PostgresManager() as postgres_manager,
+        PydanticESClient(hosts=settings.ES_HOSTS, default_alias=settings.ES_PRODUCTS_BASE_ALIAS) as es_client,
     ):
         app_.state.sse_pubsub = sse_pubsub
         app_.state.sse_consumer = sse_consumer
@@ -36,6 +38,7 @@ async def lifespan(app_: App):
         app_.state.publisher_of_new_sse_messages = publisher_of_new_sse_messages
         app_.state.postgres_manager = postgres_manager
         app_.state.history_publisher = history_publisher
+        app_.state.es_client = es_client
 
         await add_cms(app_, postgres_manager)
 

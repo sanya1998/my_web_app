@@ -1,0 +1,151 @@
+searchable_text: &searchable_text
+  type: text
+  analyzer: russian_index           # При индексации
+  search_analyzer: russian_search   # При поиске
+
+filterable_keyword: &filterable_keyword
+  type: keyword
+  normalizer: lowercase_normalizer
+#  case_insensitive: true  # versions: 7.10 - 8.10
+
+text_with_keyword: &text_with_keyword
+  <<: *searchable_text
+  fields:
+    exact:
+      <<: *filterable_keyword
+
+# ВЛОЖЕННАЯ СТРУКТУРА
+nested_variant: &nested_variant
+  type: nested
+  properties:
+    color:
+      <<: *filterable_keyword
+    size:
+      type: keyword
+    price_modifier:
+      type: float
+    stock:
+      type: integer
+    sku:
+      type: keyword
+
+version: "2"
+settings:
+  number_of_shards: 3
+  number_of_replicas: 0
+  analysis:
+    normalizer:  # Работает и при поиске, и при индексации
+      lowercase_normalizer:
+        type: custom
+        filter: [ "lowercase" ]
+    filter:
+      russian_stop:
+        type: stop
+        stopwords: _russian_  # Встроенный список русских стоп-слов
+      russian_stemmer:
+        type: stemmer
+        language: russian
+    analyzer:
+      russian_index:
+        type: custom
+        tokenizer: standard
+        filter: [ lowercase, russian_stop ]
+      russian_search:
+        type: custom
+        tokenizer: standard
+        filter:
+          - lowercase
+          - russian_stop      # russian_stop удаляет стоп-слова (и, в, на и т.д.)
+          - russian_stemmer   # russian_stemmer (Стеммер Портера) приводит слова к базовой форме
+
+mappings:
+  # Runtime fields (вычисляются при запросе, не хранятся на диске)
+  runtime:
+    total_stock:
+      type: long
+      script:
+        source: |
+          int total = 0;
+          if (doc['variants'].size() > 0) {
+            for (int i = 0; i < doc['variants'].size(); i++) {
+              total += (int) doc['variants'][i].stock.value;
+            }
+          }
+          emit(total);
+
+    min_price:
+      type: double
+      script:
+        source: |
+          double base = doc['base_price'].value;
+          double min_price = base;
+  
+          if (doc['variants'].size() > 0) {
+            for (int i = 0; i < doc['variants'].size(); i++) {
+              double modifier = doc['variants'][i].price_modifier.value;
+              double variant_price = base + modifier;
+              if (variant_price < min_price) {
+                min_price = variant_price;
+              }
+            }
+          }
+          emit(min_price);
+
+    max_price:
+      type: double
+      script:
+        source: |
+          double base = doc['base_price'].value;
+          double max_price = base;
+
+          if (doc['variants'].size() > 0) {
+            for (int i = 0; i < doc['variants'].size(); i++) {
+              double modifier = doc['variants'][i].price_modifier.value;
+              double variant_price = base + modifier;
+              if (variant_price > max_price) {
+                max_price = variant_price;
+              }
+            }
+          }
+          emit(max_price);
+
+    available_colors:
+      type: keyword
+      script:
+        source: |
+          def colors = [];
+          if (doc['variants'].size() > 0) {
+            for (int i = 0; i < doc['variants'].size(); i++) {
+              if (doc['variants'][i].stock.value > 0) {
+                def color = doc['variants'][i].color.value;
+                if (!colors.contains(color)) {
+                  colors.add(color);
+                }
+              }
+            }
+          }
+          emit(colors.toArray());
+
+  # Статические поля (хранятся на диске)
+  properties:
+    product_name: *text_with_keyword
+    category: *filterable_keyword
+    brand: *filterable_keyword
+    base_price:
+      type: float
+    rating:
+      type: half_float
+    description: *searchable_text
+    search_content: *searchable_text
+    features: *filterable_keyword
+    is_available:
+      type: boolean
+    is_on_sale:
+      type: boolean
+    created_date:
+      type: date
+    tags: *filterable_keyword
+    specifications:
+      type: object  # Появляются: specifications.screen: "6.1" и тд. Запросы проще, чем nested
+      enabled: true # Индексировать!
+    variants: *nested_variant

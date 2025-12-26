@@ -46,7 +46,7 @@ async def prepare_postgres(postgres_manager):
     os.system("alembic downgrade base")
     os.system("alembic upgrade head")
 
-    with open("tests/dump/dump.sql", "r") as f:
+    with open("tests/dump/db_dump.sql", "r") as f:
         sql_content = f.read()
 
     commands = sqlparse.split(sql_content)

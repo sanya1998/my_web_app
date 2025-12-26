@@ -31,6 +31,7 @@ orjson = "^3.10.18"
 sse-starlette = "^2.3.6"
 aio-pika = "^9.5.5"
 hypercorn = "^0.17.3"
+elasticsearch = {extras = ["async"], version = "^9.2.0"}
 
 [tool.poetry.group.dev.dependencies]
 alembic = "^1.13.1"
@@ -46,6 +47,7 @@ pytest-mock = "^3.14.0"
 sqlparse = "^0.5.3"
 anyio = {extras = ["asyncio"], version = "^4.11.0"}
 asgi-lifespan = "^2.1.0"
+faker = "^38.0.0"
 
 [build-system]
 requires = ["poetry-core"]

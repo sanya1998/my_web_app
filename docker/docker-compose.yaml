@@ -65,6 +65,18 @@ services:
 #    tty: true
 #    stdin_open: true
 
+  elasticsearch:
+    image: elasticsearch:${ES_VERSION}
+    container_name: my-web-app-elasticsearch
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx1G"
+      - ELASTIC_PASSWORD=${ES_PASSWORD}
+
   prometheus:
     image: prom/prometheus:${PROMETHEUS_VERSION}
     container_name: my-web-app-prometheus
@@ -140,6 +152,7 @@ services:
       - celery-flower
       - postgres
       - redis
+      - elasticsearch
 
   frontend:
     container_name: frontend

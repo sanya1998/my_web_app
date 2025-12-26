@@ -1,0 +1,223 @@
+🔧 Технические
+Геопоиск - поиск по координатам
+
+Валидация 10000, есть ли хотя бы один gt, lt и тд в Range
+
+🚀 Оптимизация
+Кэширование - частых запросов и агрегаций
+
+Логирование - запросов, времени, ошибок
+
+NL интерфейс - конвертация текста в ES-запросы
+
+🔍 Поиск
+Морфологический поиск - для русского языка
+Словари
+
+Автодополнение - search-as-you-type
+
+Фасетный поиск - динамические фильтры
+
+📊 Мониторинг
+Health-check - мониторинг ES кластера
+
+Query profiling - оптимизация запросов
+
+5. Билдеры частых запросов 🛠️
+def product_search_builder(term: str, filters: Dict) -> MainQuery:
+    # Предопределенные шаблоны поиска
+    pass
+
+_id, score (релевантность для каждого найденного документа) - работа с метаданными
+
+Когда сделаем разделение на Pydantic/Dict клиенты, тогда можно перейти к раздельным результатам.
+class BaseDocumentResult(BaseModel):
+    id: str
+    index: str
+    version: int
+
+class CreateResult(BaseDocumentResult):
+    result: Literal["created"] = "created"
+
+class UpdateResult(BaseDocumentResult):
+    result: Literal["updated", "noop"]
+
+Что можно улучшить позже:
+Тестирование - написать тесты для всех методов
+
+Примеры использования - создать документацию с примерами
+
+Расширение - добавить scroll, multi-search, агрегации
+
+
+
+
+
+# # Для работы с dict
+# es = ESClient(...)
+# doc_dict = await es.get(doc_id="123")
+# docs_response = await es.search(main_query)
+
+# Примерное использование
+# # 1. FastAPI lifespan
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     async with ESClient(hosts=settings.ES_HOSTS, default_alias=settings.ES_INDEX_NAME) as es_client:
+#         app.state.es = es_client
+#         yield
+#
+#
+# # 2. Pytest фикстура
+# @pytest.fixture
+# async def es_client():
+#     async with ESClient(
+#         hosts=["http://localhost:9200"], default_alias="test"
+#     ) as client:
+#         yield client
+#
+#
+# # 3. Консьюмеры/воркеры
+# async def process_queue():
+#     es = ESClient(hosts=settings.ES_HOSTS, default_alias=settings.ES_INDEX_NAME)
+#     await es.connect()
+#     try:
+#         # работа с ES
+#         pass
+#     finally:
+#         await es.close()
+#
+#
+# # 4. Использование в коде
+# class ProductModel(BaseModel):
+#     name: str
+#     price: float
+#     category: str
+#
+#
+# async def search_products(es: ESClient, query: str):
+#     main_query = MainQuery().query(Match(query=query, field="name"))
+#
+#     # С Pydantic моделью
+#     result = await es.search(main_query, model=ProductModel)
+#     products = result["results"]  # List[ProductModel]
+#     total = result["total"]
+#
+#     # Без модели
+#     result_raw = await es.search(main_query)
+#     products_raw = result_raw["results"]  # List[Dict]
+#
+#     # Получить по ID
+#     product = await es.get("123", model=ProductModel)
+#
+#     # Подсчет
+#     count = await es.count(Term(field="category", value="electronics"))
+
+сформировать source (необходимые поля) на основе pydantic-модели
+
+
+Высокий приоритет:
+
+Обработка ошибок в bulk операциях: raise_on_error создает RuntimeError - может быть, нужно специальное исключение?
+
+Средний приоритет:
+DocumentESClient._extract_document_data_and_id: если id_field=None, все равно пытается извлечь ID
+
+Aggregation.call: возможны конфликты имен дочерних агрегаций
+
+IndexClient._create_index_add_get_aliases: длинное название метода
+
+
+
+Новые вопросы из кода:
+
+
+# При чтении из ES нужно маппить на ProductOut
+async def get_product(self, doc_id: str) -> ProductOut:
+    doc = await self.get(doc_id=doc_id, index="products")
+
+    # Elasticsearch вернет runtime fields в ответе
+    return ProductOut(**doc)
+
+
+async def search_products(self, query: Dict) -> List[ProductOut]:
+    results = await self.search(index="products", body=query)
+
+    products = []
+    for hit in results["hits"]["hits"]:
+        # В hit["_source"] будут runtime fields
+        product_data = hit["_source"]
+
+        # Также runtime fields могут быть в hit["fields"]
+        if "fields" in hit:
+            for key, value in hit["fields"].items():
+                product_data[key] = value[0] if value else None
+
+        products.append(ProductOut(**product_data))
+
+    return products
+
+
+1. Можно добавить ignore_above для keyword полей:
+yaml
+filterable_keyword: &filterable_keyword
+  type: keyword
+  normalizer: lowercase_normalizer
+  ignore_above: 256  # Игнорировать слишком длинные значения
+2. Можно добавить doc_values: true для агрегаций:
+yaml
+filterable_keyword: &filterable_keyword
+  type: keyword
+  normalizer: lowercase_normalizer
+  doc_values: true  # Для быстрых агрегаций и сортировки
+3. Для rating можно добавить метаданные:
+yaml
+rating:
+  type: half_float
+  meta:
+    description: "Рейтинг товара от 1 до 5"
+    min: 1.0
+    max: 5.0
+
+1. Поиск по спецификациям (object):
+python
+# Найти телефоны с экраном 6.1 дюймов
+Term(field="specifications.screen", value='6.1"')
+
+# Найти с хранилищем 128GB
+Term(field="specifications.storage", value="128GB")
+
+2. Поиск по вариантам (nested):
+python
+# Найти товары с вариантом цвета Black в наличии
+NestedQuery(
+    path="variants",
+    query=Bool(
+        _must=[
+            Term(field="variants.color", value="black"),
+            Range(field="variants.stock", gt=0)
+        ]
+    )
+)
+
+Попробовать. И если работает, понять, зачем тогда нужно _runtime_mappings в MainQuery
+# Фильтрация по общему остатку
+Range(field="total_stock", gt=10)
+
+# Сортировка по минимальной цене
+MainQuery().sort("min_price", "asc")
+
+# Агрегация по доступным цветам
+TermsAgg("colors", "available_colors")
+
+
+# Тесты для метода проверки
+assert _is_pydantic_model_type(Variant) == True
+assert _is_pydantic_model_type(Optional[Variant]) == True
+assert _is_pydantic_model_type(str) == False
+assert _is_pydantic_model_type(List[Variant]) == False
+assert _is_pydantic_model_type(Dict[str, str]) == False
+
+
+возможно, можно упростить логику с _read и _write с помощью require_alias
+
+написать тесты

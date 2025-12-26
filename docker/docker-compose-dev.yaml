@@ -14,6 +14,9 @@ services:
   redis:
     <<: *dev-env
 
+  elasticsearch:  # TODO: енвы могут переписаться, этот момент нужно учитывать потом
+    <<: *dev-env
+
   grafana:
     <<: *dev-env
 

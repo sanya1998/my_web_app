@@ -58,10 +58,10 @@ clear-celery-tasks:
 
 
 build-related-base-services:
-	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" build postgres prometheus grafana redis rabbitmq celery-worker celery-flower
+	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" build postgres prometheus grafana redis elasticsearch rabbitmq celery-worker celery-flower
 
 up-related-base-services:
-	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" up -d postgres prometheus grafana redis rabbitmq celery-worker celery-flower
+	docker-compose --env-file envs/base.env -f docker/docker-compose.yaml -p "my-web-services" up -d postgres prometheus grafana redis elasticsearch rabbitmq celery-worker celery-flower
 
 
 build-base-app:

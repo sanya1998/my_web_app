@@ -23,6 +23,7 @@ class BookingsFilters(MainFilters):
     user: UserBaseFilters
 
     # Проверка возможности валидации поля в BaseFilters (TODO: удалить)
+    # TODO: не надо ли @classmethod
     @field_validator("room_id", mode="before")
     def check(cls, value: str | None) -> str | int:
         if value and (value := int(value)) < 0:

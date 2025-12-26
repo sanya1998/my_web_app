@@ -13,7 +13,7 @@ from starlette.requests import Request
 logger = logging.getLogger(__name__)
 
 
-class QueueFullStrategy(Enum):
+class QueueFullStrategy(str, Enum):
     REPLACE_OLDEST = "replace_oldest"
     SKIP_MESSAGE = "skip_message"
     WAIT_TIMEOUT = "wait_with_timeout"

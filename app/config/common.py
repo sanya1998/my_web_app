@@ -3,13 +3,16 @@ from app.common.constants.log_levels import LogLevel
 from app.config.api import ApiSettings
 from app.config.db import DbSettings
 from app.config.email import EmailSettings
+from app.config.es import ElasticsearchSettings
 from app.config.grafana import GrafanaSettings
 from app.config.hash import HashSettings
 from app.config.rmq import RabbitMQSettings
 from pydantic_settings import SettingsConfigDict
 
 
-class Settings(ApiSettings, DbSettings, HashSettings, EmailSettings, GrafanaSettings, RabbitMQSettings):
+class Settings(
+    ApiSettings, DbSettings, HashSettings, EmailSettings, GrafanaSettings, RabbitMQSettings, ElasticsearchSettings
+):
     """
     Конфигурация, которая объединяет общие настройки и классифицированные по группам
     """
