@@ -9,8 +9,9 @@ class ElasticsearchSettings(BaseSettings):
     """
 
     ES_VERSION: str
-    ES_HOSTS: List[str] = ["http://localhost:9200/"]
+    ES_HOSTS: List[str] = ["http://0.0.0.0:9200/"]
     ES_PRODUCTS_BASE_ALIAS: str = "products"
+    ES_HISTORY_BASE_ALIAS: str = "reindex_history"
     ES_PASSWORD: str
 
     ES_INDICES_DIRECTORY: str = "es/indices"

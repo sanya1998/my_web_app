@@ -1,10 +1,26 @@
+from enum import Enum
 from typing import List, Optional
 
-from es.data_models.products import Category
-from pydantic import BaseModel, Field
+from es.schemas.products import Brand, Category, Color, Feature
+from pydantic import BaseModel, ConfigDict, Field
 
 
-# ============ FILTER MODELS ============
+class SortOrder(str, Enum):
+    """Порядок сортировки"""
+
+    ASC = "asc"
+    DESC = "desc"
+
+
+class SortField(str, Enum):
+    """Поля для сортировки"""
+
+    CREATED_DATE = "created_date"
+    BASE_PRICE = "base_price"
+    RATING = "rating"
+    TOTAL_STOCK = "total_stock"
+
+
 class ProductFilter(BaseModel):
     """Модель для фильтрации товаров"""
 
@@ -15,7 +31,7 @@ class ProductFilter(BaseModel):
     categories: Optional[List[Category]] = Field(None, description="Фильтр по категориям")
 
     # Фильтрация по бренду
-    brands: Optional[List[str]] = Field(None, description="Фильтр по брендам")
+    brands: Optional[List[Brand]] = Field(None, description="Фильтр по брендам")
 
     # Фильтрация по цене
     min_price: Optional[float] = Field(None, ge=0, description="Минимальная цена")
@@ -32,17 +48,17 @@ class ProductFilter(BaseModel):
     tags: Optional[List[str]] = Field(None, description="Теги")
 
     # Фильтрация по фичам
-    features: Optional[List[str]] = Field(None, description="Особенности/фичи")
+    features: Optional[List[Feature]] = Field(None, description="Особенности/фичи")
 
     # Фильтрация по цветам (из вариантов)
-    colors: Optional[List[str]] = Field(None, description="Доступные цвета")
+    colors: Optional[List[Color]] = Field(None, description="Доступные цвета")
 
 
 class ProductSort(BaseModel):
     """Модель для сортировки товаров"""
 
-    sort_field: str = Field("created_date", description="Поле для сортировки")
-    order: str = Field("desc", pattern="^(asc|desc)$", description="Порядок сортировки: asc или desc")
+    sort_field: SortField = Field(SortField.CREATED_DATE, description="Поле для сортировки")
+    order: SortOrder = Field(SortOrder.DESC, description="Порядок сортировки")
 
 
 class PaginationParams(BaseModel):
@@ -53,4 +69,6 @@ class PaginationParams(BaseModel):
 
 
 class ProductCommonParams(ProductFilter, ProductSort, PaginationParams):
-    pass
+    """Объединенная модель для фильтрации, сортировки и пагинации"""
+
+    model_config = ConfigDict(use_enum_values=True)

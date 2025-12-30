@@ -1,22 +1,20 @@
 # TODO: навести порядок в этом файле
-from elasticsearch import NotFoundError
-from es.clients.pydantic_ import PydanticESClient
-from es.data_models.products import ProductCreateIn, ProductUpdateIn
-from es.main_query.aggregation import TermsAgg
-from es.main_query.main import MainQuery
-from fastapi import APIRouter, Depends, HTTPException, status
-
-from .dependency import build_main_query, get_es_client
-from .models import (
+from app.api.data.products.dependency import build_main_query, get_es_client
+from app.api.data.products.input import ProductCreateInput, ProductUpdateInput
+from app.api.data.products.responses import (
     BrandsResponse,
-    ProductCreate,
     ProductCreateResponse,
     ProductDeleteResponse,
     ProductResponse,
     ProductsListResponse,
-    ProductUpdate,
     ProductUpdateResponse,
 )
+from elasticsearch import NotFoundError
+from es.clients.pydantic_ import PydanticESClient
+from es.main_query.aggregation import TermsAgg
+from es.main_query.main import MainQuery
+from es.schemas.products import Brand, ProductCreateSchema, ProductUpdateSchema
+from fastapi import APIRouter, Depends, HTTPException, status
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -30,7 +28,7 @@ router = APIRouter(prefix="/products", tags=["products"])
     description="Создание нового товара в Elasticsearch",
 )
 async def create_product(
-    product_data: ProductCreate,
+    product_data: ProductCreateInput,
     es_client: PydanticESClient = Depends(get_es_client),
 ) -> ProductCreateResponse:
     """
@@ -45,7 +43,7 @@ async def create_product(
     """
     try:
         # Преобразуем в ProductIn (для записи)
-        product_in = ProductCreateIn(**product_data.model_dump())
+        product_in = ProductCreateSchema(**product_data.model_dump())
 
         # Создаем товар в Elasticsearch
         results = await es_client.create(document=product_in)  # TODO: попробовать document=product_data
@@ -178,9 +176,13 @@ async def get_all_brands(
 
         result = await es_client.aggregate(body=search_query())
 
-        # Извлекаем бренды из агрегации
+        # Извлекаем бренды из агрегации и преобразуем в enum
         buckets = result["aggregations"]["unique_brands"]["buckets"]
-        brands = [bucket["key"] for bucket in buckets]
+        brands = []
+        for bucket in buckets:
+            brand_value = bucket["key"]
+            brand_enum = Brand(brand_value)
+            brands.append(brand_enum)
 
         return BrandsResponse(
             brands=brands,
@@ -203,7 +205,7 @@ async def get_all_brands(
 )
 async def update_product(
     product_id: str,
-    product_data: ProductUpdate,
+    product_data: ProductUpdateInput,
     es_client: PydanticESClient = Depends(get_es_client),
 ) -> ProductUpdateResponse:
     """
@@ -221,7 +223,7 @@ async def update_product(
         HTTPException 404: если товар не найден
     """
     try:
-        product_in = ProductUpdateIn(id=product_id, **product_data.model_dump())
+        product_in = ProductUpdateSchema(id=product_id, **product_data.model_dump())
 
         # Обновляем товар в Elasticsearch
         await es_client.update(document=product_in)
@@ -244,7 +246,7 @@ async def update_product(
 )
 async def partial_update_product(
     product_id: str,
-    product_data: ProductUpdate,
+    product_data: ProductUpdateInput,
     es_client: PydanticESClient = Depends(get_es_client),
 ) -> ProductUpdateResponse:
     """

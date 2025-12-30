@@ -393,6 +393,7 @@ class Bool(Query):
 
 
 if __name__ == "__main__":
+    # TODO: Взять за основу этот файл и написать тесты
     # ПРОСТЫЕ ПРИМЕРЫ - все листовые классы
     print("\n=== ПРОСТЫЕ ПРИМЕРЫ ===")
 
@@ -410,7 +411,7 @@ if __name__ == "__main__":
     # ExactSearch
     term_query = Term(field="category", value="electronics")
     terms_query = Terms(field="brand", values=["Apple", "Samsung"])
-    range_query = Range(field="price", gte=500, lte=1500)
+    range_query = Range(field="base_price", gte=500, lte=1500)
     exists_query = Exists(field="in_stock")
 
     print(match_all_1())

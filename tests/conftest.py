@@ -1,6 +1,7 @@
 import os
 from functools import wraps
 from typing import AsyncIterator
+from urllib.parse import urlparse
 
 import pytest
 import sqlparse
@@ -12,6 +13,8 @@ from app.config.common import settings
 from app.dependencies.auth.credentials import CredentialsInput
 from app.resources.postgres import PostgresManager
 from asgi_lifespan import LifespanManager
+from es.clients.index import IndexESClient
+from es.clients.pydantic_ import PydanticESClient
 from httpx import ASGITransport, Response
 from pydantic import SecretStr
 from sqlalchemy import text
@@ -20,6 +23,7 @@ from starlette import status
 from tests.common import CustomAsyncClient
 from tests.constants.urls import AUTH_SIGN_IN_URL
 from tests.constants.users_info import CREDENTIALS
+from tests.dump.es_dump import generate_and_index_test_data
 
 ALLOWED_POSTGRES_HOSTS = ["0.0.0.0"]  # TODO: возможно, для тестов в ci/cd здесь понадобится postgres, redis
 ALLOWED_REDIS_HOSTS = ["0.0.0.0"]
@@ -61,6 +65,38 @@ async def prepare_postgres(postgres_manager):
 async def postgres_session(postgres_manager: PostgresManager) -> AsyncIterator[AsyncSession]:
     async with postgres_manager.session_factory() as session:
         yield session
+
+
+def check_es_hosts():
+    assert all(urlparse(host).hostname in ALLOWED_POSTGRES_HOSTS for host in settings.ES_HOSTS)
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def prepare_elasticsearch():
+    assert settings.ENVIRONMENT == Environments.TEST
+    check_es_hosts()
+    async with IndexESClient(hosts=settings.ES_HOSTS) as _es_client:
+        _es_client: IndexESClient
+        aliases = [settings.ES_HISTORY_BASE_ALIAS, settings.ES_PRODUCTS_BASE_ALIAS]
+        for alias in aliases:
+            # TODO: не удаляются предыдущие версии
+            await _es_client.delete_index_by_alias(base_alias=alias)
+        for alias in aliases:
+            await _es_client.create_first_index(base_alias=alias)
+
+    # TODO: дублируется async with PydanticESClient(
+    async with PydanticESClient(hosts=settings.ES_HOSTS, default_alias=settings.ES_PRODUCTS_BASE_ALIAS) as _es_client:
+        _es_client: PydanticESClient
+        await generate_and_index_test_data(_es_client)
+
+
+@pytest.fixture
+async def es_client() -> AsyncIterator[PydanticESClient]:
+    assert settings.ENVIRONMENT == Environments.TEST
+    check_es_hosts()
+    # TODO: дублируется async with PydanticESClient(
+    async with PydanticESClient(hosts=settings.ES_HOSTS) as _es_client:
+        yield _es_client
 
 
 @pytest.fixture(scope="session")

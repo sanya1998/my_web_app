@@ -59,74 +59,6 @@ settings:
           - russian_stemmer   # russian_stemmer (Стеммер Портера) приводит слова к базовой форме
 
 mappings:
-  # Runtime fields (вычисляются при запросе, не хранятся на диске)
-  runtime:
-    total_stock:
-      type: long
-      script:
-        source: |
-          int total = 0;
-          if (doc['variants'].size() > 0) {
-            for (int i = 0; i < doc['variants'].size(); i++) {
-              total += (int) doc['variants'][i].stock.value;
-            }
-          }
-          emit(total);
-
-    min_price:
-      type: double
-      script:
-        source: |
-          double base = doc['base_price'].value;
-          double min_price = base;
-  
-          if (doc['variants'].size() > 0) {
-            for (int i = 0; i < doc['variants'].size(); i++) {
-              double modifier = doc['variants'][i].price_modifier.value;
-              double variant_price = base + modifier;
-              if (variant_price < min_price) {
-                min_price = variant_price;
-              }
-            }
-          }
-          emit(min_price);
-
-    max_price:
-      type: double
-      script:
-        source: |
-          double base = doc['base_price'].value;
-          double max_price = base;
-
-          if (doc['variants'].size() > 0) {
-            for (int i = 0; i < doc['variants'].size(); i++) {
-              double modifier = doc['variants'][i].price_modifier.value;
-              double variant_price = base + modifier;
-              if (variant_price > max_price) {
-                max_price = variant_price;
-              }
-            }
-          }
-          emit(max_price);
-
-    available_colors:
-      type: keyword
-      script:
-        source: |
-          def colors = [];
-          if (doc['variants'].size() > 0) {
-            for (int i = 0; i < doc['variants'].size(); i++) {
-              if (doc['variants'][i].stock.value > 0) {
-                def color = doc['variants'][i].color.value;
-                if (!colors.contains(color)) {
-                  colors.add(color);
-                }
-              }
-            }
-          }
-          emit(colors.toArray());
-
-  # Статические поля (хранятся на диске)
   properties:
     product_name: *text_with_keyword
     category: *filterable_keyword
@@ -136,7 +68,6 @@ mappings:
     rating:
       type: half_float
     description: *searchable_text
-    search_content: *searchable_text
     features: *filterable_keyword
     is_available:
       type: boolean

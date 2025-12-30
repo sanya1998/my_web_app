@@ -265,7 +265,7 @@ class BaseESClient(AsyncElasticsearch):
 
         return using_index
 
-    async def _get_indices_by_alias(self, alias: str) -> List[str] | None:
+    async def get_indices_by_alias(self, alias: str) -> List[str] | None:
         """
         Найти индексы по базовому алиасу
         """
@@ -375,7 +375,7 @@ class BaseESClient(AsyncElasticsearch):
         config_func = self._SINGLE_OPERATION_CONFIGS[operation_type]
         es_method, body = config_func(super(), doc_data)
 
-        indices = await self._get_indices_by_alias(resolved_alias)
+        indices = await self.get_indices_by_alias(resolved_alias)
         results = []
         for index in indices:
             operation_kwargs = self._map_to_es_kwargs(doc_id=doc_id, **kwargs)
@@ -438,7 +438,7 @@ class BaseESClient(AsyncElasticsearch):
         resolved_alias = self._resolve_alias(base_alias, use_write_alias=use_write_alias)
 
         operation_builder = self._BULK_OPERATION_BUILDERS[operation_type]
-        indices = await self._get_indices_by_alias(resolved_alias)
+        indices = await self.get_indices_by_alias(resolved_alias)
         results = []
 
         for idx in indices:
@@ -517,7 +517,7 @@ class BaseESClient(AsyncElasticsearch):
         """
         resolved_alias = self._resolve_alias(base_alias, use_write_alias=use_write_alias)
         es_method = self._QUERY_OPERATION_METHODS[operation_type](super())
-        indices = await self._get_indices_by_alias(resolved_alias)
+        indices = await self.get_indices_by_alias(resolved_alias)
         results = []
 
         for idx in indices:
@@ -571,7 +571,7 @@ class BaseESClient(AsyncElasticsearch):
                 product = await es.get(
                     doc_id="123",
                     index="products",
-                    _source=["name", "price", "category"]  # Только нужные поля
+                    _source=["name", "base_price", "category"]  # Только нужные поля
                 )
                 print(f"Найден продукт: {product['name']}")
             except NotFoundError:
@@ -693,7 +693,7 @@ class BaseESClient(AsyncElasticsearch):
             docs = await es.mget(
                 ids=["123", "456", "789"],
                 index="products",
-                _source=["name", "price"]
+                _source=["name", "base_price"]
             )
 
             for i, doc in enumerate(docs):
@@ -755,7 +755,7 @@ class BaseESClient(AsyncElasticsearch):
             query = MainQuery(
                 query=Match(query="smartphone", field="product_name"),
                 size=10,
-                _source=["product_name", "price", "rating"]
+                _source=["product_name", "base_price", "rating"]
             )
 
             results = await es.search(
@@ -827,13 +827,13 @@ class BaseESClient(AsyncElasticsearch):
             query1 = MainQuery(
                 query=Match(query="smartphone", field="category"),
                 size=5,
-                _source=["product_name", "price"]
+                _source=["product_name", "base_price"]
             )
 
             query2 = MainQuery(
                 query=Term(field="brand", value="Apple"),
                 size=3,
-                sort=[{"price": {"order": "desc"}}]
+                sort=[{"base_price": {"order": "desc"}}]
             )
 
             query3 = MainQuery(
@@ -921,7 +921,7 @@ class BaseESClient(AsyncElasticsearch):
             query = MainQuery(
                 aggs=[
                     TermsAgg("brands", "brand", size=10),
-                    StatsAgg("price_stats", "price")
+                    StatsAgg("price_stats", "base_price")
                 ],
                 size=0  # Важно: size=0 для pure-агрегаций
             )
@@ -998,7 +998,7 @@ class BaseESClient(AsyncElasticsearch):
 
             # Подсчет документов в ценовом диапазоне
             affordable = await es.count(
-                query=Range(field="price", lte=1000)(),
+                query=Range(field="base_price", lte=1000)(),
                 index="products",
                 timeout="10s"
             )
@@ -1058,7 +1058,7 @@ class BaseESClient(AsyncElasticsearch):
             ```python
             # Создание документа с проверкой уникальности ID
             await es.create(
-                document={"id": "123", "name": "New Product", "price": 99.99},
+                document={"id": "123", "name": "New Product", "base_price": 99.99},
                 index="products",
                 id_field="id",  # Поле содержащее ID (по умолчанию)
                 refresh="wait_for",
@@ -1123,7 +1123,7 @@ class BaseESClient(AsyncElasticsearch):
             ```python
             # Индексация документа (создание или замена)
             await es.index(
-                document={"id": "123", "name": "Product", "price": 149.99},
+                document={"id": "123", "name": "Product", "base_price": 149.99},
                 index="products",
                 refresh=True,
                 timeout="30s"
@@ -1194,7 +1194,7 @@ class BaseESClient(AsyncElasticsearch):
             ```python
             # Полное обновление документа
             await es.update(
-                document={"id": "123", "name": "Updated Product", "price": 199.99, "stock": 50},
+                document={"id": "123", "name": "Updated Product", "base_price": 199.99, "stock": 50},
                 index="products",
                 refresh="wait_for",
                 retry_on_conflict=3
@@ -1367,7 +1367,7 @@ class BaseESClient(AsyncElasticsearch):
         Создать Painless script для частичного обновления
 
         Генерирует читаемые имена параметров на основе имен полей.
-        Пример: {"price": 99.99} → параметр field_price
+        Пример: {"base_price": 99.99} → параметр field_price
 
         Заменяет недопустимые символы на '_' для безопасного использования в Painless script.
 
@@ -1435,7 +1435,7 @@ class BaseESClient(AsyncElasticsearch):
             # 1. Автоматический script из updates
             await es.partial_update(
                 doc_id="123",
-                updates={"price": 99.99, "stock": 50},
+                updates={"base_price": 99.99, "stock": 50},
                 index="products",
                 refresh="wait_for"
             )
@@ -1461,7 +1461,7 @@ class BaseESClient(AsyncElasticsearch):
 
         resolved_alias = self._resolve_alias(base_alias, use_write_alias=use_write_alias)
 
-        indices = await self._get_indices_by_alias(resolved_alias)
+        indices = await self.get_indices_by_alias(resolved_alias)
         results = []
         for base_alias in indices:
             operation_kwargs = self._map_to_es_kwargs(doc_id=doc_id, **kwargs)
@@ -1609,7 +1609,7 @@ class BaseESClient(AsyncElasticsearch):
             # Обновление нескольких документов
             await es.bulk_update(
                 documents=[
-                    {"id": "123", "price": 99.99},
+                    {"id": "123", "base_price": 99.99},
                     {"id": "124", "stock": 50}
                 ],
                 refresh=True
@@ -1848,7 +1848,7 @@ class BaseESClient(AsyncElasticsearch):
         resolved_alias = self._resolve_alias(base_alias, use_write_alias=use_write_alias, use_read_alias=use_read_alias)
 
         # Получаем индексы по алиасу, или используем сам resolved_alias если нет индексов
-        indices = await self._get_indices_by_alias(resolved_alias) or [resolved_alias]
+        indices = await self.get_indices_by_alias(resolved_alias) or [resolved_alias]
 
         # Обновляем все индексы
         await self.indices.refresh(index=",".join(indices))

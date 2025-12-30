@@ -6,14 +6,14 @@
 """
 
 from app.config.common import settings
-from es.clients.index import IndexClient
+from es.clients.index import IndexESClient
 
 BASE_ALIAS = settings.ES_PRODUCTS_BASE_ALIAS
 
 
 async def main():
-    async with IndexClient(hosts=settings.ES_HOSTS) as client:
-        client: IndexClient
+    async with IndexESClient(hosts=settings.ES_HOSTS) as client:
+        client: IndexESClient
         await client.create_first_index(base_alias=BASE_ALIAS)
 
 

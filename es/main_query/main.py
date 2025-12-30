@@ -24,14 +24,6 @@ class MainQuery:
     - aggs: агрегации для аналитики
     - explain: включить объяснение релевантности
     - timeout: таймаут выполнения запроса
-    - runtime_mappings: временный runtime field только для данного запроса
-        {
-            "price_with_tax": {  # Новое поле, которого нет в маппинге
-                "type": "double",
-                "script": "emit(doc['min_price'].value * 1.2)"
-            }
-        }
-        Примечание: уже определенные в маппинге runtime fields указывать не требуется.
     """
 
     def __init__(
@@ -46,7 +38,7 @@ class MainQuery:
         aggs: Optional[List[Aggregation]] = None,
         explain: Optional[bool] = None,
         timeout: Optional[str] = None,
-        runtime_mappings: Optional[Dict[str, Dict[str, Any]]] = None,
+        **kwargs,
     ):
         self._query: Optional[Query] = query
         self._size: Optional[int] = size
@@ -58,7 +50,7 @@ class MainQuery:
         self._aggs: List[Aggregation] = aggs or []
         self._explain: Optional[bool] = explain
         self._timeout: Optional[str] = timeout
-        self._runtime_mappings: Optional[Dict[str, Dict[str, Any]]] = runtime_mappings
+        self._kwargs: Dict[str, Any] = kwargs
 
     def query(self, query: Query) -> "MainQuery":
         """Установить основной поисковый запрос"""
@@ -90,10 +82,6 @@ class MainQuery:
     def search_after(self, values: List[Any]) -> "MainQuery":
         """Установить значение для поиска после курсора"""
         self._search_after = values
-        return self
-
-    def runtime_mappings(self, runtime_mappings: Dict[str, Dict[str, Any]]) -> "MainQuery":
-        self._runtime_mappings = runtime_mappings
         return self
 
     def source_filter(self, includes: List[str] = None, excludes: Optional[List[str]] = None) -> "MainQuery":
@@ -181,7 +169,7 @@ class MainQuery:
 
     def __call__(self) -> Dict[str, Any]:
         """Собрать полный поисковый запрос"""
-        result = {}
+        result = self._kwargs
 
         # Обрабатываем агрегации
         if self._aggs:
@@ -200,7 +188,6 @@ class MainQuery:
             ("highlight", self._highlight),
             ("explain", self._explain),
             ("timeout", self._timeout),
-            ("runtime_mappings", self._runtime_mappings),
         ]
 
         for key, value in params_to_add:
@@ -218,8 +205,8 @@ if __name__ == "__main__":
         MainQuery()
         .query(Match(query="phone", field="product_name"))
         .size(10)
-        .source(["product_name", "price", "rating"])
-        .sort("price", "asc")
+        .source(["product_name", "base_price", "rating"])
+        .sort("base_price", "asc")
     )
     print("Результат:", simple_search())
 
@@ -228,7 +215,7 @@ if __name__ == "__main__":
     analytics_only = (
         MainQuery()
         .add_agg(TermsAgg("categories", "category", size=5))
-        .add_agg(StatsAgg("price_stats", "price"))
+        .add_agg(StatsAgg("price_stats", "base_price"))
         .size(0)
     )
     print("Результат:", analytics_only())
@@ -248,8 +235,8 @@ if __name__ == "__main__":
         .aggs(
             [
                 TermsAgg("brands", "brand", size=5),
-                StatsAgg("price_analysis", "price"),
-                RangeAgg("price_ranges", "price", [{"to": 500}, {"from": 500, "to": 1000}]),
+                StatsAgg("price_analysis", "base_price"),
+                RangeAgg("price_ranges", "base_price", [{"to": 500}, {"from": 500, "to": 1000}]),
             ]
         )
         .size(5)
@@ -265,7 +252,7 @@ if __name__ == "__main__":
         .add_agg(StatsAgg("rating_stats", "rating"))
         .add_agg(DateHistogramAgg("monthly", "created_date", calendar_interval="month"))
         .size(8)
-        .source_filter(includes=["product_name", "brand", "price"])
+        .source_filter(includes=["product_name", "brand", "base_price"])
     )
     print("Результат:", full_analysis_add())
 
@@ -273,11 +260,11 @@ if __name__ == "__main__":
     print("\n5. 🎯 Комбинированный подход:")
     combined = (
         MainQuery()
-        .query(Range(field="price", lte=1000))
+        .query(Range(field="base_price", lte=1000))
         .aggs(
             [  # Базовые агрегации
                 TermsAgg("categories", "category"),
-                StatsAgg("price_stats", "price"),
+                StatsAgg("price_stats", "base_price"),
             ]
         )
         .add_agg(CardinalityAgg("unique_brands", "brand"))  # Дополнительная агрегация
@@ -299,7 +286,7 @@ if __name__ == "__main__":
             StatsAgg("availability_stats", "rating"),
         ],
         size=5,
-        _source=["product_name", "price", "features"],
+        _source=["product_name", "base_price", "features"],
     )
     print("Результат:", constructor_query())
 

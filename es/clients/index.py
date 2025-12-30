@@ -4,7 +4,7 @@
 import asyncio
 from dataclasses import asdict
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 from app.common.logger import logger
@@ -18,7 +18,7 @@ from es.main_query.main import MainQuery
 from es.main_query.query import Term
 
 
-class IndexClient(BaseESClient):
+class IndexESClient(BaseESClient):
     """
     Управление созданием и миграцией индексов
 
@@ -57,7 +57,7 @@ class IndexClient(BaseESClient):
         hosts: Optional[List[str]] = None,
         **kwargs,
     ):
-        super().__init__(hosts=hosts, default_alias="reindex_history", **kwargs)
+        super().__init__(hosts=hosts, default_alias=settings.ES_HISTORY_BASE_ALIAS, **kwargs)
 
     @staticmethod
     def _load_index_config(
@@ -340,7 +340,7 @@ class IndexClient(BaseESClient):
         Записать информацию о задаче реиндекса в индекс истории
 
         Сохраняет метаинформацию о запущенной задаче реиндекса в специальный индекс
-        `reindex_history` для последующего отслеживания и восстановления.
+        settings.ES_HISTORY_BASE_ALIAS (например `reindex_history`) для последующего отслеживания и восстановления.
 
         Сохраняемая информация:
         - task_id - идентификатор задачи Elasticsearch
@@ -533,7 +533,7 @@ class IndexClient(BaseESClient):
         Получить индекс по базовому алиасу
         Правило: base_alias всегда указывает только на один индекс
         """
-        indices = await self._get_indices_by_alias(base_alias)
+        indices = await self.get_indices_by_alias(base_alias)
         return indices[0] if indices else None
 
     async def create_first_index(
@@ -694,3 +694,64 @@ class IndexClient(BaseESClient):
         task = await self._wait_reindex(base_alias=base_alias, check_interval=check_interval)
         new_i = task.dest_index
         await self._switch_aliases(old_index=old_i, new_index=new_i, base_alias=base_alias)
+
+    async def delete_index_by_alias(
+        self,
+        base_alias: Optional[str] = None,
+        use_write_alias: bool = False,
+        use_read_alias: bool = False,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        Удалить индекс(ы) по алиасу
+
+        Удаляет все индексы, соответствующие указанному алиасу.
+        Если алиас указывает на несколько индексов (например во время миграции),
+        удаляются все соответствующие индексы.
+
+        ВНИМАНИЕ: Удаление индекса НЕОБРАТИМО. Все данные будут потеряны.
+        Для production используйте с осторожностью.
+
+        Args:
+            base_alias: Базовый алиас или индекс (если None - дефолтный)
+            use_write_alias: Использовать _write алиас
+            use_read_alias: Использовать _read алиас
+            **kwargs: Дополнительные параметры Elasticsearch delete index API:
+                - timeout: str - таймаут операции ("30s", "1m")
+                - master_timeout: str - таймаут ожидания master-ноды
+                - ignore_unavailable: bool - игнорировать отсутствующие индексы
+                - allow_no_indices: bool - разрешить если индекс не существует
+                - expand_wildcards: str | List[str] - обработка wildcard
+                - wait_for_active_shards: str - ждать активных шардов
+
+        Returns:
+            Ответ Elasticsearch с подтверждением удаления
+
+        Примеры:
+            ```python
+            # Удалить все индексы, соответствующие базовому алиасу
+            await index_client.delete_index(base_alias="products")
+
+            # Удалить write индекс (используется во время миграции)
+            await index_client.delete_index(
+                base_alias="products",
+                use_write_alias=True
+            )
+
+            # Удалить конкретный индекс по имени
+            await index_client.delete_index(base_alias="products_v1")
+            ```
+
+        Примечание:
+            - Алиасы автоматически удаляются при удалении индекса
+            - Для безопасного удаления используйте `ignore_unavailable=True`
+        """
+        resolved_alias = self._resolve_alias(base_alias, use_write_alias=use_write_alias, use_read_alias=use_read_alias)
+
+        indices = await self.get_indices_by_alias(alias=resolved_alias)
+
+        if not indices:
+            return {"Info": f"Not found indices by alias '{resolved_alias}'."}
+
+        # Удаляем все индексы
+        return await self.indices.delete(index=",".join(indices), **kwargs)

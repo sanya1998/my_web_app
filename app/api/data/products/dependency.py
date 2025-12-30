@@ -23,7 +23,7 @@ def build_main_query(
         query_parts.append(
             MultiMatch(
                 query=params.search_query,
-                fields=["product_name", "description", "search_content", "brand"],
+                fields=["product_name", "description", "brand", "features"],
                 fuzziness="AUTO",
             )
         )

@@ -263,7 +263,7 @@ class PydanticESClient(BaseESClient):
         )
 
         hits_data = response["hits"]["hits"]
-        sources = [resolved_model.model_validate(hit["_source"]) for hit in hits_data]
+        sources = [resolved_model.model_validate(hit.get("_source", {})) for hit in hits_data]
 
         return SearchResult(
             sources=sources,
@@ -310,7 +310,7 @@ class PydanticESClient(BaseESClient):
 
             sources = []
             for hit in hits_data:
-                source = hit.get("_source")
+                source = hit.get("_source", {})
                 if not source:
                     continue
                 sources.append(model.model_validate(source))
@@ -440,7 +440,6 @@ class PydanticESClient(BaseESClient):
     ) -> List[Dict[str, Any]]:
         return await super().bulk_index(
             documents=[d.model_dump() for d in documents],
-            operation_type=OperationType.INDEX,
             base_alias=base_alias,
             use_write_alias=use_write_alias,
             id_field=id_field,
@@ -459,7 +458,6 @@ class PydanticESClient(BaseESClient):
     ) -> List[Dict[str, Any]]:
         return await super().bulk_create(
             documents=[d.model_dump() for d in documents],
-            operation_type=OperationType.CREATE,
             base_alias=base_alias,
             use_write_alias=use_write_alias,
             id_field=id_field,
@@ -478,7 +476,6 @@ class PydanticESClient(BaseESClient):
     ) -> List[Dict[str, Any]]:
         return await super().bulk_update(
             documents=[d.model_dump() for d in documents],
-            operation_type=OperationType.UPDATE,
             base_alias=base_alias,
             use_write_alias=use_write_alias,
             id_field=id_field,
@@ -497,7 +494,6 @@ class PydanticESClient(BaseESClient):
     ) -> List[Dict[str, Any]]:
         return await super().bulk_delete(
             documents=[d.model_dump() for d in documents],
-            operation_type=OperationType.DELETE,
             base_alias=base_alias,
             use_write_alias=use_write_alias,
             id_field=id_field,

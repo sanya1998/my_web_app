@@ -10,7 +10,7 @@ import asyncio
 
 import click
 from app.config.common import settings
-from es.clients.index import IndexClient
+from es.clients.index import IndexESClient
 
 BASE_ALIAS = settings.ES_PRODUCTS_BASE_ALIAS
 
@@ -21,8 +21,8 @@ def cli() -> None:
 
 
 async def start_reindex_async() -> None:
-    async with IndexClient(hosts=settings.ES_HOSTS) as client:
-        client: IndexClient
+    async with IndexESClient(hosts=settings.ES_HOSTS) as client:
+        client: IndexESClient
         task_id = await client.start_reindex(base_alias=BASE_ALIAS)
         print(f"Task ID: {task_id}")
 
@@ -33,8 +33,8 @@ def start_reindex() -> None:
 
 
 async def end_reindex_async() -> None:
-    async with IndexClient(hosts=settings.ES_HOSTS) as client:
-        client: IndexClient
+    async with IndexESClient(hosts=settings.ES_HOSTS) as client:
+        client: IndexESClient
         await client.end_reindex(base_alias=BASE_ALIAS, check_interval=2)
 
 

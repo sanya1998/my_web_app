@@ -389,6 +389,7 @@ class CumulativeSumAgg(PipelineAgg):
 
 
 if __name__ == "__main__":
+    # TODO: Взять за основу этот файл и написать тесты
     print("=== ПРИМЕРЫ АГРЕГАЦИЙ (БЕЗ MainQuery) ===")
 
     # 1. 📊 БАЗОВАЯ АГРЕГАЦИЯ - Уникальные категории
@@ -404,7 +405,7 @@ if __name__ == "__main__":
         {"from": 500, "to": 1000},
         {"from": 1000},
     ]
-    price_agg = RangeAgg(name="price_distribution", field="price", ranges=price_ranges, keyed=True)
+    price_agg = RangeAgg(name="price_distribution", field="base_price", ranges=price_ranges, keyed=True)
     print("Price Ranges Agg:", price_agg())
 
     # 3. ⭐ СТАТИСТИКА РЕЙТИНГОВ
