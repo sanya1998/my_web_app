@@ -1,85 +1,106 @@
 from typing import Annotated
 
 from app.api.data.products.filters import ProductCommonParams
+from elasticsearch import AsyncElasticsearch
+from elasticsearch.dsl import AsyncSearch
+from elasticsearch.dsl.query import Bool, MultiMatch, Nested, Range, Term, Terms
 from es.clients.pydantic_ import PydanticESClient
-from es.main_query.main import MainQuery
-from es.main_query.query import Bool, MatchAll, MultiMatch, NestedQuery, Range, Term, Terms
 from fastapi import Query
 from starlette.requests import Request
 
 
-def get_es_client(request: Request) -> PydanticESClient:
+def get_pydantic_es_client(request: Request) -> PydanticESClient:
+    """Зависимость для получения клиента Elasticsearch"""
+    return request.app.state.pydantic_es_client
+
+
+def get_es_client(request: Request) -> AsyncElasticsearch:
     """Зависимость для получения клиента Elasticsearch"""
     return request.app.state.es_client
 
 
-def build_main_query(
+def build_search_query(
     params: Annotated[ProductCommonParams, Query()],
-):
-    query_parts = []
+) -> AsyncSearch:
+    """
+    Построить поисковый запрос для товаров на основе параметров фильтрации
 
-    # Текстовый поиск
+    Использует официальный elasticsearch.dsl для построения запросов.
+
+    Args:
+        params: Параметры фильтрации из Query параметров
+
+    Returns:
+        Search: Поисковый запрос elasticsearch-dsl
+    """
+    search = AsyncSearch()
+
+    must_queries = []  # Для полнотекстового поиска (влияет на score)
+    filter_queries = []  # Для точных фильтров (не влияет на score)
+
+    # 1. Текстовый поиск (добавляем в must для влияния на score)
     if params.search_query:
-        query_parts.append(
+        must_queries.append(
             MultiMatch(
-                query=params.search_query,
-                fields=["product_name", "description", "brand", "features"],
-                fuzziness="AUTO",
+                query=params.search_query, fields=["product_name", "description", "brand", "features"], fuzziness="AUTO"
             )
         )
 
-    # Фильтр по категориям
+    # 2. Точные фильтры (добавляем в filter для скорости)
+
+    # Категории
     if params.categories:
-        query_parts.append(Terms(field="category", values=[c.value for c in params.categories]))
+        filter_queries.append(Terms(category=params.categories))
 
-    # Фильтр по брендам
+    # Бренды
     if params.brands:
-        query_parts.append(Terms(field="brand", values=params.brands))
+        filter_queries.append(Terms(brand=params.brands))
 
-    # Фильтр по цене TODO: упростить до Range(field="base_price", lte=..., gte=...)
+    # Цена
     price_range = {}
     if params.min_price is not None:
         price_range["gte"] = params.min_price
     if params.max_price is not None:
         price_range["lte"] = params.max_price
     if price_range:
-        query_parts.append(Range(field="base_price", **price_range))
+        filter_queries.append(Range(base_price=price_range))
 
-    # Фильтр по рейтингу
+    # Рейтинг
     if params.min_rating is not None:
-        query_parts.append(Range(field="rating", gte=params.min_rating))
+        filter_queries.append(Range(rating={"gte": params.min_rating}))
 
-    # Фильтр по наличию
+    # Наличие
     if params.is_available is not None:
-        query_parts.append(Term(field="is_available", value=params.is_available))
+        filter_queries.append(Term(is_available=params.is_available))
 
-    # Фильтр по скидке
+    # Скидка
     if params.is_on_sale is not None:
-        query_parts.append(Term(field="is_on_sale", value=params.is_on_sale))
+        filter_queries.append(Term(is_on_sale=params.is_on_sale))
 
-    # Фильтр по тегам
+    # Теги
     if params.tags:
-        query_parts.append(Terms(field="tags", values=params.tags))
+        filter_queries.append(Terms(tags=params.tags))
 
-    # Фильтр по фичам
+    # Фичи
     if params.features:
-        query_parts.append(Terms(field="features", values=params.features))
+        filter_queries.append(Terms(features=params.features))
 
-    # Фильтр по цветам (из вариантов)
+    # Цвета (nested поле) - используем правильный синтаксис
     if params.colors:
-        # Для фильтрации по nested полям нужен nested query
-        query_parts.append(NestedQuery(path="variants", query=Terms(field="variants.color", values=params.colors)))
+        filter_queries.append(Nested(path="variants", query=Terms(variants__color=params.colors)))
 
-    # Собираем финальный запрос
-    if query_parts:
-        search_query = Bool(_must=query_parts)
-    else:
-        search_query = MatchAll()
+    # 3. Собираем финальный Bool запрос
+    bool_query = Bool()
+    if must_queries:
+        bool_query.must = must_queries
+    if filter_queries:
+        bool_query.filter = filter_queries
+    search = search.query(bool_query)
 
-    # Создаем MainQuery
-    main_query = (
-        MainQuery(query=search_query)
-        .paginate(page=params.page, per_page=params.per_page)
-        .sort(params.sort_field, params.order)
-    )
-    return main_query
+    # 4. Пагинация
+    search = search[(params.page - 1) * params.per_page : params.page * params.per_page]
+
+    # 5. Сортировка
+    search = search.sort({params.sort_field: {"order": params.order}})
+
+    return search

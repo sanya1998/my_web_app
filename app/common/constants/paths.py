@@ -16,6 +16,7 @@ IMAGES_PATH = "/images"
 BOOKINGS_PATH = "/bookings"
 ROOMS_PATH = "/rooms"
 HOTELS_PATH = "/hotels"
+PRODUCTS_PATH = "/products"
 USERS_PATH = "/users"
 AUTH_PATH = "/auth"
 

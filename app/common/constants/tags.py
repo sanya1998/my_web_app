@@ -8,6 +8,7 @@ class TagsEnum(str, Enum):
     HOTELS = "Hotels"
     ROOMS = "Rooms"
     BOOKINGS = "Bookings"
+    PRODUCTS = "Products"
     MEDIA = "Media"
     FRONTEND = "Frontend"
     INTERNAL = "Internal"

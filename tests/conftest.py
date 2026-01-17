@@ -15,6 +15,8 @@ from app.resources.postgres import PostgresManager
 from asgi_lifespan import LifespanManager
 from es.clients.index import IndexESClient
 from es.clients.pydantic_ import PydanticESClient
+from es.dsl.indices.products import ProductDocument
+from es.dsl.indices.reindex_history import ReindexHistoryDocument
 from httpx import ASGITransport, Response
 from pydantic import SecretStr
 from sqlalchemy import text
@@ -77,12 +79,11 @@ async def prepare_elasticsearch():
     check_es_hosts()
     async with IndexESClient(hosts=settings.ES_HOSTS) as _es_client:
         _es_client: IndexESClient
-        aliases = [settings.ES_HISTORY_BASE_ALIAS, settings.ES_PRODUCTS_BASE_ALIAS]
-        for alias in aliases:
+        indices = [ReindexHistoryDocument, ProductDocument]
+        for document_class in indices:
             # TODO: не удаляются предыдущие версии
-            await _es_client.delete_index_by_alias(base_alias=alias)
-        for alias in aliases:
-            await _es_client.create_first_index(base_alias=alias)
+            await _es_client.delete_index(document_class=document_class)
+            await _es_client.create_first_index(document_class=document_class)
 
     # TODO: дублируется async with PydanticESClient(
     async with PydanticESClient(hosts=settings.ES_HOSTS, default_alias=settings.ES_PRODUCTS_BASE_ALIAS) as _es_client:

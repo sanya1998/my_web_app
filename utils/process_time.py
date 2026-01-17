@@ -24,6 +24,7 @@ def scale_all(attempts: int, _url: str):
 
 if __name__ == "__main__":
     url = "http://0.0.0.0:8000/api/v1/hotels/"
+    # url = f"http://{settings.API_HOST}:{settings.API_PORT}/api/v1/hotels/"
     scale_one(url)  # Чтобы записалось в кеш
     scale_all(attempts=10, _url=url)
     # Average seconds: 0.014312070698360912

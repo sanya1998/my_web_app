@@ -1,5 +1,4 @@
-# TODO: навести порядок в этом файле
-from app.api.data.products.dependency import build_main_query, get_es_client
+from app.api.data.products.dependency import build_search_query, get_es_client, get_pydantic_es_client
 from app.api.data.products.input import ProductCreateInput, ProductUpdateInput
 from app.api.data.products.responses import (
     BrandsResponse,
@@ -9,14 +8,19 @@ from app.api.data.products.responses import (
     ProductsListResponse,
     ProductUpdateResponse,
 )
+from app.common.constants.paths import PRODUCTS_PATH
+from app.common.constants.tags import TagsEnum
+from app.common.helpers.api_version import VersionedAPIRouter
+from app.config.common import settings
 from elasticsearch import NotFoundError
+from elasticsearch.dsl import AsyncSearch
+from elasticsearch.dsl.aggs import Terms
 from es.clients.pydantic_ import PydanticESClient
-from es.main_query.aggregation import TermsAgg
-from es.main_query.main import MainQuery
+from es.constants import READ_SUFFIX
 from es.schemas.products import Brand, ProductCreateSchema, ProductUpdateSchema
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status
 
-router = APIRouter(prefix="/products", tags=["products"])
+router = VersionedAPIRouter(prefix=PRODUCTS_PATH, tags=[TagsEnum.PRODUCTS])
 
 
 # ============ CREATE ============
@@ -29,7 +33,7 @@ router = APIRouter(prefix="/products", tags=["products"])
 )
 async def create_product(
     product_data: ProductCreateInput,
-    es_client: PydanticESClient = Depends(get_es_client),
+    es_client: PydanticESClient = Depends(get_pydantic_es_client),
 ) -> ProductCreateResponse:
     """
     Создание нового товара
@@ -75,7 +79,7 @@ async def create_product(
 )
 async def get_product(
     product_id: str,
-    es_client: PydanticESClient = Depends(get_es_client),
+    es_client: PydanticESClient = Depends(get_pydantic_es_client),
 ) -> ProductResponse:
     """
     Получение товара по ID
@@ -117,35 +121,54 @@ async def get_product(
     description="Получение списка товаров с фильтрацией, сортировкой и пагинацией",
 )
 async def get_products(
-    main_query: MainQuery = Depends(build_main_query),
-    es_client: PydanticESClient = Depends(get_es_client),
+    main_query: AsyncSearch = Depends(build_search_query),
+    es_client: PydanticESClient = Depends(get_pydantic_es_client),
 ) -> ProductsListResponse:
     """
     Получение списка товаров с фильтрами
 
     Args:
-        main_query: объект MainQuery
-        es_client: Клиент Elasticsearch
+        main_query: объект AsyncSearch
+        es_client: Клиент PydanticESClient
 
     Returns:
         ProductsListResponse со списком товаров и метаданными
     """
     try:
-        # Выполняем поиск
-        result = await es_client.search(
-            body=main_query(),
-            response_model=ProductResponse,
-        )
-        # TODO: pycharm подчеркивает
-        return ProductsListResponse(
-            products=result.sources,
-        )
-
+        result = await es_client.search(body=main_query.to_dict(), response_model=ProductResponse)
+        return ProductsListResponse(products=result.sources)  # TODO: pycharm подчеркивает
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Error searching products: {str(e)}",
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error searching products: {str(e)}")
+
+
+@router.get(
+    "/",
+    response_model=ProductsListResponse,
+    summary="Поиск товаров",
+    description="Поиск товаров с использованием AsyncSearch DSL",
+)
+@router.set_api_version("v2")
+async def search_products(
+    main_query: AsyncSearch = Depends(build_search_query),
+    es_client: PydanticESClient = Depends(get_es_client),
+) -> ProductsListResponse:
+    """
+    Поиск товаров с использованием AsyncSearch DSL
+
+    Args:
+        main_query: объект AsyncSearch
+        es_client: Клиент PydanticESClient
+
+    Returns:
+        ProductsListResponse со списком товаров и метаданными
+    """
+    try:
+        search = main_query.using(es_client).index([f"{settings.ES_PRODUCTS_BASE_ALIAS}{READ_SUFFIX}"])
+        response = await search.execute()
+        products = [ProductResponse.model_validate(hit.to_dict()) for hit in response]
+        return ProductsListResponse(products=products)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Error searching products: {str(e)}")
 
 
 # ============ READ (aggregations - brands) ============
@@ -156,7 +179,7 @@ async def get_products(
     description="Получение списка всех уникальных брендов товаров",
 )
 async def get_all_brands(
-    es_client: PydanticESClient = Depends(get_es_client),
+    es_client: PydanticESClient = Depends(get_pydantic_es_client),
 ) -> BrandsResponse:
     """
     Получение списка всех брендов
@@ -169,12 +192,10 @@ async def get_all_brands(
     """
     try:
         # Создаем запрос с агрегацией по брендам
-        search_query = MainQuery(
-            aggs=[TermsAgg("unique_brands", "brand", size=1000)],
-            size=0,
-        )
+        search_query = AsyncSearch()
+        search_query.aggs.bucket("unique_brands", Terms(field="brand", size=1000))
 
-        result = await es_client.aggregate(body=search_query())
+        result = await es_client.aggregate(body=search_query.to_dict())
 
         # Извлекаем бренды из агрегации и преобразуем в enum
         buckets = result["aggregations"]["unique_brands"]["buckets"]
@@ -206,7 +227,7 @@ async def get_all_brands(
 async def update_product(
     product_id: str,
     product_data: ProductUpdateInput,
-    es_client: PydanticESClient = Depends(get_es_client),
+    es_client: PydanticESClient = Depends(get_pydantic_es_client),
 ) -> ProductUpdateResponse:
     """
     Полное обновление товара
@@ -247,7 +268,7 @@ async def update_product(
 async def partial_update_product(
     product_id: str,
     product_data: ProductUpdateInput,
-    es_client: PydanticESClient = Depends(get_es_client),
+    es_client: PydanticESClient = Depends(get_pydantic_es_client),
 ) -> ProductUpdateResponse:
     """
     Частичное обновление товара
@@ -294,7 +315,7 @@ async def partial_update_product(
 )
 async def delete_product(
     product_id: str,
-    es_client: PydanticESClient = Depends(get_es_client),
+    es_client: PydanticESClient = Depends(get_pydantic_es_client),
 ) -> ProductDeleteResponse:
     """
     Удаление товара

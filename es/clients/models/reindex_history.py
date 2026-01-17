@@ -1,3 +1,4 @@
+# Модели документов хранятся в других местах. Однако ReindexHistory считается служебной моделью, поэтому она здесь
 from datetime import datetime
 
 from pydantic import BaseModel

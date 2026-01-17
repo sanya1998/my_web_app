@@ -8,6 +8,10 @@ from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
 
+# TODO: два раза создается экземпляр в этом файле (redis.ConnectionPool.from_url и redis.from_url)
+# max_connections=settings.CACHE_MAX_CONNECTIONS,
+# retry_on_timeout=settings.CACHE_RETRY_ON_TIMEOUT,
+# client_name=platform.node(), # import platform
 pool = redis.ConnectionPool.from_url(url=settings.CACHE_URL, max_connections=settings.CACHE_MAX_CONNECTIONS)
 
 

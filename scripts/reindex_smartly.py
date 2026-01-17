@@ -1,7 +1,8 @@
+# scripts/reindex_smartly.py
 """
 🔹 Миграция индекса
-1. Обновить es/indices/products.yaml
-2. Заполнить поле BASE_ALIAS
+1. Обновить DSL модель (изменить версию в Index.name)
+2. Прописать нужную модель в DOCUMENT_CLASS = ProductDocument
 3. Выполнить скрипт `python3 reindex_smartly.py start_reindex`
 4. Выполнить скрипт `python3 reindex_smartly.py end_reindex`
 """
@@ -11,8 +12,9 @@ import asyncio
 import click
 from app.config.common import settings
 from es.clients.index import IndexESClient
+from es.dsl.indices.products import ProductDocument
 
-BASE_ALIAS = settings.ES_PRODUCTS_BASE_ALIAS
+DOCUMENT_CLASS = ProductDocument
 
 
 @click.group()
@@ -23,7 +25,7 @@ def cli() -> None:
 async def start_reindex_async() -> None:
     async with IndexESClient(hosts=settings.ES_HOSTS) as client:
         client: IndexESClient
-        task_id = await client.start_reindex(base_alias=BASE_ALIAS)
+        task_id = await client.start_reindex(DOCUMENT_CLASS)
         print(f"Task ID: {task_id}")
 
 
@@ -35,7 +37,7 @@ def start_reindex() -> None:
 async def end_reindex_async() -> None:
     async with IndexESClient(hosts=settings.ES_HOSTS) as client:
         client: IndexESClient
-        await client.end_reindex(base_alias=BASE_ALIAS, check_interval=2)
+        await client.end_reindex(DOCUMENT_CLASS, check_interval=2)
 
 
 @cli.command()

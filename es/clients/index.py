@@ -1,21 +1,20 @@
 # TODO: внимательнее эти моменты проработать:
 #  при реиндексе надежнее использовать index и для create, и для update.
-#  при реиндексе удаление не происходит ни в одном из индексов, так как возникает ошибка отсутствия документа
+#  при реиндексе удаление может не произойти ни в одном из индексов, так как возникает ошибка отсутствия документа
+#  при записи всегда два запроса (получение индексов по алиасу, запись)
+#  при реиндексе два запроса для записи в разные индексы (а можно bulk)
 import asyncio
 from dataclasses import asdict
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
-import yaml
-from app.common.logger import logger
 from app.config.common import settings
 from elastic_transport import ApiResponse
+from elasticsearch.dsl import AsyncDocument, AsyncSearch
+from elasticsearch.dsl.query import Term
 from es.clients.base import BaseESClient
 from es.clients.models.aliases import AddAlias, AddAliasInfo, AliasInfo, RemoveAlias
-from es.clients.models.config import IndexConfig
 from es.clients.models.reindex_history import ReindexHistory
-from es.main_query.main import MainQuery
-from es.main_query.query import Term
 
 
 class IndexESClient(BaseESClient):
@@ -29,25 +28,26 @@ class IndexESClient(BaseESClient):
     ├── products_read     (read алиас)        → читает приложение
     └── products_write    (write алиас)       → пишет приложение
 
-    2. Перед созданием индекса или реиндексом нужно создать или изменить файл es/indices/{base_alias}.yaml:
-    ```yaml
-    version: "2"                     # Версия индекса
-    settings:                        # Настройки индекса
-      number_of_shards: 3
-      number_of_replicas: 1
-    mappings:                        # Маппинги полей
-      properties:
-        field_name:
-          type: "text"
+    2. Для каждого индекса создается DSL модель в es/dsl/indices/:
+    ```python
+    # es/dsl/indices/products.py
+    from elasticsearch.dsl import Document
+
+    class ProductDocument(Document):
+        # поля документа
+
+        class Index:
+            name = "products_v3"  # Имя индекса с версией
+            settings = {...}      # Настройки индекса
     ```
 
     3. АЛГОРИТМЫ МИГРАЦИИ
         🔹 Сценарий 1: Первое создание индекса
-            1. Создать файл конфигурации es/indices/products.yaml
+            1. Создать DSL модель в es/dsl/indices/
             2. Выполнить скрипт `python3 create_index.py`
 
         🔹 Сценарий 2: Миграция и отслеживание (Во время реиндекса: чтение из старого индекса, запись в оба индекса)
-            1. Обновить es/indices/products.yaml
+            1. Обновить DSL модель (увеличить версию в имени индекса)
             2. Выполнить скрипт `python3 reindex_smartly.py start_reindex`
             3. Выполнить скрипт `python3 reindex_smartly.py end_reindex`
     """
@@ -57,84 +57,54 @@ class IndexESClient(BaseESClient):
         hosts: Optional[List[str]] = None,
         **kwargs,
     ):
+        """
+        Инициализация клиента для управления индексами
+
+        Args:
+            hosts: Список URL нод Elasticsearch (например: ["http://localhost:9200"])
+            **kwargs: Дополнительные параметры для AsyncElasticsearch
+        """
         super().__init__(hosts=hosts, default_alias=settings.ES_HISTORY_BASE_ALIAS, **kwargs)
 
-    @staticmethod
-    def _load_index_config(
-        base_alias: str,
-        directory: str = settings.ES_INDICES_DIRECTORY,
-        file_extension: str = settings.ES_INDEX_FILE_EXTENSION,
-    ) -> IndexConfig:
-        """Загрузить конфигурацию индекса"""
-        config_path = f"{directory}/{base_alias}.{file_extension}"
-
-        with open(config_path, "r", encoding=settings.ES_INDEX_FILE_ENCODING) as f:
-            raw_config = yaml.safe_load(f)
-
-        return IndexConfig(base_alias=base_alias, **raw_config)
-
-    async def _create_new_index(
-        self,
-        base_alias: str,
-        directory: str = settings.ES_INDICES_DIRECTORY,
-        file_extension: str = settings.ES_INDEX_FILE_EXTENSION,
-    ) -> str:
+    async def _create_new_index(self, document_class: Type[AsyncDocument]) -> str:
         """
-        Создать новый индекс на основе YAML-конфигурации
+        Создать новый индекс на основе DSL модели
 
         Создает индекс с именем {base_alias}_v{version}, где version берется из
-        YAML-конфигурационного файла.
+        DSL модели в es/dsl/indices/{base_alias}.py.
 
         Процесс:
-        1. Загружает конфигурацию из es/indices/{base_alias}.yaml
+        1. Загружает конфигурацию из DSL модели
         2. Проверяет, не существует ли уже индекс с таким именем
         3. Создает индекс с настройками и маппингами из конфигурации
         4. Возвращает имя созданного индекса
 
         Args:
-            base_alias: Базовый алиас (имя YAML-файла без расширения)
-            directory: Директория с конфигурационными файлами (по умолчанию: settings.ES_INDICES_DIRECTORY)
-            file_extension: Расширение конфигурационных файлов (по умолчанию: settings.ES_INDEX_FILE_EXTENSION)
+            base_alias: Базовый алиас (имя DSL модели)
 
         Returns:
-            Имя созданного индекса (например, "products_v2")
+            Имя созданного индекса (например, "products_v3")
 
         Raises:
             ValueError: если индекс с таким именем уже существует
-            FileNotFoundError: если конфигурационный файл не найден
-            yaml.YAMLError: если ошибка парсинга YAML
+            ValueError: если DSL модель не найдена
 
         Пример:
             ```python
-            # Создание индекса products_v2 на основе es/indices/products.yaml
+            # Создание индекса products_v3 на основе es/dsl/indices/products.py
             index_name = await index_client._create_new_index("products")
             print(f"Создан индекс: {index_name}")
-
-            # С кастомной директорией конфигов
-            index_name = await index_client._create_new_index(
-                base_alias="users",
-                directory="/path/to/configs",
-                file_extension="yml"
-            )
             ```
-
-        См. также:
-            - `IndexConfig` - модель конфигурации индекса
-            - `create_first_index()` - публичный метод для создания первого индекса
         """
-        config = self._load_index_config(base_alias=base_alias, directory=directory, file_extension=file_extension)
-        new_index_name = f"{config.base_alias}_v{config.version}"
+        # TODO: проверить нет ли общего с create_first_index
+        index_name = document_class.Index.name
 
-        if config.settings is None:
-            logger.info(f"Index {new_index_name}: using default settings")
-        if config.mappings is None:
-            logger.warning(f"Index {new_index_name}: no mappings defined - dynamic mapping enabled")
+        if await self.indices.exists(index=index_name):
+            raise ValueError(f"Index '{index_name}'elasticsearch already exists")
 
-        if await self.indices.exists(index=new_index_name):
-            raise ValueError(f"Index '{new_index_name}' already exists")
+        await document_class.init(using=self)
 
-        await self.indices.create(index=new_index_name, settings=config.settings, mappings=config.mappings)
-        return new_index_name
+        return index_name
 
     async def _add_all_aliases(self, index_name: str, base_alias: str) -> None:
         """
@@ -149,26 +119,21 @@ class IndexESClient(BaseESClient):
         - {base_alias}_write    (write алиас для записи приложением)
 
         Args:
-            index_name: Имя индекса, к которому добавляются алиасы (например, "products_v2")
+            index_name: Имя индекса, к которому добавляются алиасы (например, "products_v3")
             base_alias: Базовый алиас (например, "products")
 
         Пример:
             ```python
-            # После создания индекса products_v2 добавляем все алиасы
+            # После создания индекса products_v3 добавляем все алиасы
             await index_client._add_all_aliases(
-                index_name="products_v2",
+                index_name="products_v3",
                 base_alias="products"
             )
             # Теперь доступны:
-            # - products → products_v2
-            # - products_read → products_v2
-            # - products_write → products_v2
+            # - products → products_v3
+            # - products_read → products_v3
+            # - products_write → products_v3
             ```
-
-        Примечание:
-            - Использует атомарную операцию update_aliases
-            - Все три алиаса добавляются за одну операцию
-            - Для добавления только write алиаса используйте `_add_write_alias_only()`
         """
         actions = [
             AddAlias(AddAliasInfo(index=index_name, alias=base_alias)),
@@ -197,20 +162,16 @@ class IndexESClient(BaseESClient):
 
         Пример:
             ```python
-            # Во время миграции с products_v1 на products_v2
+            # Во время миграции с products_v2 на products_v3
             # Добавляем write алиас на новый индекс для двойной записи
             await index_client._add_write_alias_only(
-                index_name="products_v2",
+                index_name="products_v3",
                 base_alias="products"
             )
             # Теперь:
-            # - products_write → products_v1, products_v2 (двойная запись)
-            # - products, products_read → products_v1 (чтение со старого)
+            # - products_write → products_v2, products_v3 (двойная запись)
+            # - products, products_read → products_v2 (чтение со старого)
             ```
-
-        Примечание:
-            - Используется в `start_reindex()` для настройки двойной записи
-            - После завершения миграции алиасы переключаются через `_switch_aliases()`
         """
         action = AddAlias(AddAliasInfo(index=index_name, alias=self._get_write_alias(base_alias)))
         await self._setup_aliases(action)
@@ -244,21 +205,16 @@ class IndexESClient(BaseESClient):
 
         Пример:
             ```python
-            # Завершение миграции: переключаем алиасы с products_v1 на products_v2
+            # Завершение миграции: переключаем алиасы с products_v2 на products_v3
             await index_client._switch_aliases(
-                old_index="products_v1",
-                new_index="products_v2",
+                old_index="products_v2",
+                new_index="products_v3",
                 base_alias="products"
             )
             # Теперь:
-            # - products, products_read, products_write → products_v2
-            # - products_v1 больше не имеет алиасов
+            # - products, products_read, products_write → products_v3
+            # - products_v2 больше не имеет алиасов
             ```
-
-        Примечание:
-            - Атомарность гарантирует отсутствие downtime
-            - Вызывается в `end_reindex()` после завершения реиндексации
-            - Старый индекс можно удалить после проверки работы нового
         """
         read_alias = self._get_read_alias(base_alias)
         write_alias = self._get_write_alias(base_alias)
@@ -310,21 +266,14 @@ class IndexESClient(BaseESClient):
             ```python
             # Запуск реиндекса с параллельной обработкой
             task_id = await index_client._start_reindex(
-                source_index="products_v1",
-                dest_index="products_v2",
+                source_index="products_v2",
+                dest_index="products_v3",
                 slices="auto",  # Автоматическое определение количества срезов
                 requests_per_second=1000,  # Ограничение скорости
                 refresh=False  # Не обновлять сразу
             )
-
             print(f"Запущен реиндекс, task_id: {task_id}")
-            # task_id имеет формат: "node_id:task_number"
             ```
-
-        Примечание:
-            - Для отслеживания прогресса используйте `_wait_reindex()` или `get_task_silent()`
-            - Реиндекс выполняется асинхронно, метод возвращает управление сразу
-            - Используется в `start_reindex()` для запуска миграции
         """
         response = await self.reindex(
             source=dict(index=source_index),
@@ -361,25 +310,10 @@ class IndexESClient(BaseESClient):
             await index_client._write_task_id(
                 task_id="abc123:456",
                 base_alias="products",
-                source_index="products_v1",
-                dest_index="products_v2"
+                source_index="products_v2",
+                dest_index="products_v3"
             )
-
-            # Теперь в индексе reindex_history есть запись:
-            # {
-            #   "task_id": "abc123:456",
-            #   "base_alias": "products",
-            #   "source_index": "products_v1",
-            #   "dest_index": "products_v2",
-            #   "started_at": "2024-01-15T10:30:00Z"
-            # }
             ```
-
-        Примечание:
-            - Если индекс `reindex_history` не существует, он создается автоматически
-            - Используется в `start_reindex()` для сохранения состояния
-            - `_wait_reindex()` читает из этого индекса для отслеживания прогресса
-            - Документ индексируется с авто-генерируемым ID
         """
         history_doc = ReindexHistory(
             task_id=task_id,
@@ -392,7 +326,7 @@ class IndexESClient(BaseESClient):
         if not await self._get_index_by_alias(self._default_alias):
             await self.create_first_index(self._default_alias)
 
-        await self.index(document=history_doc.model_dump())  # TODO: refresh index
+        await self.index(document=history_doc.model_dump())
 
     async def get_task_silent(
         self,
@@ -401,38 +335,17 @@ class IndexESClient(BaseESClient):
         **kwargs,
     ) -> ApiResponse:
         """
-        Упрощённая версия tasks.get() без предупреждений о technical preview.
+        Упрощённая версия tasks.get() без предупреждений о technical preview
 
         Args:
             task_id: ID задачи (обязательный)
             **kwargs: Дополнительные параметры Elasticsearch API:
-
                 wait_for_completion: t.Optional[bool] = None
-                    Если True, запрос блокируется до завершения задачи.
-
                 timeout: t.Optional[t.Union[str, t.Literal[-1], t.Literal[0]]] = None
-                    Время ожидания ответа. Если ответ не получен до истечения таймаута,
-                    запрос завершается ошибкой.
-                    Формат: "30s", "1m", "500ms"
-                    Специальные значения: -1 (бесконечно), 0 (без ожидания)
-
                 error_trace: t.Optional[bool] = None
-                    Если True, включает трассировку стека в ответе при ошибках.
-
                 filter_path: t.Optional[t.Union[str, t.Sequence[str]]] = None
-                    Фильтрация полей в ответе. Например: "task.status,task.description"
-
                 human: t.Optional[bool] = None
-                    Если True, возвращает время и размеры в удобочитаемом формате.
-                    Например: "1h" вместо "3600s"
-
                 pretty: t.Optional[bool] = None
-                    Если True, возвращает "красивый" (отформатированный) JSON.
-
-                Также принимает любые другие допустимые query-параметры Elasticsearch Tasks API.
-
-        Returns:
-            ObjectApiResponse с телом ответа Elasticsearch.
         """
         return await self.perform_request(
             "GET",
@@ -447,31 +360,27 @@ class IndexESClient(BaseESClient):
         check_interval: int = 10,
     ) -> ReindexHistory:
         """
-        Получить статус реиндекса
+        Ожидать завершения реиндекса
+
+        Мониторит прогресс задачи реиндекса и ожидает ее завершения.
+        Выводит информацию о прогрессе в консоль.
+
+        Логика работы:
+            1. Найти в _reindex_history последний документ по base_alias
+            2. Взять task_id
+            3. Проверить статус через tasks.get(task_id)
+            4. Циклически проверять до завершения
 
         Args:
             base_alias: базовый алиас
             check_interval: интервал проверки в секундах
 
         Returns:
-            {
-                "task_id": "abc123:456",
-                "status": "running",  # "running", "completed", "failed"
-                "source_index": "products_v1",
-                "dest_index": "products_v2"
-            }
-
-        Logic:
-            1. Найти в _reindex_history последний документ по base_alias
-            2. Взять task_id
-            3. Проверить статус через tasks.get(task_id)
-            4. Циклически проверять до завершения
+            Документ истории реиндекса с информацией о задаче
         """
         # Найти историю реиндекса
-        search_query = MainQuery(
-            query=Term(field="base_alias", value=base_alias), sort=[{"started_at": {"order": "desc"}}], size=1
-        )
-        response = await self.search(body=search_query())
+        search_query = AsyncSearch()[:1].query(Term(base_alias=base_alias)).sort("-started_at")
+        response = await self.search(body=search_query.to_dict())
 
         if not response["hits"]["hits"]:
             raise ValueError(f"No reindex history found for base_alias: {base_alias}")
@@ -483,29 +392,27 @@ class IndexESClient(BaseESClient):
             response = await self.get_task_silent(task_id=task_id)
             task_body = response.body
 
-            # Получаем статус задачи
             task_info = task_body.get("task", {})
+            if task_body.get("completed"):
+                print("Reindex completed successfully")
+                break
+
             task_status = task_info.get("status", {})
             response_data = task_body.get("response", {})
 
-            # Проверяем, есть ли общее количество документов
             if (total := task_status.get("total", 0)) == 0:
-                # Если total=0, возможно задача ещё не начала обрабатывать документы
                 await asyncio.sleep(check_interval)
                 continue
 
-            # Вычисляем прогресс
             created = task_status.get("created", 0)
             updated = task_status.get("updated", 0)
             deleted = task_status.get("deleted", 0)
             processed = created + updated + deleted
 
-            # Статистика выполнения
             failures = len(response_data.get("failures", []))
             took_ms = response_data.get("took", 0)
             progress = int((processed / total) * 100) if total > 0 else 0
 
-            # Выводим информацию о прогрессе
             timestamp = datetime.utcnow()
             print(
                 f"{timestamp}: Reindex progress: {progress}% "
@@ -514,16 +421,12 @@ class IndexESClient(BaseESClient):
                 f"{failures} failures, {took_ms}ms"
             )
 
-            # Проверяем завершение задачи
-            if task_body.get("completed"):
-                print(f"{timestamp}: Reindex completed successfully")
-                break
-
             await asyncio.sleep(check_interval)
 
         return ReindexHistory(**history_doc)
 
     # === ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ===
+
     async def _setup_aliases(self, *actions: AddAlias | RemoveAlias) -> None:
         """Настроить алиасы"""
         await self.indices.update_aliases(actions=[asdict(a) for a in actions])
@@ -536,17 +439,12 @@ class IndexESClient(BaseESClient):
         indices = await self.get_indices_by_alias(base_alias)
         return indices[0] if indices else None
 
-    async def create_first_index(
-        self,
-        base_alias: str,
-        directory: str = settings.ES_INDICES_DIRECTORY,
-        file_extension: str = settings.ES_INDEX_FILE_EXTENSION,
-    ) -> str:
+    async def create_first_index(self, document_class: Type[AsyncDocument]) -> str:
         """
         Создать первый индекс для базового алиаса
 
         Полный процесс создания индекса с нуля:
-        1. Создает новый индекс на основе YAML-конфигурации
+        1. Создает новый индекс на основе DSL модели
         2. Добавляет все три алиаса (базовый, _read, _write) к созданному индексу
         3. Возвращает имя созданного индекса
 
@@ -554,16 +452,14 @@ class IndexESClient(BaseESClient):
         создании нового типа документов.
 
         Args:
-            base_alias: Базовый алиас для индекса (например, "products")
-            directory: Директория с конфигурационными файлами
-            file_extension: Расширение конфигурационных файлов
+            document_class: TODO
 
         Returns:
-            Имя созданного индекса (например, "products_v1")
+            Имя созданного индекса (например, "products_v3")
 
         Raises:
             ValueError: если индекс уже существует
-            FileNotFoundError: если конфигурационный файл не найден
+            ValueError: если DSL модель не найдена
 
         Пример использования через скрипт:
             ```python
@@ -573,33 +469,27 @@ class IndexESClient(BaseESClient):
                 print(f"Создан индекс: {index_name}")
             ```
 
-        Пример конфигурационного файла (es/indices/products.yaml):
-            ```yaml
-            version: "1"
-            settings:
-              number_of_shards: 3
-              number_of_replicas: 1
-            mappings:
-              properties:
-                name: {type: text}
-                price: {type: float}
-            ```
-
         После выполнения:
-            - Создан индекс: products_v1
-            - Алиасы: products → products_v1, products_read → products_v1, products_write → products_v1
+            - Создан индекс: products_v3
+            - Алиасы: products → products_v3, products_read → products_v3, products_write → products_v3
             - Индекс готов к использованию через клиенты BaseESClient/PydanticESClient
         """
-        index = await self._create_new_index(base_alias=base_alias, directory=directory, file_extension=file_extension)
-        await self._add_all_aliases(index, base_alias)
-        print(f"Created index: {index}")
-        return index
+        index_name = document_class.Index.name
+
+        if await self.indices.exists(index=index_name):
+            raise ValueError(f"Index '{index_name}' already exists")
+
+        await document_class.init(using=self)
+
+        base_alias = index_name.rsplit("_v", 1)[0]
+        await self._add_all_aliases(index_name, base_alias)
+
+        return index_name
 
     async def start_reindex(
         self,
-        base_alias: str,
-        directory: str = settings.ES_INDICES_DIRECTORY,
-        file_extension: str = settings.ES_INDEX_FILE_EXTENSION,
+        document_class: Type[AsyncDocument],
+        **reindex_kwargs,
     ):
         """
         Начать процесс миграции индекса (реиндексации)
@@ -608,47 +498,50 @@ class IndexESClient(BaseESClient):
         изменении маппингов, настроек или необходимости переиндексации данных.
 
         Процесс миграции (zero-downtime):
-        1. Создает новый индекс на основе обновленной конфигурации
+        1. Создает новый индекс на основе обновленной DSL модели
         2. Добавляет write алиас на новый индекс (двойная запись)
         3. Запускает асинхронный реиндекс данных со старого индекса на новый
         4. Сохраняет информацию о задаче в индекс истории
 
         Args:
-            base_alias: Базовый алиас для миграции (например, "products")
-            directory: Директория с конфигурационными файлами
-            file_extension: Расширение конфигурационных файлов
+            document_class: TODO
 
         Returns:
             task_id: ID задачи реиндекса для отслеживания прогресса
 
         Пример использования через скрипт:
             ```bash
-            # Обновить es/indices/products.yaml (увеличить version)
+            # Обновить es/dsl/indices/products.py (увеличить version в имени индекса)
             # Запустить реиндекс
             python3 reindex_smartly.py start_reindex
             ```
 
         Состояние системы после выполнения:
-            - Новый индекс: products_v2 (на основе обновленной конфигурации)
-            - Старый индекс: products_v1 (остается для чтения)
+            - Новый индекс: products_v3 (на основе обновленной DSL модели)
+            - Старый индекс: products_v2 (остается для чтения)
             - Алиасы:
-              * products, products_read → products_v1 (чтение со старого)
-              * products_write → products_v1, products_v2 (двойная запись в оба)
-            - Запущен фоновый процесс копирования данных products_v1 → products_v2
-
-        Примечание:
-            - Во время миграции приложение продолжает работать без downtime
-            - Чтение идет со старого индекса, запись идет в оба индекса
-            - Для завершения миграции выполните `end_reindex()`
+              * products, products_read → products_v2 (чтение со старого)
+              * products_write → products_v2, products_v3 (двойная запись в оба)
+            - Запущен фоновый процесс копирования данных products_v2 → products_v3
         """
-        new_i = await self._create_new_index(base_alias=base_alias, directory=directory, file_extension=file_extension)
-        await self._add_write_alias_only(index_name=new_i, base_alias=base_alias)
-        old_i = await self._get_index_by_alias(base_alias)
-        task_id = await self._start_reindex(source_index=old_i, dest_index=new_i)
-        await self._write_task_id(task_id=task_id, base_alias=base_alias, source_index=old_i, dest_index=new_i)
+        new_index_name = await self._create_new_index(document_class)
+        base_alias = new_index_name.rsplit("_v", 1)[0]
+
+        old_index = await self._get_index_by_alias(base_alias)
+        if not old_index:
+            raise ValueError(f"No existing index found for base_alias: {base_alias}")
+
+        await self._add_write_alias_only(index_name=new_index_name, base_alias=base_alias)
+
+        task_id = await self._start_reindex(source_index=old_index, dest_index=new_index_name, **reindex_kwargs)
+
+        await self._write_task_id(
+            task_id=task_id, base_alias=base_alias, source_index=old_index, dest_index=new_index_name
+        )
+
         return task_id
 
-    async def end_reindex(self, base_alias: str, check_interval: int = 10):
+    async def end_reindex(self, document_class: Type[AsyncDocument], check_interval: int = 10):
         """
         Завершить процесс миграции индекса
 
@@ -661,7 +554,7 @@ class IndexESClient(BaseESClient):
         3. Удаляет алиасы со старого индекса
 
         Args:
-            base_alias: Базовый алиас для завершения миграции
+            document_class: TODO
             check_interval: Интервал проверки прогресса в секундах
 
         Пример использования через скрипт:
@@ -671,51 +564,36 @@ class IndexESClient(BaseESClient):
             ```
 
         Состояние системы после выполнения:
-            - Новый индекс: products_v2 (полностью заполнен и актуален)
-            - Старый индекс: products_v1 (больше не имеет алиасов)
+            - Новый индекс: products_v3 (полностью заполнен и актуален)
+            - Старый индекс: products_v2 (больше не имеет алиасов)
             - Алиасы:
-              * products, products_read, products_write → products_v2
+              * products, products_read, products_write → products_v3
             - Приложение читает и пишет только в новый индекс
-
-        Что делать дальше:
-            - Проверить корректность работы приложения с новым индексом
-            - Удалить старый индекс products_v1 (если больше не нужен):
-              ```python
-              await client.indices.delete(index="products_v1")
-              ```
-            - Обновить конфигурацию при необходимости
-
-        Примечание:
-            - Переключение алиасов атомарно (zero-downtime)
-            - Старый индекс остается доступным для отката при проблемах
-            - Рекомендуется выполнять в период низкой нагрузки
         """
-        old_i = await self._get_index_by_alias(base_alias)
-        task = await self._wait_reindex(base_alias=base_alias, check_interval=check_interval)
-        new_i = task.dest_index
-        await self._switch_aliases(old_index=old_i, new_index=new_i, base_alias=base_alias)
+        new_index_name = document_class.Index.name
+        base_alias = new_index_name.rsplit("_v", 1)[0]
 
-    async def delete_index_by_alias(
+        old_index = await self._get_index_by_alias(base_alias)
+        if not old_index:
+            raise ValueError(f"No existing index found for base_alias: {base_alias}")
+
+        task = await self._wait_reindex(base_alias=base_alias, check_interval=check_interval)
+
+        if task.dest_index != new_index_name:
+            raise ValueError(f"Destination index mismatch. Expected: {new_index_name}, Got: {task.dest_index}")
+
+        await self._switch_aliases(old_index=old_index, new_index=new_index_name, base_alias=base_alias)
+
+    async def delete_index(
         self,
-        base_alias: Optional[str] = None,
-        use_write_alias: bool = False,
-        use_read_alias: bool = False,
+        document_class: Type[AsyncDocument],
         **kwargs,
     ) -> Dict[str, Any]:
         """
-        Удалить индекс(ы) по алиасу
-
-        Удаляет все индексы, соответствующие указанному алиасу.
-        Если алиас указывает на несколько индексов (например во время миграции),
-        удаляются все соответствующие индексы.
-
-        ВНИМАНИЕ: Удаление индекса НЕОБРАТИМО. Все данные будут потеряны.
-        Для production используйте с осторожностью.
+        Удалить индекс по DSL модели
 
         Args:
-            base_alias: Базовый алиас или индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
-            use_read_alias: Использовать _read алиас
+            document_class: Класс документа Elasticsearch DSL
             **kwargs: Дополнительные параметры Elasticsearch delete index API:
                 - timeout: str - таймаут операции ("30s", "1m")
                 - master_timeout: str - таймаут ожидания master-ноды
@@ -727,31 +605,17 @@ class IndexESClient(BaseESClient):
         Returns:
             Ответ Elasticsearch с подтверждением удаления
 
-        Примеры:
+        Пример:
             ```python
-            # Удалить все индексы, соответствующие базовому алиасу
-            await index_client.delete_index(base_alias="products")
-
-            # Удалить write индекс (используется во время миграции)
-            await index_client.delete_index(
-                base_alias="products",
-                use_write_alias=True
-            )
-
-            # Удалить конкретный индекс по имени
-            await index_client.delete_index(base_alias="products_v1")
+            from es.dsl.indices.products import ProductDocument
+            await client.delete_index(ProductDocument)
             ```
-
-        Примечание:
-            - Алиасы автоматически удаляются при удалении индекса
-            - Для безопасного удаления используйте `ignore_unavailable=True`
         """
-        resolved_alias = self._resolve_alias(base_alias, use_write_alias=use_write_alias, use_read_alias=use_read_alias)
+        index_name = document_class.Index.name
 
-        indices = await self.get_indices_by_alias(alias=resolved_alias)
+        # Проверяем существование
+        if not await self.indices.exists(index=index_name):
+            return {"message": f"Index '{index_name}' did not exist"}
 
-        if not indices:
-            return {"Info": f"Not found indices by alias '{resolved_alias}'."}
-
-        # Удаляем все индексы
-        return await self.indices.delete(index=",".join(indices), **kwargs)
+        # Удаляем
+        return await self.indices.delete(index=index_name, **kwargs)
