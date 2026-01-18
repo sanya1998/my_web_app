@@ -5,7 +5,7 @@ from orjson import orjson
 
 
 class BasePublisher(BaseRabbitMQ):
-    def __init__(self, routing_key: str, exchange_name: str, **kwargs):
+    def __init__(self, exchange_name: str, routing_key: str = "", **kwargs):
         self.routing_key = routing_key
         self.exchange_name = exchange_name
         self.exchange = None
@@ -20,15 +20,27 @@ class BasePublisher(BaseRabbitMQ):
         await self.set_exchange()
 
     @staticmethod
-    def prepare_message(raw_message: BaseSchema) -> Message:
-        return Message(orjson.dumps(raw_message.model_dump()))
+    def prepare_message(
+        raw_message: BaseSchema, exclude_unset=False, exclude_none=False, exclude_defaults=False
+    ) -> Message:
+        return Message(
+            orjson.dumps(
+                raw_message.model_dump(
+                    exclude_unset=exclude_unset, exclude_none=exclude_none, exclude_defaults=exclude_defaults
+                )
+            )
+        )
 
     async def ensure_connection(self):
         """Переподключается при разрыве соединения"""
         if self.connection is None or self.connection.is_closed:
             await self.setup()
 
-    async def publish(self, message: BaseSchema) -> None:
+    async def publish(
+        self, message: BaseSchema, exclude_unset=False, exclude_none=False, exclude_defaults=False
+    ) -> None:
         await self.ensure_connection()
-        prepared_message = self.prepare_message(message)
+        prepared_message = self.prepare_message(
+            message, exclude_unset=exclude_unset, exclude_none=exclude_none, exclude_defaults=exclude_defaults
+        )
         await self.exchange.publish(message=prepared_message, routing_key=self.routing_key)

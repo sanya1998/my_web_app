@@ -1,12 +1,12 @@
 import re
 from functools import wraps
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Tuple, TypeVar, cast
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, TypeVar, cast
 
 from elastic_transport import ConnectionTimeout
 from elasticsearch import AsyncElasticsearch
 from elasticsearch.exceptions import ApiError, ConnectionError, NotFoundError, TransportError
 from es.clients.models.document import OperationType, QueryOperationType
-from es.constants import ID_FIELD_DEFAULT, READ_SUFFIX, WRITE_SUFFIX
+from es.constants import ID_FIELD_DEFAULT, WRITE_SUFFIX
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -22,7 +22,7 @@ class BaseESClient(AsyncElasticsearch):
     - Поддержка read/write алиасов
     """
 
-    # === МАППИНГИ ===
+    # === МАППИНГИ === # TODO: подумать, нет ли избыточности
     # Маппинг типов операций на конфигурации для одиночных операций.
     _SINGLE_OPERATION_CONFIGS: Dict[OperationType, Callable] = {
         OperationType.CREATE: lambda es, doc_data: (es.create, doc_data),
@@ -81,7 +81,8 @@ class BaseESClient(AsyncElasticsearch):
     def __init__(
         self,
         hosts: Optional[List[str]] = None,
-        default_alias: Optional[str] = None,
+        base_alias: Optional[str] = None,
+        use_write_alias: bool = False,
         **kwargs,
     ):
         """
@@ -89,7 +90,8 @@ class BaseESClient(AsyncElasticsearch):
 
         Args:
             hosts: Список URL нод Elasticsearch (например: ["http://localhost:9200"])
-            default_alias: Дефолтный алиас для операций (можно переопределять в методах)
+            base_alias: Дефолтный алиас для операций (можно переопределять в методах)
+            use_write_alias: Использовать _write алиас
             **kwargs: Дополнительные параметры для AsyncElasticsearch
 
         Примеры использования:
@@ -136,7 +138,8 @@ class BaseESClient(AsyncElasticsearch):
         ```
         """
         super().__init__(hosts, **kwargs)
-        self._default_alias = default_alias
+        self._base_alias = base_alias
+        self._use_write_alias = use_write_alias
         self._wrap_methods(self, self._CLIENT_METHODS_TO_WRAP)
         self._wrap_methods(self.indices, self._INDICES_METHODS_TO_WRAP)
 
@@ -226,44 +229,31 @@ class BaseESClient(AsyncElasticsearch):
         """Получить write алиас для базового алиаса"""
         return f"{base_alias}{WRITE_SUFFIX}"
 
-    @staticmethod
-    def _get_read_alias(base_alias: str) -> str:
-        """Получить read алиас для базового алиаса"""
-        return f"{base_alias}{READ_SUFFIX}"
-
     def _resolve_alias(
         self,
         base_alias: Optional[str] = None,
-        use_write_alias: bool = False,
-        use_read_alias: bool = False,
     ) -> str:
         """
         Разрешение индекса с поддержкой алиасов
 
         Args:
-            base_alias: Базовый алиас (если None - дефолтный)
-            use_write_alias: Добавить _write суффикс
-            use_read_alias: Добавить _read суффикс
+            base_alias: Базовый алиас (если None, то будет использоваться дефолтный)
 
         Returns:
-            Полное имя индекса или алиаса
+            Полное имя алиаса
 
         Raises:
-            ValueError: если не указан индекс и нет дефолтного
+            ValueError: если не указан базовый алиас и нет дефолтного
         """
-        if use_write_alias and use_read_alias:
-            raise ValueError("Cannot use both write and read aliases simultaneously")
 
-        using_index = base_alias or self._default_alias
-        if not using_index:
-            raise ValueError("Index must be specified either in method or in client initialization")
+        using_alias = base_alias or self._base_alias
+        if not using_alias:
+            raise ValueError("Alias must be specified either in method or in client initialization")
 
-        if use_write_alias:
-            return self._get_write_alias(using_index)
-        elif use_read_alias:
-            return self._get_read_alias(using_index)
+        if self._use_write_alias:
+            return self._get_write_alias(using_alias)
 
-        return using_index
+        return using_alias
 
     async def get_indices_by_alias(self, alias: str) -> List[str] | None:
         """
@@ -272,20 +262,16 @@ class BaseESClient(AsyncElasticsearch):
         try:
             response = await self.indices.get_alias(name=alias)
             indices = list(response.keys())
-            return indices
         except NotFoundError:
-            return []
+            indices = []
+        return indices
 
     @staticmethod
-    def _extract_document_data_and_id(
-        document: Dict[str, Any],
-        id_field: str = ID_FIELD_DEFAULT,
-    ) -> Tuple[Dict[str, Any], Optional[str]]:
+    def _extract_document_data_and_id(document: Dict[str, Any], id_field: str = ID_FIELD_DEFAULT) -> Optional[str]:
         """Извлечь данные документа и ID"""
-        doc_id = None
-        if id_field and id_field in document:
-            doc_id = str(document[id_field])
-        return document, doc_id
+        doc_id = document.get(id_field)
+        doc_id = str(doc_id) if doc_id else None
+        return doc_id
 
     @staticmethod
     def _map_to_es_kwargs(
@@ -329,18 +315,16 @@ class BaseESClient(AsyncElasticsearch):
         document: Dict[str, Any],
         operation_type: OperationType,
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str = ID_FIELD_DEFAULT,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Общий метод для одиночных операций с документами
 
         Args:
             document: Документ (dict)
             operation_type: Тип операции
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             id_field: Поле документа, содержащее ID
             **kwargs: Дополнительные параметры для Elasticsearch:
                 - refresh: RefreshType - когда сделать изменения видимыми
@@ -353,7 +337,7 @@ class BaseESClient(AsyncElasticsearch):
                 - И другие параметры соответствующих операций ES
 
         Returns:
-            Сырые ответы ES по каждому индексу, соответствующему алиасу
+            Сырой ответ ES
 
         Пример:
             ```python
@@ -369,37 +353,32 @@ class BaseESClient(AsyncElasticsearch):
             )
             ```
         """
-        resolved_alias = self._resolve_alias(base_alias, use_write_alias=use_write_alias)
-        doc_data, doc_id = self._extract_document_data_and_id(document, id_field)
+        resolved_alias = self._resolve_alias(base_alias)
+        doc_id = self._extract_document_data_and_id(document, id_field)
 
         config_func = self._SINGLE_OPERATION_CONFIGS[operation_type]
-        es_method, body = config_func(super(), doc_data)
+        es_method, body = config_func(super(), document)
 
-        indices = await self.get_indices_by_alias(resolved_alias)
-        results = []
-        for index in indices:
-            operation_kwargs = self._map_to_es_kwargs(doc_id=doc_id, **kwargs)
-            results.append(await es_method(index=index, body=body, **operation_kwargs))
-        return results
+        operation_kwargs = self._map_to_es_kwargs(doc_id=doc_id, **kwargs)
+        result = await es_method(index=resolved_alias, body=body, **operation_kwargs)
+        return result
 
     async def _bulk_execute(
         self,
         documents: List[Dict[str, Any]],
         operation_type: OperationType,
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
-        id_field: str | None = ID_FIELD_DEFAULT,  # Явно, как важный параметр
-        raise_on_error: bool = False,  # Явно, как важный параметр
+        id_field: str | None = ID_FIELD_DEFAULT,
+        raise_on_error: bool = False,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Общий метод для массовых операций (bulk index, create, update, delete)
 
         Args:
             documents: Список документов для обработки
             operation_type: Тип операции
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             id_field: Поле документа, содержащее ID (по умолчанию: "id").
                      Если None - Elasticsearch сгенерирует ID автоматически.
             raise_on_error: Бросать исключение при ошибках в bulk операции.
@@ -418,7 +397,7 @@ class BaseESClient(AsyncElasticsearch):
                 И другие параметры Elasticsearch bulk API.
 
         Returns:
-            Список результатов bulk операции для каждого индекса, соответствующего алиасу
+            Сырой ответ ES
 
         Пример:
             ```python
@@ -435,56 +414,48 @@ class BaseESClient(AsyncElasticsearch):
             )
             ```
         """
-        resolved_alias = self._resolve_alias(base_alias, use_write_alias=use_write_alias)
+        resolved_alias = self._resolve_alias(base_alias)
 
         operation_builder = self._BULK_OPERATION_BUILDERS[operation_type]
-        indices = await self.get_indices_by_alias(resolved_alias)
-        results = []
 
-        for idx in indices:
-            operations = []
+        operations = []
 
-            for doc_data in documents:
-                operation = {"_index": idx}
-                if id_field and (_id := doc_data.get(id_field)):
-                    operation["_id"] = str(_id)
+        for document in documents:
+            doc_id = self._extract_document_data_and_id(document, id_field)
+            operation = {"_id": doc_id} if doc_id else {}
+            doc_operations = operation_builder(operation, document)
+            operations.extend(doc_operations)
 
-                doc_operations = operation_builder(operation, doc_data)
-                operations.extend(doc_operations)
-
-            results.append(await super().bulk(operations=operations, **kwargs))
+        result = await super().bulk(index=resolved_alias, operations=operations, **kwargs)
 
         # Проверка ошибок (если raise_on_error=True)
-        for result in results:
-            if raise_on_error and result.get("errors"):
-                failed_ids = [
-                    item.get(operation_type.value, {}).get("_id", "unknown")
-                    for item in result["items"]
-                    if "error" in item.get(operation_type.value, {})
-                ]
-                error_msg = f"Bulk {operation_type.value} failed for {len(failed_ids)} documents"
-                if ids_sample := ", ".join(failed_ids):
-                    error_msg += f" (sample IDs: {ids_sample})"
-                raise RuntimeError(error_msg)
+        if raise_on_error and result.get("errors"):
+            failed_ids = [
+                item.get(operation_type.value, {}).get("_id", "unknown")
+                for item in result["items"]
+                if "error" in item.get(operation_type.value, {})
+            ]
+            error_msg = f"Bulk {operation_type.value} failed for {len(failed_ids)} documents"
+            if ids_sample := ", ".join(failed_ids):
+                error_msg += f" (sample IDs: {ids_sample})"
+            raise RuntimeError(error_msg)
 
-        return results
+        return result
 
     async def _by_query_execute(
         self,
         query: Mapping[str, Any],
         operation_type: QueryOperationType,
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Общий метод для операций по запросу (update_by_query, delete_by_query)
 
         Args:
             query: Query dict для фильтрации документов. Должен быть результатом вызова Query объекта:
             operation_type: Тип операции
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             **kwargs: Дополнительные параметры для Elasticsearch API.
                  Декоратор @_rewrite_parameters в библиотеке elasticsearch-py
                  автоматически переместит параметры из body_fields в тело запроса:
@@ -504,7 +475,7 @@ class BaseESClient(AsyncElasticsearch):
                  - и другие параметры Elasticsearch API
 
         Returns:
-            Результаты операции по каждому индексу, соответствующему алиасу
+            Результат операции
 
         ```python
         # Query объект
@@ -515,22 +486,16 @@ class BaseESClient(AsyncElasticsearch):
         await es.update_by_query(query={"term": {"category": "electronics"}})
         ```
         """
-        resolved_alias = self._resolve_alias(base_alias, use_write_alias=use_write_alias)
+        resolved_alias = self._resolve_alias(base_alias)
         es_method = self._QUERY_OPERATION_METHODS[operation_type](super())
-        indices = await self.get_indices_by_alias(resolved_alias)
-        results = []
-
-        for idx in indices:
-            results.append(await es_method(index=idx, query=query, **kwargs))
-
-        return results
+        result = await es_method(index=resolved_alias, query=query, **kwargs)
+        return result
 
     # === ПУБЛИЧНЫЕ МЕТОДЫ: ЧТЕНИЕ ===
     async def get(
         self,
         doc_id: str,
         base_alias: Optional[str] = None,
-        use_read_alias: bool = True,
         **kwargs,
     ) -> Dict[str, Any]:
         """
@@ -539,14 +504,12 @@ class BaseESClient(AsyncElasticsearch):
         Получает один документ по его уникальному идентификатору.
 
         Особенности:
-        - Использует _read алиас по умолчанию (читает из реплик)
         - Если документ не найден - бросает NotFoundError
         - Для безопасного получения используйте `get_or_none()`
 
         Args:
             doc_id: ID документа для получения
-            base_alias: Индекс для поиска (если None - дефолтный)
-            use_read_alias: Использовать _read алиас (по умолчанию True)
+            base_alias: Алиас для поиска (если None - дефолтный)
             **kwargs: Дополнительные параметры Elasticsearch get API:
                 - _source: bool | str | List[str] - какие поля возвращать
                 - stored_fields: List[str] - возвращаемые stored поля
@@ -589,7 +552,7 @@ class BaseESClient(AsyncElasticsearch):
             - `get_or_none()` - безопасное получение (возвращает None если не найден)
             - `mget()` - для получения нескольких документов за один запрос
         """
-        resolved_alias = self._resolve_alias(base_alias, use_read_alias=use_read_alias)
+        resolved_alias = self._resolve_alias(base_alias)
         response = await super().get(index=resolved_alias, id=doc_id, **kwargs)
         return response["_source"]
 
@@ -597,7 +560,6 @@ class BaseESClient(AsyncElasticsearch):
         self,
         doc_id: str,
         base_alias: Optional[str] = None,
-        use_read_alias: bool = True,
         **kwargs,
     ) -> Optional[Dict[str, Any]]:
         """
@@ -607,14 +569,12 @@ class BaseESClient(AsyncElasticsearch):
         если документ с указанным ID не найден.
 
         Особенности:
-        - Использует _read алиас по умолчанию
         - Не бросает исключение при отсутствии документа
         - Полезен для проверки существования документа без обработки исключений
 
         Args:
             doc_id: ID документа для получения
-            base_alias: Индекс для поиска (если None - дефолтный)
-            use_read_alias: Использовать _read алиас (по умолчанию True)
+            base_alias: Алиас для поиска (если None - дефолтный)
             **kwargs: Дополнительные параметры Elasticsearch get API:
                 - _source: bool | str | List[str] - какие поля возвращать
                 - stored_fields: List[str] - возвращаемые stored поля
@@ -652,7 +612,7 @@ class BaseESClient(AsyncElasticsearch):
             - `PydanticESClient.get_or_none()` - версия с валидацией в Pydantic модель
         """
         try:
-            return await self.get(doc_id=doc_id, base_alias=base_alias, use_read_alias=use_read_alias, **kwargs)
+            return await self.get(doc_id=doc_id, base_alias=base_alias, **kwargs)
         except NotFoundError:
             return None
 
@@ -660,7 +620,6 @@ class BaseESClient(AsyncElasticsearch):
         self,
         ids: Optional[str | Sequence[str]] = None,
         base_alias: Optional[str] = None,
-        use_read_alias: bool = True,
         **kwargs,
     ) -> List[Optional[Dict[str, Any]]]:
         """
@@ -668,8 +627,7 @@ class BaseESClient(AsyncElasticsearch):
 
         Args:
             ids: Список ID документов для получения
-            base_alias: Индекс (если None - дефолтный)
-            use_read_alias: Использовать _read алиас
+            base_alias: Алиас (если None - дефолтный)
             **kwargs: Дополнительные параметры Elasticsearch mget API:
                 - source: bool | str | List[str] - какие поля возвращать (синоним _source)
                 - _source: bool | str | List[str] - какие поля возвращать
@@ -703,18 +661,14 @@ class BaseESClient(AsyncElasticsearch):
                     print(f"Документ {ids[i]} не найден")
             ```
         """
-        resolved_alias = self._resolve_alias(base_alias, use_read_alias=use_read_alias)
-
+        resolved_alias = self._resolve_alias(base_alias)
         response = await super().mget(index=resolved_alias, ids=ids, **kwargs)
-
-        # Преобразуем ответ
         return [doc.get("_source") if doc.get("found") else None for doc in response["docs"]]
 
     async def search(
         self,
         base_alias: Optional[str] = None,
         body: Optional[Dict[str, Any]] = None,
-        use_read_alias: bool = True,
         **kwargs,
     ) -> Dict[str, Any]:
         """
@@ -723,14 +677,12 @@ class BaseESClient(AsyncElasticsearch):
         Основной метод для полнотекстового поиска, фильтрации и агрегаций.
 
         Особенности:
-        - Использует _read алиас по умолчанию (читает из реплик)
         - Для построения запросов используйте классы из `es.main_query`
         - Для пагинации используйте параметры `from_` и `size`
 
         Args:
-            base_alias: Индекс для поиска (если None - дефолтный)
+            base_alias: Алиас для поиска (если None - дефолтный)
             body: Тело поискового запроса (рекомендуется использовать MainQuery)
-            use_read_alias: Использовать _read алиас (по умолчанию True)
             **kwargs: Дополнительные параметры Elasticsearch search API:
                 - size: int - количество возвращаемых результатов
                 - from_: int - смещение для пагинации
@@ -769,14 +721,14 @@ class BaseESClient(AsyncElasticsearch):
             - `MainQuery` - для построения структурированных запросов
             - `count()` - для подсчета документов без возврата результатов
         """
-        resolved_alias = self._resolve_alias(base_alias, use_read_alias=use_read_alias)
+        resolved_alias = self._resolve_alias(base_alias)
         return await super().search(index=resolved_alias, body=body, **kwargs)
 
+    # TODO: убрать из комментариев везде MainQuery, использовать стандартный DSL, AsyncSearch
     async def msearch(
         self,
         searches: Optional[Sequence[Mapping[str, Any]]] = None,
         base_alias: Optional[str] = None,
-        use_read_alias: bool = True,
         **kwargs,
     ) -> List[Dict[str, Any]]:
         """
@@ -788,15 +740,13 @@ class BaseESClient(AsyncElasticsearch):
         Особенности:
         - Все запросы выполняются параллельно в одном HTTP-запросе
         - Каждый запрос может иметь свои параметры (size, from_, sort, _source и т.д.)
-        - Использует _read алиас по умолчанию (читает из реплик)
         - Результаты возвращаются в том же порядке, что и запросы
 
         Args:
             searches: Список поисковых запросов. Каждый элемент - словарь с телом запроса.
                       Формат: [{"query": {...}, "size": 10}, {"query": {...}, "size": 5}]
                       Можно использовать MainQuery() для генерации запросов.
-            base_alias: Индекс для поиска (если None - дефолтный)
-            use_read_alias: Использовать _read алиас (по умолчанию True)
+            base_alias: Алиас для поиска (если None - дефолтный)
             **kwargs: Дополнительные параметры Elasticsearch msearch API:
                 - search_type: str - тип поиска ("query_then_fetch", "dfs_query_then_fetch")
                 - routing: str - routing ключ для всех запросов
@@ -875,7 +825,7 @@ class BaseESClient(AsyncElasticsearch):
             - `MainQuery` - для построения структурированных запросов
             - `mget()` - для множественного получения документов по ID
         """
-        resolved_alias = self._resolve_alias(base_alias, use_read_alias=use_read_alias)
+        resolved_alias = self._resolve_alias(base_alias)
         response = await super().msearch(index=resolved_alias, searches=searches, **kwargs)
         return response.get("responses", [])
 
@@ -883,7 +833,6 @@ class BaseESClient(AsyncElasticsearch):
         self,
         body: Optional[Dict[str, Any]] = None,
         base_alias: Optional[str] = None,
-        use_read_alias: bool = True,
         **kwargs,
     ) -> Dict[str, Any]:
         """
@@ -900,8 +849,7 @@ class BaseESClient(AsyncElasticsearch):
 
         Args:
             body: Тело запроса с агрегациями (рекомендуется использовать MainQuery)
-            base_alias: Индекс для агрегации (если None - дефолтный)
-            use_read_alias: Использовать _read алиас (по умолчанию True)
+            base_alias: Алиас для агрегации (если None - дефолтный)
             **kwargs: Дополнительные параметры Elasticsearch search API:
                 - size: int - количество возвращаемых документов
                          Для pure-агрегаций установите size=0
@@ -943,14 +891,13 @@ class BaseESClient(AsyncElasticsearch):
             aggs = result_with_docs["aggregations"]
             ```
         """
-        resolved_alias = self._resolve_alias(base_alias, use_read_alias=use_read_alias)
+        resolved_alias = self._resolve_alias(base_alias)
         return await super().search(index=resolved_alias, body=body, **kwargs)
 
     async def count(
         self,
         query: Optional[Mapping[str, Any]] = None,
         base_alias: Optional[str] = None,
-        use_read_alias: bool = True,
         **kwargs,
     ) -> int:
         """
@@ -961,15 +908,13 @@ class BaseESClient(AsyncElasticsearch):
 
         Особенности:
         - Быстрее чем search + подсчет, так как не загружает документы
-        - Использует _read алиас по умолчанию
         - Поддерживает все типы запросов Elasticsearch
 
         Args:
             query: Запрос для фильтрации документов.
                   Если None - подсчет всех документов в индексе.
                   Рекомендуется использовать Query объекты из es.main_query.
-            base_alias: Индекс для подсчета (если None - дефолтный)
-            use_read_alias: Использовать _read алиас (по умолчанию True)
+            base_alias: Алиас для подсчета (если None - дефолтный)
             **kwargs: Дополнительные параметры Elasticsearch count API:
                 - routing: str | List[str] - routing ключ(и)
                 - preference: str - предпочтительный шард
@@ -1008,7 +953,7 @@ class BaseESClient(AsyncElasticsearch):
             - `search()` - для поиска с возвратом документов
             - Query классы в `es.main_query.query` - для построения запросов
         """
-        resolved_alias = self._resolve_alias(base_alias, use_read_alias=use_read_alias)
+        resolved_alias = self._resolve_alias(base_alias)
         response = await super().count(index=resolved_alias, query=query, **kwargs)
         return response["count"]
 
@@ -1017,10 +962,9 @@ class BaseESClient(AsyncElasticsearch):
         self,
         document: Dict[str, Any],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str = ID_FIELD_DEFAULT,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Создать документ (CREATE операция)
 
@@ -1033,8 +977,7 @@ class BaseESClient(AsyncElasticsearch):
 
         Args:
             document: Документ для создания (словарь)
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             id_field: Поле документа, содержащее ID (по умолчанию: "id").
                      Должно быть указано для CREATE операции.
             **kwargs: Дополнительные параметры Elasticsearch create API:
@@ -1049,7 +992,7 @@ class BaseESClient(AsyncElasticsearch):
                 - И другие параметры Elasticsearch create API
 
         Returns:
-            Сырые ответы ES по каждому индексу, соответствующему алиасу
+            Сырой ответ ES
 
         Raises:
             ConflictError: если документ с таким ID уже существует
@@ -1074,7 +1017,6 @@ class BaseESClient(AsyncElasticsearch):
             document=document,
             operation_type=OperationType.CREATE,
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             **kwargs,
         )
@@ -1083,10 +1025,9 @@ class BaseESClient(AsyncElasticsearch):
         self,
         document: Dict[str, Any],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str = ID_FIELD_DEFAULT,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Индексировать документ (INDEX операция)
 
@@ -1099,8 +1040,7 @@ class BaseESClient(AsyncElasticsearch):
 
         Args:
             document: Документ для индексации (словарь)
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             id_field: Поле документа, содержащее ID (по умолчанию: "id").
                      Если None - Elasticsearch сгенерирует ID автоматически.
             **kwargs: Дополнительные параметры Elasticsearch index API:
@@ -1117,7 +1057,7 @@ class BaseESClient(AsyncElasticsearch):
                 - И другие параметры Elasticsearch index API
 
         Returns:
-            Сырые ответы ES по каждому индексу, соответствующему алиасу
+            Сырой ответ ES
 
         Пример:
             ```python
@@ -1138,7 +1078,6 @@ class BaseESClient(AsyncElasticsearch):
             document=document,
             operation_type=OperationType.INDEX,
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             **kwargs,
         )
@@ -1147,10 +1086,9 @@ class BaseESClient(AsyncElasticsearch):
         self,
         document: Dict[str, Any],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str = ID_FIELD_DEFAULT,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Обновить документ (UPDATE операция)
 
@@ -1168,8 +1106,7 @@ class BaseESClient(AsyncElasticsearch):
 
         Args:
             document: Документ с обновлениями (полностью заменяет существующий)
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             id_field: Поле документа, содержащее ID (по умолчанию: "id")
             **kwargs: Дополнительные параметры Elasticsearch update API:
                 - refresh: RefreshType - когда сделать изменения видимыми
@@ -1185,7 +1122,7 @@ class BaseESClient(AsyncElasticsearch):
                 - И другие параметры Elasticsearch update API
 
         Returns:
-            Сырые ответы ES по каждому индексу, соответствующему алиасу
+            Сырой ответ ES
 
         Raises:
             NotFoundError: если документ не существует
@@ -1210,7 +1147,6 @@ class BaseESClient(AsyncElasticsearch):
             document=document,
             operation_type=OperationType.UPDATE,
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             **kwargs,
         )
@@ -1219,10 +1155,9 @@ class BaseESClient(AsyncElasticsearch):
         self,
         document: Dict[str, Any],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str = ID_FIELD_DEFAULT,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Удалить документ (DELETE операция)
 
@@ -1236,8 +1171,7 @@ class BaseESClient(AsyncElasticsearch):
 
         Args:
             document: Документ для удаления (должен содержать ID)
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             id_field: Поле документа, содержащее ID (по умолчанию: "id")
             **kwargs: Дополнительные параметры Elasticsearch delete API:
                 - refresh: RefreshType - когда сделать изменения видимыми
@@ -1252,7 +1186,7 @@ class BaseESClient(AsyncElasticsearch):
                 - И другие параметры Elasticsearch delete API
 
         Returns:
-            Сырые ответы ES по каждому индексу, соответствующему алиасу
+            Сырой ответ ES
 
         Пример:
             ```python
@@ -1275,7 +1209,6 @@ class BaseESClient(AsyncElasticsearch):
             document=document,
             operation_type=OperationType.DELETE,
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             **kwargs,
         )
@@ -1285,9 +1218,8 @@ class BaseESClient(AsyncElasticsearch):
         doc_id: str,
         id_field: str = ID_FIELD_DEFAULT,
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Удалить документ по ID
 
@@ -1303,8 +1235,7 @@ class BaseESClient(AsyncElasticsearch):
             doc_id: ID документа для удаления
             id_field: Поле, содержащее ID (по умолчанию: "id")
                     Используется только для создания временного документа.
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас (по умолчанию True)
+            base_alias: Алиас (если None - дефолтный)
             **kwargs: Дополнительные параметры Elasticsearch delete API:
                 - refresh: RefreshType - когда сделать изменения видимыми
                           "true" - немедленно, "false" - никогда, "wait_for" - дождаться
@@ -1318,7 +1249,7 @@ class BaseESClient(AsyncElasticsearch):
                 - И другие параметры Elasticsearch delete API
 
         Returns:
-            Сырые ответы ES по каждому индексу, соответствующему алиасу
+            Сырой ответ ES
 
         Пример:
             ```python
@@ -1356,7 +1287,6 @@ class BaseESClient(AsyncElasticsearch):
             document=document,
             operation_type=OperationType.DELETE,
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             **kwargs,
         )
@@ -1398,10 +1328,9 @@ class BaseESClient(AsyncElasticsearch):
         doc_id: str,
         updates: Optional[Dict[str, Any]] = None,
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         script: Optional[Dict[str, Any]] = None,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Optional[Dict[str, Any]]:
         """
         Частичное обновление документа через Painless script
 
@@ -1410,8 +1339,7 @@ class BaseESClient(AsyncElasticsearch):
             updates: Словарь с обновлениями (только изменяемые поля).
                     Используется только если script=None.
                     Если None и script=None - метод завершится без ошибок, ничего не обновив.
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             script: Кастомный Painless script для обновления.
                    Если None - будет создан автоматически из updates.
                    Если updates тоже None или пустой - метод завершится без ошибок.
@@ -1428,7 +1356,7 @@ class BaseESClient(AsyncElasticsearch):
                 - И другие параметры Elasticsearch update API
 
         Returns:
-            Сырой ответ ES или пустой список если нечего обновлять
+            Сырой ответ ES
 
         Примеры:
             ```python
@@ -1457,28 +1385,22 @@ class BaseESClient(AsyncElasticsearch):
         """
         final_script = script or self._create_update_script(updates)
         if not final_script:
-            return []
+            return None
 
-        resolved_alias = self._resolve_alias(base_alias, use_write_alias=use_write_alias)
-
-        indices = await self.get_indices_by_alias(resolved_alias)
-        results = []
-        for base_alias in indices:
-            operation_kwargs = self._map_to_es_kwargs(doc_id=doc_id, **kwargs)
-            results.append(await super().update(index=base_alias, script=final_script, **operation_kwargs))
-
-        return results
+        resolved_alias = self._resolve_alias(base_alias)
+        operation_kwargs = self._map_to_es_kwargs(doc_id=doc_id, **kwargs)
+        result = await super().update(index=resolved_alias, script=final_script, **operation_kwargs)
+        return result
 
     # === ПУБЛИЧНЫЕ МЕТОДЫ: МАССОВЫЕ ОПЕРАЦИИ ===
     async def bulk_index(
         self,
         documents: List[Dict[str, Any]],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str | None = ID_FIELD_DEFAULT,
         raise_on_error: bool = False,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Массовая индексация документов
 
@@ -1486,8 +1408,7 @@ class BaseESClient(AsyncElasticsearch):
 
         Args:
             documents: Список документов для индексации
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             id_field: Поле документа, содержащее ID (по умолчанию: "id").
                      Если None - Elasticsearch сгенерирует ID автоматически.
             raise_on_error: Бросать исключение при ошибках в bulk операции.
@@ -1498,7 +1419,7 @@ class BaseESClient(AsyncElasticsearch):
                 - И другие параметры bulk API.
 
         Returns:
-            Список результатов операции для каждого индекса, соответствующего алиасу
+            Сырой ответ ES
 
         Пример:
             ```python
@@ -1524,7 +1445,6 @@ class BaseESClient(AsyncElasticsearch):
             documents=documents,
             operation_type=OperationType.INDEX,
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             raise_on_error=raise_on_error,
             **kwargs,
@@ -1534,11 +1454,10 @@ class BaseESClient(AsyncElasticsearch):
         self,
         documents: List[Dict[str, Any]],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str | None = ID_FIELD_DEFAULT,
         raise_on_error: bool = False,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Массовое создание документов
 
@@ -1546,15 +1465,14 @@ class BaseESClient(AsyncElasticsearch):
 
         Args:
             documents: Список документов для создания
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             id_field: Поле документа, содержащее ID (по умолчанию: "id").
                      Должно быть указано для CREATE операции.
             raise_on_error: Бросать исключение при ошибках в bulk операции.
             **kwargs: Дополнительные параметры Elasticsearch bulk API.
 
         Returns:
-            Список результатов операции для каждого индекса, соответствующего алиасу
+            Сырой ответ ES
 
         Пример:
             ```python
@@ -1572,7 +1490,6 @@ class BaseESClient(AsyncElasticsearch):
             documents=documents,
             operation_type=OperationType.CREATE,
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             raise_on_error=raise_on_error,
             **kwargs,
@@ -1582,11 +1499,10 @@ class BaseESClient(AsyncElasticsearch):
         self,
         documents: List[Dict[str, Any]],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str | None = ID_FIELD_DEFAULT,
         raise_on_error: bool = False,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Массовое обновление документов
 
@@ -1594,15 +1510,14 @@ class BaseESClient(AsyncElasticsearch):
 
         Args:
             documents: Список документов с обновлениями. Каждый документ должен содержать ID.
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             id_field: Поле документа, содержащее ID (по умолчанию: "id").
                      Обязательно должно быть указано.
             raise_on_error: Бросать исключение при ошибках в bulk операции.
             **kwargs: Дополнительные параметры Elasticsearch bulk API.
 
         Returns:
-            Список результатов операции для каждого индекса, соответствующего алиасу
+            Сырой ответ ES
 
         Пример:
             ```python
@@ -1620,7 +1535,6 @@ class BaseESClient(AsyncElasticsearch):
             documents=documents,
             operation_type=OperationType.UPDATE,
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             raise_on_error=raise_on_error,
             **kwargs,
@@ -1630,11 +1544,10 @@ class BaseESClient(AsyncElasticsearch):
         self,
         documents: List[Dict[str, Any]],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str | None = ID_FIELD_DEFAULT,
         raise_on_error: bool = False,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Массовое удаление документов по самим документам.
 
@@ -1642,14 +1555,13 @@ class BaseESClient(AsyncElasticsearch):
 
         Args:
             documents: Список документов для удаления. Каждый документ должен содержать ID.
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             id_field: Поле документа, содержащее ID (по умолчанию: "id").
             raise_on_error: Бросать исключение при ошибках в bulk операции.
             **kwargs: Дополнительные параметры Elasticsearch bulk API.
 
         Returns:
-            Список результатов операции для каждого индекса, соответствующего алиасу
+            Сырой ответ ES
 
         Пример:
             ```python
@@ -1668,7 +1580,6 @@ class BaseESClient(AsyncElasticsearch):
             documents=documents,
             operation_type=OperationType.DELETE,
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             raise_on_error=raise_on_error,
             **kwargs,
@@ -1678,10 +1589,9 @@ class BaseESClient(AsyncElasticsearch):
         self,
         ids: List[str],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         raise_on_error: bool = False,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Массовое удаление документов по их ID.
 
@@ -1689,13 +1599,12 @@ class BaseESClient(AsyncElasticsearch):
 
         Args:
             ids: Список ID документов для удаления
-            base_alias: Индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
+            base_alias: Алиас (если None - дефолтный)
             raise_on_error: Бросать исключение при ошибках в bulk операции.
             **kwargs: Дополнительные параметры Elasticsearch bulk API.
 
         Returns:
-            Список результатов операции для каждого индекса, соответствующего алиасу
+            Сырой ответ ES
 
         Пример:
             ```python
@@ -1714,7 +1623,6 @@ class BaseESClient(AsyncElasticsearch):
             documents=documents,
             operation_type=OperationType.DELETE,
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=ID_FIELD_DEFAULT,  # Используем дефолтное поле
             raise_on_error=raise_on_error,
             **kwargs,
@@ -1725,16 +1633,14 @@ class BaseESClient(AsyncElasticsearch):
         self,
         query: Mapping[str, Any],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Обновить документы по запросу
 
         Args:
             query: Query dict для фильтрации документов. Должен быть результатом вызова Query объекта:
             base_alias: базовый алиас (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
             **kwargs: Дополнительные параметры Elasticsearch update_by_query API.
                      См. подробности в _by_query_execute().
 
@@ -1748,7 +1654,7 @@ class BaseESClient(AsyncElasticsearch):
                      - slices: int | "auto" - параллельная обработка для ускорения
 
         Returns:
-            Список результатов операции для каждого индекса, соответствующего алиасу
+            Сырой ответ ES
 
         Пример:
             ```python
@@ -1768,7 +1674,6 @@ class BaseESClient(AsyncElasticsearch):
             query=query,
             operation_type=QueryOperationType.UPDATE_BY_QUERY,
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             **kwargs,
         )
 
@@ -1776,16 +1681,14 @@ class BaseESClient(AsyncElasticsearch):
         self,
         query: Mapping[str, Any],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Удалить документы по запросу
 
         Args:
             query: Query dict для фильтрации документов. Должен быть результатом вызова Query объекта:
             base_alias: Базовый алиас (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
             **kwargs: Дополнительные параметры Elasticsearch delete_by_query API.
                      См. подробности в _by_query_execute().
 
@@ -1797,7 +1700,7 @@ class BaseESClient(AsyncElasticsearch):
                      - max_docs: int - ограничить количество удаляемых документов
 
         Returns:
-            Список результатов операции для каждого индекса, соответствующего алиасу
+            Сырой ответ ES
 
         Пример:
             ```python
@@ -1813,14 +1716,11 @@ class BaseESClient(AsyncElasticsearch):
             query=query,
             operation_type=QueryOperationType.DELETE_BY_QUERY,
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             **kwargs,
         )
 
     # === ПУБЛИЧНЫЕ МЕТОДЫ: УПРАВЛЕНИЕ ИНДЕКСАМИ ===
-    async def refresh_index(
-        self, base_alias: Optional[str] = None, use_write_alias: bool = False, use_read_alias: bool = False
-    ) -> None:
+    async def refresh_index(self, base_alias: Optional[str] = None) -> None:
         """
         Принудительное обновление индекса(ов)
 
@@ -1828,27 +1728,18 @@ class BaseESClient(AsyncElasticsearch):
         в течение refresh_interval (настраивается в маппинге индекса).
 
         Особенности:
-        - Если алиас указывает на несколько индексов (например во время миграции),
-          обновляются все соответствующие индексы
-        - Можно обновить все индексы соответствующие алиасу: base_alias, _read, _write
-        - Если передан реальный индекс (не алиас) - обновит его
+        - Если алиас указывает на несколько индексов, обновляются все соответствующие индексы
 
         Пример использования:
         ```python
         await es.bulk_index(documents) # Документы индексируются
-        await es.refresh_index() # Принудительно обновляем все индексы
+        await es.refresh_index() # Принудительно обновляем все индексы, соответствующих алиасу по умолчанию
         results = await es.search(query) # Новые документы уже доступны для поиска
         ```
 
         Args:
-            base_alias: Базовый алиас или индекс (если None - дефолтный)
-            use_write_alias: Использовать _write алиас
-            use_read_alias: Использовать _read алиас
+            base_alias: Базовый алиас (если None - дефолтный)
         """
-        resolved_alias = self._resolve_alias(base_alias, use_write_alias=use_write_alias, use_read_alias=use_read_alias)
-
-        # Получаем индексы по алиасу, или используем сам resolved_alias если нет индексов
-        indices = await self.get_indices_by_alias(resolved_alias) or [resolved_alias]
-
-        # Обновляем все индексы
+        resolved_alias = self._resolve_alias(base_alias)
+        indices = await self.get_indices_by_alias(resolved_alias)
         await self.indices.refresh(index=",".join(indices))

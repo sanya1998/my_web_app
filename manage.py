@@ -57,5 +57,27 @@ def run_history_consumer() -> None:
     asyncio.run(consumer.blocking_consume())
 
 
+@cli.command()
+def run_es_write_consumer() -> None:
+    """Run consumer of es_write_consumer."""
+    import asyncio
+
+    from app.consumers.es_write import ESWriteConsumer
+
+    consumer = ESWriteConsumer(queue_name=settings.ES_WRITE_QUEUE_NAME, use_write_alias=False)
+    asyncio.run(consumer.blocking_consume())
+
+
+@cli.command()
+def run_es_write_reindex_consumer() -> None:
+    """Run consumer of es_write_consumer for reindex."""
+    import asyncio
+
+    from app.consumers.es_write import ESWriteConsumer
+
+    consumer = ESWriteConsumer(queue_name=settings.ES_WRITE_REINDEX_QUEUE_NAME, use_write_alias=True)
+    asyncio.run(consumer.blocking_consume())
+
+
 if __name__ == "__main__":
     cli()

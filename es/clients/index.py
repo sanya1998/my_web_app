@@ -15,6 +15,7 @@ from elasticsearch.dsl.query import Term
 from es.clients.base import BaseESClient
 from es.clients.models.aliases import AddAlias, AddAliasInfo, AliasInfo, RemoveAlias
 from es.clients.models.reindex_history import ReindexHistory
+from es.dsl.indices.reindex_history import ReindexHistoryDocument
 
 
 class IndexESClient(BaseESClient):
@@ -23,10 +24,7 @@ class IndexESClient(BaseESClient):
 
     Правила:
 
-    1. Каждый индекс должен иметь 3 алиаса, например для products_v1:
-    ├── products          (базовый алиас)     → читает пользователь
-    ├── products_read     (read алиас)        → читает приложение
-    └── products_write    (write алиас)       → пишет приложение
+    1. Каждый индекс должен иметь базовый алиас, например для products_v1: products
 
     2. Для каждого индекса создается DSL модель в es/dsl/indices/:
     ```python
@@ -37,6 +35,7 @@ class IndexESClient(BaseESClient):
         # поля документа
 
         class Index:
+            TODO: прописывать base_alias, чтобы потом его использовать
             name = "products_v3"  # Имя индекса с версией
             settings = {...}      # Настройки индекса
     ```
@@ -64,7 +63,7 @@ class IndexESClient(BaseESClient):
             hosts: Список URL нод Elasticsearch (например: ["http://localhost:9200"])
             **kwargs: Дополнительные параметры для AsyncElasticsearch
         """
-        super().__init__(hosts=hosts, default_alias=settings.ES_HISTORY_BASE_ALIAS, **kwargs)
+        super().__init__(hosts=hosts, base_alias=settings.ES_HISTORY_BASE_ALIAS, **kwargs)
 
     async def _create_new_index(self, document_class: Type[AsyncDocument]) -> str:
         """
@@ -80,7 +79,7 @@ class IndexESClient(BaseESClient):
         4. Возвращает имя созданного индекса
 
         Args:
-            base_alias: Базовый алиас (имя DSL модели)
+            document_class: DSL модель
 
         Returns:
             Имя созданного индекса (например, "products_v3")
@@ -106,55 +105,18 @@ class IndexESClient(BaseESClient):
 
         return index_name
 
-    async def _add_all_aliases(self, index_name: str, base_alias: str) -> None:
-        """
-        Добавить все три алиаса к индексу
-
-        Атомарно добавляет базовый алиас, read алиас и write алиас к указанному индексу.
-        Используется при первоначальном создании индекса.
-
-        Добавляемые алиасы:
-        - {base_alias}          (базовый алиас для чтения пользователем)
-        - {base_alias}_read     (read алиас для чтения приложением)
-        - {base_alias}_write    (write алиас для записи приложением)
-
-        Args:
-            index_name: Имя индекса, к которому добавляются алиасы (например, "products_v3")
-            base_alias: Базовый алиас (например, "products")
-
-        Пример:
-            ```python
-            # После создания индекса products_v3 добавляем все алиасы
-            await index_client._add_all_aliases(
-                index_name="products_v3",
-                base_alias="products"
-            )
-            # Теперь доступны:
-            # - products → products_v3
-            # - products_read → products_v3
-            # - products_write → products_v3
-            ```
-        """
-        actions = [
-            AddAlias(AddAliasInfo(index=index_name, alias=base_alias)),
-            AddAlias(AddAliasInfo(index=index_name, alias=self._get_read_alias(base_alias))),
-            AddAlias(AddAliasInfo(index=index_name, alias=self._get_write_alias(base_alias))),
-        ]
-        await self._setup_aliases(*actions)
-
     async def _add_write_alias_only(self, index_name: str, base_alias: str) -> None:
         """
         Добавить только write алиас к индексу
 
         Добавляет только write алиас к указанному индексу, оставляя базовый
-        и read алиасы pointing на старый индекс. Используется во время миграции
-        для реализации двойной записи.
+        алиас на старый индекс. Используется во время миграции для реализации двойной записи.
 
         Сценарий использования:
         1. Во время реиндексации нужно писать в оба индекса (старый и новый)
-        2. Добавляем write алиас на новый индекс
-        3. Приложение продолжает писать через write алиас, который теперь указывает на оба индекса
-        4. Чтение идет со старого индекса через базовый/read алиасы
+        2. Добавляется write алиас на новый индекс
+        3. Приложение продолжает писать через базовый алиас (старый индекс) и write алиас (новый индекс)
+        4. Чтение идет со старого индекса через базовый алиас
 
         Args:
             index_name: Имя индекса, к которому добавляется write алиас
@@ -173,58 +135,55 @@ class IndexESClient(BaseESClient):
             # - products, products_read → products_v2 (чтение со старого)
             ```
         """
-        action = AddAlias(AddAliasInfo(index=index_name, alias=self._get_write_alias(base_alias)))
+        action = AddAlias(AddAliasInfo(index=index_name, alias=self._get_write_alias(base_alias), is_write_index=True))
         await self._setup_aliases(action)
 
     async def _switch_aliases(self, old_index: str, new_index: str, base_alias: str) -> None:
         """
-        Атомарно переключить алиасы со старого индекса на новый
+        Атомарно переключить алиасы между старым и новым индексом
 
-        Выполняет атомарное переключение всех алиасов в одной операции.
+        Выполняет атомарное переключение алиасов в одной операции.
         Используется в конце миграции для переключения трафика на новый индекс.
 
         Операции выполняемые атомарно:
         1. Удаление с old_index:
            - {base_alias}
-           - {base_alias}_read
-           - {base_alias}_write
-        2. Добавление к new_index:
+        2. Добавление к old_index:
+           - {base_alias}{WRITE_SUFFIX}
+        3. Добавление к new_index:
            - {base_alias}
-           - {base_alias}_read
-           - write алиас уже должен быть добавлен через `_add_write_alias_only()`
+        4. Удаление с new_index:
+           - {base_alias}{WRITE_SUFFIX}
+
 
         Требования:
         - new_index уже должен иметь write алиас (добавлен через `_add_write_alias_only()`)
-        - old_index должен иметь все три алиаса
+        - old_index должен иметь базовый алиас
         - Операция атомарна: либо все изменения применяются, либо ни одно
 
         Args:
-            old_index: Старый индекс, с которого удаляются алиасы
-            new_index: Новый индекс, на который добавляются алиасы
+            old_index: Старый индекс
+            new_index: Новый индекс
             base_alias: Базовый алиас
 
         Пример:
             ```python
-            # Завершение миграции: переключаем алиасы с products_v2 на products_v3
             await index_client._switch_aliases(
                 old_index="products_v2",
                 new_index="products_v3",
                 base_alias="products"
             )
             # Теперь:
-            # - products, products_read, products_write → products_v3
-            # - products_v2 больше не имеет алиасов
+            # - products → products_v3
+            # - products_write → products_v2
             ```
         """
-        read_alias = self._get_read_alias(base_alias)
         write_alias = self._get_write_alias(base_alias)
-
         actions = [
+            AddAlias(AddAliasInfo(index=new_index, alias=base_alias, is_write_index=True)),
+            AddAlias(AddAliasInfo(index=old_index, alias=write_alias, is_write_index=True)),
+            RemoveAlias(AliasInfo(index=new_index, alias=write_alias)),
             RemoveAlias(AliasInfo(index=old_index, alias=base_alias)),
-            RemoveAlias(AliasInfo(index=old_index, alias=read_alias)),
-            RemoveAlias(AliasInfo(index=old_index, alias=write_alias)),
-            AddAlias(AddAliasInfo(index=new_index, alias=base_alias)),
-            AddAlias(AddAliasInfo(index=new_index, alias=read_alias)),
         ]
 
         await self._setup_aliases(*actions)
@@ -323,8 +282,8 @@ class IndexESClient(BaseESClient):
             started_at=datetime.utcnow(),
         )
 
-        if not await self._get_index_by_alias(self._default_alias):
-            await self.create_first_index(self._default_alias)
+        if not await self._get_index_by_alias(self._base_alias):
+            await self.create_first_index(ReindexHistoryDocument)
 
         await self.index(document=history_doc.model_dump())
 
@@ -445,11 +404,10 @@ class IndexESClient(BaseESClient):
 
         Полный процесс создания индекса с нуля:
         1. Создает новый индекс на основе DSL модели
-        2. Добавляет все три алиаса (базовый, _read, _write) к созданному индексу
+        2. Добавляет базовый алиас к созданному индексу
         3. Возвращает имя созданного индекса
 
-        Используется при первоначальном развертывании приложения или при
-        создании нового типа документов.
+        Используется при первоначальном развертывании приложения или при создании нового типа документов.
 
         Args:
             document_class: TODO
@@ -463,28 +421,35 @@ class IndexESClient(BaseESClient):
 
         Пример использования через скрипт:
             ```python
-            # create_index.py
-            async with IndexClient(hosts=settings.ES_HOSTS) as client:
-                index_name = await client.create_first_index("products")
-                print(f"Создан индекс: {index_name}")
+            class ProductDocument(AsyncDocument):
+                pass
+            async with IndexESClient(hosts=settings.ES_HOSTS) as client:
+                client: IndexESClient
+                index_name = await client.create_first_index(ProductDocument)
             ```
 
         После выполнения:
             - Создан индекс: products_v3
-            - Алиасы: products → products_v3, products_read → products_v3, products_write → products_v3
+            - Алиас: products → products_v3
             - Индекс готов к использованию через клиенты BaseESClient/PydanticESClient
         """
         index_name = document_class.Index.name
-
         if await self.indices.exists(index=index_name):
             raise ValueError(f"Index '{index_name}' already exists")
-
         await document_class.init(using=self)
-
-        base_alias = index_name.rsplit("_v", 1)[0]
-        await self._add_all_aliases(index_name, base_alias)
-
+        base_alias = index_name.rsplit("_v", 1)[0]  # TODO: получать сразу base_alias из AsyncDocument
+        await self._setup_aliases(AddAlias(AddAliasInfo(index=index_name, alias=base_alias, is_write_index=True)))
         return index_name
+
+    async def prepare_reindex(self, document_class: Type[AsyncDocument]):
+        """
+        Подготовка к реиндексу:
+            Создание нового индекса
+            Добавление к нему алиаса на запись
+        """
+        new_index_name = await self._create_new_index(document_class)
+        base_alias = new_index_name.rsplit("_v", 1)[0]  # TODO: переделать
+        await self._add_write_alias_only(index_name=new_index_name, base_alias=base_alias)
 
     async def start_reindex(
         self,
@@ -499,7 +464,7 @@ class IndexESClient(BaseESClient):
 
         Процесс миграции (zero-downtime):
         1. Создает новый индекс на основе обновленной DSL модели
-        2. Добавляет write алиас на новый индекс (двойная запись)
+        2. Добавляет new алиас на новый индекс (двойная запись)
         3. Запускает асинхронный реиндекс данных со старого индекса на новый
         4. Сохраняет информацию о задаче в индекс истории
 
@@ -520,18 +485,16 @@ class IndexESClient(BaseESClient):
             - Новый индекс: products_v3 (на основе обновленной DSL модели)
             - Старый индекс: products_v2 (остается для чтения)
             - Алиасы:
-              * products, products_read → products_v2 (чтение со старого)
-              * products_write → products_v2, products_v3 (двойная запись в оба)
+              * products → products_v2
+              * products_write → products_v3
             - Запущен фоновый процесс копирования данных products_v2 → products_v3
         """
-        new_index_name = await self._create_new_index(document_class)
-        base_alias = new_index_name.rsplit("_v", 1)[0]
+        new_index_name = document_class.Index.name
+        base_alias = new_index_name.rsplit("_v", 1)[0]  # TODO: переделать
 
         old_index = await self._get_index_by_alias(base_alias)
         if not old_index:
             raise ValueError(f"No existing index found for base_alias: {base_alias}")
-
-        await self._add_write_alias_only(index_name=new_index_name, base_alias=base_alias)
 
         task_id = await self._start_reindex(source_index=old_index, dest_index=new_index_name, **reindex_kwargs)
 
@@ -565,10 +528,11 @@ class IndexESClient(BaseESClient):
 
         Состояние системы после выполнения:
             - Новый индекс: products_v3 (полностью заполнен и актуален)
-            - Старый индекс: products_v2 (больше не имеет алиасов)
+            - Старый индекс: products_v2 (до остановки параллельной записи будет заполняться)
             - Алиасы:
-              * products, products_read, products_write → products_v3
-            - Приложение читает и пишет только в новый индекс
+              * products -> products_v3
+              * products_write → products_v2
+            - Необходимо остановить запись в products_write
         """
         new_index_name = document_class.Index.name
         base_alias = new_index_name.rsplit("_v", 1)[0]
@@ -603,7 +567,7 @@ class IndexESClient(BaseESClient):
                 - wait_for_active_shards: str - ждать активных шардов
 
         Returns:
-            Ответ Elasticsearch с подтверждением удаления
+            Ответ Elasticsearch или сообщение о том, что индекс не существует
 
         Пример:
             ```python
@@ -613,9 +577,7 @@ class IndexESClient(BaseESClient):
         """
         index_name = document_class.Index.name
 
-        # Проверяем существование
         if not await self.indices.exists(index=index_name):
             return {"message": f"Index '{index_name}' did not exist"}
 
-        # Удаляем
         return await self.indices.delete(index=index_name, **kwargs)

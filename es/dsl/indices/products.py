@@ -82,7 +82,7 @@ class ProductDocument(AsyncDocument):
     class Index:
         """Настройки индекса товаров."""
 
-        name = f"{settings.ES_PRODUCTS_BASE_ALIAS}_v2"
+        name = f"{settings.ES_PRODUCTS_BASE_ALIAS}_v1"
 
         settings = {
             "number_of_shards": 3,  # Количество шардов

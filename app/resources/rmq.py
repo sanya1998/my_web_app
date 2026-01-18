@@ -1,3 +1,5 @@
+from typing import Optional
+
 from aio_pika import RobustChannel, connect_robust
 from aio_pika.abc import AbstractRobustConnection, ExchangeType
 from app.config.common import settings
@@ -40,7 +42,7 @@ class BaseRabbitMQ:
         self,
         exchange_name: str,
         queue_name: str,
-        routing_key: str,
+        routing_key: Optional[str] = None,
         exchange_type: ExchangeType = ExchangeType.DIRECT,
         durable: bool = settings.RMQ_DURABLE_DEFAULT,
     ):

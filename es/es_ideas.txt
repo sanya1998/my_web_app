@@ -94,9 +94,11 @@ assert _is_pydantic_model_type(List[Variant]) == False
 assert _is_pydantic_model_type(Dict[str, str]) == False
 
 
-возможно, можно упростить логику с _read и _write с помощью require_alias
-
 вместо Search использовать AsyncSearch в документации
 AsyncDocument и тд
 
 Убрать мз клиента проход по циклу и два запроса (на получение индексов по алиасу и сама запись)
+
+Чтобы во время реиндекса можно было разрешить конфликт, попробовать в методах на запись использовать: (if use_write_alias ?)
+:param version: The explicit version number for concurrency control. It must
+            be a non-negative long number.

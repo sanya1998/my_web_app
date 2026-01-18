@@ -20,6 +20,10 @@ class RabbitMQSettings(BaseSettings):
     HISTORY_QUEUE_NAME: str = "history_queue"
     HISTORY_EXCHANGE_NAME: str = "history_exchange"
 
+    ES_WRITE_QUEUE_NAME: str = "es_write_queue"
+    ES_WRITE_REINDEX_QUEUE_NAME: str = "es_write_queue_reindex"
+    ES_WRITE_EXCHANGE_NAME: str = "es_write_exchange"
+
     SSE_ROUTING_KEY: str = "sse_routing_key"
     SSE_QUEUE_NAME: str = "sse_queue"
     SSE_EXCHANGE_NAME: str = "sse_exchange"

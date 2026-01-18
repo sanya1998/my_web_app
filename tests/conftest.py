@@ -85,8 +85,18 @@ async def prepare_elasticsearch():
             await _es_client.delete_index(document_class=document_class)
             await _es_client.create_first_index(document_class=document_class)
 
-    # TODO: дублируется async with PydanticESClient(
-    async with PydanticESClient(hosts=settings.ES_HOSTS, default_alias=settings.ES_PRODUCTS_BASE_ALIAS) as _es_client:
+    # TODO: дублируется здесь и es_client
+    # async with PydanticESClient(
+    #     hosts=settings.ES_HOSTS,
+    #     base_alias=settings.ES_PRODUCTS_BASE_ALIAS,
+    #     use_write_alias=True
+    # ) as _es_client:
+    #     _es_client: PydanticESClient
+    #     await generate_and_index_test_data(_es_client)
+
+    async with PydanticESClient(
+        hosts=settings.ES_HOSTS, base_alias=settings.ES_PRODUCTS_BASE_ALIAS, use_write_alias=False
+    ) as _es_client:
         _es_client: PydanticESClient
         await generate_and_index_test_data(_es_client)
 

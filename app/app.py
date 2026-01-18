@@ -28,10 +28,11 @@ async def lifespan(app_: App):
     async with (
         SSEPubsubListener(channel_name=settings.PUBSUB_SSE_CHANNEL) as sse_pubsub,
         SSEConsumer(settings.SSE_QUEUE_NAME) as sse_consumer,
-        BasePublisher(settings.SSE_ROUTING_KEY, settings.SSE_EXCHANGE_NAME) as publisher_of_new_sse_messages,
-        BasePublisher(settings.HISTORY_ROUTING_KEY, settings.HISTORY_EXCHANGE_NAME) as history_publisher,
+        BasePublisher(settings.SSE_EXCHANGE_NAME, settings.SSE_ROUTING_KEY) as publisher_of_new_sse_messages,
+        BasePublisher(settings.HISTORY_EXCHANGE_NAME, settings.HISTORY_ROUTING_KEY) as history_publisher,
+        BasePublisher(settings.ES_WRITE_EXCHANGE_NAME) as es_write_publisher,
         PostgresManager() as postgres_manager,
-        PydanticESClient(hosts=settings.ES_HOSTS, default_alias=settings.ES_PRODUCTS_BASE_ALIAS) as pydantic_es_client,
+        PydanticESClient(hosts=settings.ES_HOSTS, base_alias=settings.ES_PRODUCTS_BASE_ALIAS) as pydantic_es_client,
         AsyncElasticsearch(hosts=settings.ES_HOSTS) as es_client,
     ):
         app_.state.sse_pubsub = sse_pubsub
@@ -39,6 +40,7 @@ async def lifespan(app_: App):
         await app_.state.sse_consumer.consume()
         app_.state.publisher_of_new_sse_messages = publisher_of_new_sse_messages
         app_.state.postgres_manager = postgres_manager
+        app_.state.es_write_publisher = es_write_publisher
         app_.state.history_publisher = history_publisher
         app_.state.pydantic_es_client = pydantic_es_client
         app_.state.es_client = es_client

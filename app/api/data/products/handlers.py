@@ -2,7 +2,6 @@ from app.api.data.products.dependency import build_search_query, get_es_client, 
 from app.api.data.products.input import ProductCreateInput, ProductUpdateInput
 from app.api.data.products.responses import (
     BrandsResponse,
-    ProductCreateResponse,
     ProductDeleteResponse,
     ProductResponse,
     ProductsListResponse,
@@ -12,13 +11,15 @@ from app.common.constants.paths import PRODUCTS_PATH
 from app.common.constants.tags import TagsEnum
 from app.common.helpers.api_version import VersionedAPIRouter
 from app.config.common import settings
+from app.consumers.es_write import ESMethod, Message
 from elasticsearch import NotFoundError
 from elasticsearch.dsl import AsyncSearch
 from elasticsearch.dsl.aggs import Terms
 from es.clients.pydantic_ import PydanticESClient
-from es.constants import READ_SUFFIX
-from es.schemas.products import Brand, ProductCreateSchema, ProductUpdateSchema
+from es.constants import WRITE_SUFFIX
+from es.schemas.products import Brand
 from fastapi import Depends, HTTPException, status
+from starlette.requests import Request
 
 router = VersionedAPIRouter(prefix=PRODUCTS_PATH, tags=[TagsEnum.PRODUCTS])
 
@@ -26,43 +27,26 @@ router = VersionedAPIRouter(prefix=PRODUCTS_PATH, tags=[TagsEnum.PRODUCTS])
 # ============ CREATE ============
 @router.post(
     "/",
-    response_model=ProductCreateResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Создать товар",
     description="Создание нового товара в Elasticsearch",
 )
 async def create_product(
+    request: Request,
     product_data: ProductCreateInput,
-    es_client: PydanticESClient = Depends(get_pydantic_es_client),
-) -> ProductCreateResponse:
+):
     """
     Создание нового товара
 
     Args:
+        request:
         product_data: Данные для создания товара
-        es_client: Клиент Elasticsearch
-
     Returns:
         ProductCreateResponse с ID созданного товара
     """
     try:
-        # Преобразуем в ProductIn (для записи)
-        product_in = ProductCreateSchema(**product_data.model_dump())
-
-        # Создаем товар в Elasticsearch
-        results = await es_client.create(document=product_in)  # TODO: попробовать document=product_data
-
-        if not results:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create product",
-            )
-
-        # Берем ID из первого результата
-        product_id = results[0].id
-
-        return ProductCreateResponse(id=product_id)
-
+        m = Message(method=ESMethod.CREATE, kwargs=dict(document=product_data))
+        await request.app.state.es_write_publisher.publish(m, exclude_unset=True)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -163,7 +147,7 @@ async def search_products(
         ProductsListResponse со списком товаров и метаданными
     """
     try:
-        search = main_query.using(es_client).index([f"{settings.ES_PRODUCTS_BASE_ALIAS}{READ_SUFFIX}"])
+        search = main_query.using(es_client).index([f"{settings.ES_PRODUCTS_BASE_ALIAS}{WRITE_SUFFIX}"])
         response = await search.execute()
         products = [ProductResponse.model_validate(hit.to_dict()) for hit in response]
         return ProductsListResponse(products=products)
@@ -220,22 +204,21 @@ async def get_all_brands(
 # ============ UPDATE (full за исключением id, created_date и тд) ============
 @router.put(
     "/{product_id}",
-    response_model=ProductUpdateResponse,
     summary="Полностью обновить товар",
     description="Полное обновление всех полей товара",
 )
 async def update_product(
+    request: Request,
     product_id: str,
     product_data: ProductUpdateInput,
-    es_client: PydanticESClient = Depends(get_pydantic_es_client),
-) -> ProductUpdateResponse:
+):
     """
     Полное обновление товара
 
     Args:
+        request:
         product_id: ID товара для обновления
         product_data: Новые данные товара
-        es_client: Клиент Elasticsearch
 
     Returns:
         ProductUpdateResponse с сообщением об успехе
@@ -244,12 +227,10 @@ async def update_product(
         HTTPException 404: если товар не найден
     """
     try:
-        product_in = ProductUpdateSchema(id=product_id, **product_data.model_dump())
-
-        # Обновляем товар в Elasticsearch
-        await es_client.update(document=product_in)
-
-        return ProductUpdateResponse()
+        product_data = product_data.model_dump()
+        product_data["id"] = product_id
+        m = Message(method=ESMethod.UPDATE, kwargs=dict(document=product_data))
+        await request.app.state.es_write_publisher.publish(m, exclude_unset=True)
 
     except Exception as e:
         raise HTTPException(

@@ -28,13 +28,6 @@ class BrandsResponse(BaseModel):
     total: int
 
 
-class ProductCreateResponse(BaseModel):
-    """Модель ответа при создании товара"""
-
-    id: str
-    message: str = "Product created successfully"
-
-
 class ProductUpdateResponse(BaseModel):
     """Модель ответа при обновлении товара"""
 

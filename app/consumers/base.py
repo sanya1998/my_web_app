@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Generic, Optional, TypeVar
+from typing import Generic, Optional, Type, TypeVar
 
 from aio_pika.abc import AbstractIncomingMessage
 from app.common.helpers.stop_events import configure_event_of_stop_signal
@@ -39,7 +39,7 @@ class BaseConsumer(BaseRabbitMQ, Generic[MessageClass]):
         # Stop, for another example in FastApi lifespan: 'yield'
     """
 
-    message_cls = MessageClass
+    message_cls: Type[BaseSchema] = MessageClass
     ack_exceptions = (JSONDecodeError,)
 
     def __init__(self, queue_name: str = "", **kwargs):

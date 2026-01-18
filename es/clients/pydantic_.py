@@ -21,7 +21,8 @@ class PydanticESClient(BaseESClient):
     def __init__(
         self,
         hosts: Optional[List[str]] = None,
-        default_alias: Optional[str] = None,
+        base_alias: Optional[str] = None,
+        use_write_alias: bool = False,
         response_model: Optional[Type[BaseModel]] = None,
         **kwargs,
     ):
@@ -30,7 +31,8 @@ class PydanticESClient(BaseESClient):
 
         Args:
             hosts: Список URL нод Elasticsearch (например: ["http://localhost:9200"])
-            default_alias: Дефолтный индекс для операций (можно переопределять в методах)
+            base_alias: Дефолтный алиас для операций (можно переопределять в методах)
+            use_write_alias: Использовать _write алиас
             response_model: Дефолтная Pydantic модель (опционально)
             **kwargs: Дополнительные параметры для AsyncElasticsearch
 
@@ -47,13 +49,10 @@ class PydanticESClient(BaseESClient):
         universal_es = PydanticESClient(hosts=["http://localhost:9200"])
         ```
         """
-        super().__init__(hosts, default_alias, **kwargs)
+        super().__init__(hosts=hosts, base_alias=base_alias, use_write_alias=use_write_alias, **kwargs)
         self._response_model = response_model
 
-    def _resolve_response_model(
-        self,
-        response_model: Optional[Type[BaseModel]] = None,
-    ) -> Type[BaseModel]:
+    def _resolve_response_model(self, response_model: Optional[Type[BaseModel]] = None) -> Type[BaseModel]:
         """
         Разрешение класса модели
 
@@ -76,20 +75,17 @@ class PydanticESClient(BaseESClient):
         return resolved_model
 
     @staticmethod
-    def _process_es_response(results: List[Dict[str, Any]], operation: OperationType) -> List[DocumentResult]:
+    def _process_es_response(result: Dict[str, Any], operation: OperationType) -> DocumentResult:
         """Преобразовать ответ ES в DocumentResult"""
         # TODO: нельзя ли получить operation из result?
-        return [
-            DocumentResult(
-                id=result["_id"],
-                index=result["_index"],
-                version=result.get("_version", 1),
-                operation=operation,
-                seq_no=result.get("_seq_no"),
-                primary_term=result.get("_primary_term"),
-            )
-            for result in results
-        ]
+        return DocumentResult(
+            id=result["_id"],
+            index=result["_index"],
+            version=result.get("_version", 1),
+            operation=operation,
+            seq_no=result.get("_seq_no"),
+            primary_term=result.get("_primary_term"),
+        )
 
     @staticmethod
     def _is_pydantic_model_type(annotation) -> bool:
@@ -159,7 +155,7 @@ class PydanticESClient(BaseESClient):
         computed_fields = getattr(response_model, "model_computed_fields", {})
 
         for field_name, field_info in response_model.model_fields.items():
-            # Проверяем exclude через Field(exclude=True)
+            # Проверка на Field(exclude=True)
             if getattr(field_info, "exclude", False) or field_name in computed_fields:
                 continue
 
@@ -182,17 +178,12 @@ class PydanticESClient(BaseESClient):
         doc_id: str,
         response_model: Optional[Type[BaseModel]] = None,
         base_alias: Optional[str] = None,
-        use_read_alias: bool = True,
         **kwargs,
     ) -> BaseModel:
+        # TODO: Дублируются эти две строчки в этом модуле много раз:
         resolved_model = self._resolve_response_model(response_model)
         kwargs.setdefault("_source", self._get_source_from_model(resolved_model))
-        doc_dict = await super().get(
-            doc_id=doc_id,
-            base_alias=base_alias,
-            use_read_alias=use_read_alias,
-            **kwargs,
-        )
+        doc_dict = await super().get(doc_id=doc_id, base_alias=base_alias, **kwargs)
         return resolved_model.model_validate(doc_dict)
 
     async def get_or_none(
@@ -200,49 +191,24 @@ class PydanticESClient(BaseESClient):
         doc_id: str,
         response_model: Optional[Type[BaseModel]] = None,
         base_alias: Optional[str] = None,
-        use_read_alias: bool = True,
         **kwargs,
     ) -> Optional[BaseModel]:
         resolved_model = self._resolve_response_model(response_model)
         kwargs.setdefault("_source", self._get_source_from_model(resolved_model))
-
-        doc_dict = await super().get_or_none(
-            doc_id=doc_id,
-            base_alias=base_alias,
-            use_read_alias=use_read_alias,
-            **kwargs,
-        )
-
-        if doc_dict is None:
-            return None
-
-        return resolved_model.model_validate(doc_dict)
+        doc_dict = await super().get_or_none(doc_id=doc_id, base_alias=base_alias, **kwargs)
+        return resolved_model.model_validate(doc_dict) if doc_dict else doc_dict
 
     async def mget(
         self,
         ids: Optional[str | Sequence[str]] = None,
         response_model: Optional[Type[BaseModel]] = None,
         base_alias: Optional[str] = None,
-        use_read_alias: bool = True,
         **kwargs,
     ) -> List[Optional[BaseModel]]:
         resolved_model = self._resolve_response_model(response_model)
         kwargs.setdefault("_source", self._get_source_from_model(resolved_model))
-
-        docs = await super().mget(
-            ids=ids,
-            base_alias=base_alias,
-            use_read_alias=use_read_alias,
-            **kwargs,
-        )
-
-        result = []
-        for doc in docs:
-            if doc is None:
-                result.append(None)
-            else:
-                result.append(resolved_model.model_validate(doc))
-
+        docs = await super().mget(ids=ids, base_alias=base_alias, **kwargs)
+        result = [resolved_model.model_validate(doc) if doc else doc for doc in docs]
         return result
 
     async def search(
@@ -250,26 +216,14 @@ class PydanticESClient(BaseESClient):
         base_alias: Optional[str] = None,
         body: Optional[Dict[str, Any]] = None,
         response_model: Optional[Type[BaseModel]] = None,
-        use_read_alias: bool = True,
         **kwargs,
     ) -> SearchResult:
         resolved_model = self._resolve_response_model(response_model)
         kwargs.setdefault("_source", self._get_source_from_model(resolved_model))
-        response = await super().search(
-            base_alias=base_alias,
-            body=body,
-            use_read_alias=use_read_alias,
-            **kwargs,
-        )
-
+        response = await super().search(base_alias=base_alias, body=body, **kwargs)
         hits_data = response["hits"]["hits"]
         sources = [resolved_model.model_validate(hit.get("_source", {})) for hit in hits_data]
-
-        return SearchResult(
-            sources=sources,
-            total=response["hits"]["total"]["value"],
-            took=response["took"],
-        )
+        return SearchResult(sources=sources, total=response["hits"]["total"]["value"], took=response["took"])
 
     async def msearch(
         self,
@@ -277,7 +231,6 @@ class PydanticESClient(BaseESClient):
         searches: Optional[Sequence[Mapping[str, Any]]] = None,
         response_models: Optional[Sequence[Type[BaseModel]]] = None,
         base_alias: Optional[str] = None,
-        use_read_alias: bool = True,
         **kwargs,
     ) -> List[SearchResult]:
         if not searches:
@@ -299,10 +252,7 @@ class PydanticESClient(BaseESClient):
                 f"number of searches ({len(searches)}) or be 1 for all searches"
             )
 
-        # Выполняем msearch через родительский метод
-        raw_results = await super().msearch(
-            searches=searches, base_alias=base_alias, use_read_alias=use_read_alias, **kwargs
-        )
+        raw_results = await super().msearch(searches=searches, base_alias=base_alias, **kwargs)
 
         results = []
         for i, (raw_result, model) in enumerate(zip(raw_results, models)):
@@ -316,11 +266,7 @@ class PydanticESClient(BaseESClient):
                 sources.append(model.model_validate(source))
 
             results.append(
-                SearchResult(
-                    sources=sources,
-                    total=raw_result["hits"]["total"]["value"],
-                    took=raw_result["took"],
-                )
+                SearchResult(sources=sources, total=raw_result["hits"]["total"]["value"], took=raw_result["took"])
             )
 
         return results
@@ -330,118 +276,76 @@ class PydanticESClient(BaseESClient):
         self,
         document: BaseModel,
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str = ID_FIELD_DEFAULT,
         **kwargs,
-    ) -> List[DocumentResult]:
-        results = await super().create(
-            document=document.model_dump(),
-            base_alias=base_alias,
-            use_write_alias=use_write_alias,
-            id_field=id_field,
-            **kwargs,
-        )
-        return self._process_es_response(results, OperationType.CREATE)
+    ) -> DocumentResult:
+        res = await super().create(document=document.model_dump(), base_alias=base_alias, id_field=id_field, **kwargs)
+        return self._process_es_response(res, OperationType.CREATE)
 
     async def index(
         self,
         document: BaseModel,
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str = ID_FIELD_DEFAULT,
         **kwargs,
-    ) -> List[DocumentResult]:
-        results = await super().index(
-            document=document.model_dump(),
-            base_alias=base_alias,
-            use_write_alias=use_write_alias,
-            id_field=id_field,
-            **kwargs,
-        )
-        return self._process_es_response(results, OperationType.INDEX)
+    ) -> DocumentResult:
+        res = await super().index(document=document.model_dump(), base_alias=base_alias, id_field=id_field, **kwargs)
+        return self._process_es_response(res, OperationType.INDEX)
 
     async def update(
         self,
         document: BaseModel,
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str = ID_FIELD_DEFAULT,
         **kwargs,
-    ) -> List[DocumentResult]:
-        results = await super().update(
-            document=document.model_dump(),
-            base_alias=base_alias,
-            use_write_alias=use_write_alias,
-            id_field=id_field,
-            **kwargs,
-        )
-        return self._process_es_response(results, OperationType.UPDATE)
+    ) -> DocumentResult:
+        res = await super().update(document=document.model_dump(), base_alias=base_alias, id_field=id_field, **kwargs)
+        return self._process_es_response(res, OperationType.UPDATE)
 
     async def delete(
         self,
         document: BaseModel,
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str = ID_FIELD_DEFAULT,
         **kwargs,
-    ) -> List[DocumentResult]:
-        results = await super().delete(
-            document=document.model_dump(),
-            base_alias=base_alias,
-            use_write_alias=use_write_alias,
-            id_field=id_field,
-            **kwargs,
-        )
-        return self._process_es_response(results, OperationType.DELETE)
+    ) -> DocumentResult:
+        res = await super().delete(document=document.model_dump(), base_alias=base_alias, id_field=id_field, **kwargs)
+        return self._process_es_response(res, OperationType.DELETE)
 
     async def delete_by_id(
         self,
         doc_id: str,
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         **kwargs,
-    ) -> List[DocumentResult]:
-        results = await super().delete_by_id(
-            doc_id=doc_id,
-            base_alias=base_alias,
-            use_write_alias=use_write_alias,
-            **kwargs,
-        )
-        return self._process_es_response(results, OperationType.DELETE)
+    ) -> DocumentResult:
+        result = await super().delete_by_id(doc_id=doc_id, base_alias=base_alias, **kwargs)
+        return self._process_es_response(result, OperationType.DELETE)
 
     async def partial_update(
         self,
         doc_id: str,
         updates: Optional[Dict[str, Any]] = None,
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         script: Optional[Dict[str, Any]] = None,
         **kwargs,
-    ) -> List[DocumentResult]:
-        results = await super().partial_update(
-            doc_id=doc_id,
-            updates=updates,
-            base_alias=base_alias,
-            use_write_alias=use_write_alias,
-            script=script,
-            **kwargs,
+    ) -> DocumentResult:
+        res = await super().partial_update(
+            doc_id=doc_id, updates=updates, base_alias=base_alias, script=script, **kwargs
         )
-        return self._process_es_response(results, OperationType.UPDATE)
+        return self._process_es_response(res, OperationType.UPDATE)
 
     # === ПУБЛИЧНЫЕ МЕТОДЫ: МАССОВЫЕ ОПЕРАЦИИ ===
     async def bulk_index(
         self,
         documents: List[BaseModel],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str | None = ID_FIELD_DEFAULT,
         raise_on_error: bool = False,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         return await super().bulk_index(
             documents=[d.model_dump() for d in documents],
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             raise_on_error=raise_on_error,
             **kwargs,
@@ -451,15 +355,13 @@ class PydanticESClient(BaseESClient):
         self,
         documents: List[BaseModel],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str | None = ID_FIELD_DEFAULT,
         raise_on_error: bool = False,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         return await super().bulk_create(
             documents=[d.model_dump() for d in documents],
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             raise_on_error=raise_on_error,
             **kwargs,
@@ -469,15 +371,13 @@ class PydanticESClient(BaseESClient):
         self,
         documents: List[BaseModel],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str | None = ID_FIELD_DEFAULT,
         raise_on_error: bool = False,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         return await super().bulk_update(
             documents=[d.model_dump() for d in documents],
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             raise_on_error=raise_on_error,
             **kwargs,
@@ -487,15 +387,13 @@ class PydanticESClient(BaseESClient):
         self,
         documents: List[BaseModel],
         base_alias: Optional[str] = None,
-        use_write_alias: bool = True,
         id_field: str | None = ID_FIELD_DEFAULT,
         raise_on_error: bool = False,
         **kwargs,
-    ) -> List[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         return await super().bulk_delete(
             documents=[d.model_dump() for d in documents],
             base_alias=base_alias,
-            use_write_alias=use_write_alias,
             id_field=id_field,
             raise_on_error=raise_on_error,
             **kwargs,
