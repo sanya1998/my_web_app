@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from aio_pika import RobustChannel, connect_robust
 from aio_pika.abc import AbstractRobustConnection, ExchangeType
@@ -45,7 +45,8 @@ class BaseRabbitMQ:
         routing_key: Optional[str] = None,
         exchange_type: ExchangeType = ExchangeType.DIRECT,
         durable: bool = settings.RMQ_DURABLE_DEFAULT,
+        queue_arguments: Optional[Dict[str, Any]] = None,
     ):
         exchange = await self.channel.declare_exchange(exchange_name, exchange_type, durable=durable)
-        queue = await self.channel.declare_queue(queue_name, durable=durable)
+        queue = await self.channel.declare_queue(queue_name, durable=durable, arguments=queue_arguments)
         await queue.bind(exchange, routing_key)

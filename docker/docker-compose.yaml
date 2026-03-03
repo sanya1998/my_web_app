@@ -16,6 +16,7 @@ x-base-python: &base-python
     - ../alembic:/code/alembic
     - ../alembic.ini:/code/alembic.ini
     - ../app:/code/app
+    - ../es:/code/es
     - ../docker:/code/docker
     - ../manage.py:/code/manage.py
     - ../envs:/code/envs
@@ -102,7 +103,11 @@ services:
       - prometheus
 
   rabbitmq:
-    image: rabbitmq:${RMQ_VERSION}
+    build:
+      context: ../
+      dockerfile: docker/custom_rabbitmq/Dockerfile
+      args:
+        RMQ_VERSION: ${RMQ_VERSION}
     container_name: my-web-app-rabbitmq
     restart: unless-stopped
     <<: *base-env

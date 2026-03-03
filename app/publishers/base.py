@@ -1,4 +1,8 @@
-from aio_pika import Message
+import hashlib
+
+from aio_pika import Message, RobustExchange
+from aiormq import DeliveryError
+from app.common.logger import logger
 from app.common.schemas.base import BaseSchema
 from app.resources.rmq import BaseRabbitMQ
 from orjson import orjson
@@ -8,7 +12,7 @@ class BasePublisher(BaseRabbitMQ):
     def __init__(self, exchange_name: str, routing_key: str = "", **kwargs):
         self.routing_key = routing_key
         self.exchange_name = exchange_name
-        self.exchange = None
+        self.exchange: RobustExchange | None = None
         super().__init__(**kwargs)
 
     async def set_exchange(self):
@@ -21,15 +25,17 @@ class BasePublisher(BaseRabbitMQ):
 
     @staticmethod
     def prepare_message(
-        raw_message: BaseSchema, exclude_unset=False, exclude_none=False, exclude_defaults=False
+        raw_message: BaseSchema, exclude_unset=False, exclude_none=False, exclude_defaults=False, deduplication=False
     ) -> Message:
-        return Message(
-            orjson.dumps(
-                raw_message.model_dump(
-                    exclude_unset=exclude_unset, exclude_none=exclude_none, exclude_defaults=exclude_defaults
-                )
+        body = orjson.dumps(
+            raw_message.model_dump(
+                exclude_unset=exclude_unset, exclude_none=exclude_none, exclude_defaults=exclude_defaults
             )
         )
+        headers = dict()
+        if deduplication:
+            headers["x-deduplication-header"] = hashlib.md5(body).hexdigest()
+        return Message(body=body, headers=headers if headers else None)
 
     async def ensure_connection(self):
         """Переподключается при разрыве соединения"""
@@ -37,10 +43,20 @@ class BasePublisher(BaseRabbitMQ):
             await self.setup()
 
     async def publish(
-        self, message: BaseSchema, exclude_unset=False, exclude_none=False, exclude_defaults=False
+        self, message: BaseSchema, exclude_unset=False, exclude_none=False, exclude_defaults=False, deduplication=False
     ) -> None:
         await self.ensure_connection()
         prepared_message = self.prepare_message(
-            message, exclude_unset=exclude_unset, exclude_none=exclude_none, exclude_defaults=exclude_defaults
+            message,
+            exclude_unset=exclude_unset,
+            exclude_none=exclude_none,
+            exclude_defaults=exclude_defaults,
+            deduplication=deduplication,
         )
-        await self.exchange.publish(message=prepared_message, routing_key=self.routing_key)
+        try:
+            await self.exchange.publish(message=prepared_message, routing_key=self.routing_key)
+        except DeliveryError as e:
+            if "Basic.Nack" in str(e):
+                logger.warning("Сообщение отклонено (дубликат)")
+            else:
+                raise

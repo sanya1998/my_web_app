@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import platform
 from typing import Optional
 
 import redis.asyncio as redis
@@ -8,11 +9,11 @@ from redis.asyncio import Redis
 
 logger = logging.getLogger(__name__)
 
+# TODO: посмотреть в тассбэке решение, которое удобно при полном падении редиса.
 # TODO: два раза создается экземпляр в этом файле (redis.ConnectionPool.from_url и redis.from_url)
-# max_connections=settings.CACHE_MAX_CONNECTIONS,
-# retry_on_timeout=settings.CACHE_RETRY_ON_TIMEOUT,
+# max_connections=settings.REDIS_MAX_CONNECTIONS,
 # client_name=platform.node(), # import platform
-pool = redis.ConnectionPool.from_url(url=settings.CACHE_URL, max_connections=settings.CACHE_MAX_CONNECTIONS)
+pool = redis.ConnectionPool.from_url(url=settings.CACHE_URL, max_connections=settings.REDIS_MAX_CONNECTIONS)
 
 
 def with_redis_client(func):
@@ -43,7 +44,11 @@ class BasePubsub:
         self.redis = redis.from_url(
             url=settings.REDIS_BASE_URL,
             decode_responses=True,
+            max_connections=settings.REDIS_MAX_CONNECTIONS,
             health_check_interval=settings.REDIS_HEALTH_CHECK_INTERVAL,
+            socket_connect_timeout=settings.REDIS_SOCKET_CONNECT_TIMEOUT,
+            socket_timeout=settings.REDIS_SOCKET_TIMEOUT,
+            client_name=platform.node(),
         )
 
     async def __aenter__(self):

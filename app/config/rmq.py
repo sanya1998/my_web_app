@@ -27,3 +27,7 @@ class RabbitMQSettings(BaseSettings):
     SSE_ROUTING_KEY: str = "sse_routing_key"
     SSE_QUEUE_NAME: str = "sse_queue"
     SSE_EXCHANGE_NAME: str = "sse_exchange"
+
+    DEDUPLICATION_ROUTING_KEY: str = "deduplication_routing_key"
+    DEDUPLICATION_QUEUE_NAME: str = "deduplication_queue"
+    DEDUPLICATION_EXCHANGE_NAME: str = "deduplication_exchange"

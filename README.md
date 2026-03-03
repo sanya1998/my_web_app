@@ -131,6 +131,7 @@
 5) создать дашборд для графаны самому.
 6) можно ли автоматизировать подключение графаны к прометеусу?
 7) можно ли автоматизировать добавление дашборда в графану?
+8) INFO memory (и другие) для редиса. used_memory_dataset (11 561 140 байт ≈ 11.03 MiB) — память под сами данные (ключи и значения). used_memory (12 529 192 байт ≈ 11.95 MiB) — общая память процесса, включая служебные расходы.
 
 ### DB
 1) Понять разницу backref и back_populates в sqlalchemy.orm.relationship
@@ -149,6 +150,10 @@
 11) Проверять подключение к бд при старте приложения (Lifespan) (ping)
 12) Почитать доку https://aminalaee.dev/sqladmin/
 13) Попробовать poetry add "alembic[asyncio]" -G dev
+
+### Redis
+1) Сброс кеша между запусками тестов @pytest.fixture(autouse=True) async def clean_cache(app): yield; await app.state.cache.client.flushdb()
+2) Отключать из пула соединения, которые долго не используются. На стороне редис: # Close the connection after a client is idle for N seconds (0 to disable) timeout 0
 
 ### Rabbitmq
 1) запускать rmq консьюмер как starlette, если будет необходимость
@@ -204,3 +209,4 @@
 17) Добавить схему в readme https://stackoverflow.com/questions/14494747/how-to-add-images-to-readme-md-on-github
 18) почитать про weakref.WeakKeyDictionary, попробовать применить в SSE для клиентов
 19) зачем используется ContextVar
+20) Воркер по cron

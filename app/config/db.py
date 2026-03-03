@@ -16,14 +16,18 @@ class DbSettings(BaseSettings):
     REDIS_PORT: int
     REDIS_USER: str
     REDIS_PASSWORD: str
-    REDIS_HEALTH_CHECK_INTERVAL: int = 30
-    REDIS_RECONNECT_INTERVAL: int = 1
+
+    REDIS_MAX_CONNECTIONS: int = 10
+    REDIS_HEALTH_CHECK_INTERVAL: int = 0
+    REDIS_RECONNECT_INTERVAL: int = 15
+    REDIS_SOCKET_CONNECT_TIMEOUT: int = 3
+    REDIS_SOCKET_TIMEOUT: int = 1
 
     PUBSUB_TIMEOUT: float = 5.0
     PUBSUB_SSE_CHANNEL: str = "sse_messages"
 
     CACHE_DB: int
-    CACHE_MAX_CONNECTIONS: int = 10
+
     CACHE_EXPIRE_DEFAULT: int = 120
     CACHE_EXPIRE_HOTELS: int = 60
 
