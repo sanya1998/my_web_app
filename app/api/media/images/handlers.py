@@ -21,9 +21,9 @@ async def add_images_for_moderator(
 ):
     # TODO: use info_type
     first_file = files[0]  # TODO: all files
-    media_type = "images"  # TODO: проверить, что картинка, а не другой тип файла. Конвертировать в webp
+    # TODO: проверить, что картинка, а не другой тип файла. Конвертировать в webp
     # TODO: .webp -> envs
-    im_path = f"{settings.STATIC_DIRECTORY}{media_type}/{name}.webp"
+    im_path = f"{settings.STATIC_DIRECTORY}{settings.IMAGES_DIRECTORY}{name}.webp"
     with open(im_path, "wb+") as file_object:
         shutil.copyfileobj(first_file.file, file_object)
 

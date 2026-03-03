@@ -20,7 +20,6 @@ x-base-python: &base-python
     - ../docker:/code/docker
     - ../manage.py:/code/manage.py
     - ../envs:/code/envs
-    - ../static:/code/static
     - ../scripts:/code/scripts
 
 services:

@@ -1,6 +1,3 @@
-# Ignore everything in this directory (TODO: игнорировать?)
-7.webp
-# Except this file
-!.gitignore
 # Этот файл нужен также для того, чтобы директория попала в git,
 # чтобы после клонирования её не нужно было создавать вручную.
+*.webp

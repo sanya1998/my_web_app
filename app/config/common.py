@@ -24,6 +24,7 @@ class Settings(
     HAWK_TOKEN: str
     PICKLE_PROTOCOL: int = -1
     STATIC_DIRECTORY: str = "app/static/"
+    IMAGES_DIRECTORY: str = "images/"
     STATIC_NAME: str = "static"
     STATIC_PATH: str = "/static"
 
